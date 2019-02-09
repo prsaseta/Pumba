@@ -62,7 +62,7 @@ def register_view(request):
             return render(request, "register.html", {"form": form, "error": "That username is already taken"})
         # Comprobamos que el email no está cogido
         if User.objects.filter(email = email).count() > 0 or PreRegister.objects.filter(email = email).count() > 0:
-            return render(request, "register.html", {"form": form, "error": "That username is already taken"})
+            return render(request, "register.html", {"form": form, "error": "That email is already taken"})
 
         if IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY:
             try:
