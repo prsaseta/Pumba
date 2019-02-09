@@ -126,3 +126,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Configuración de correo
+# Uso un servicio externo
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'EDPVincent'
+EMAIL_HOST_PASSWORD = 'PumbaPumba8'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Esto activa o desactiva la necesidad de usar el correo para registrarse
+IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = True
+
+# URL base para los correos de verificación
+VERIFICATION_MAIL_URL = "http://localhost:8000"
