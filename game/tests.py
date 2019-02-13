@@ -78,6 +78,188 @@ class GameTestCase(TestCase):
         except IllegalMoveException as e:
             if(str(e) != "Cannot draw if there are no cards in play!"):
                 raise
+    
+    def test_regular_draw_forced_1(self):
+        # Intenta robar una carta de forma forzada
+        self.game.drawCounter = 1
+        self.game.player_action_draw_forced()
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 5)
+
+    def test_regular_draw_forced_2(self):
+        # Intenta robar dos cartas de forma forzada
+        self.game.drawCounter = 2
+        self.game.player_action_draw_forced()
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 6)
+
+    def test_regular_draw_forced_2_shuffle(self):
+        # Intenta robar dos cartas de forma forzada barajando la baraja
+        self.game.drawCounter = 2
+        pile = self.game.drawPile
+        self.game.drawPile = []
+        self.game.playPile.extend(pile)
+        self.game.player_action_draw_forced()
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 6)
+
+    def test_regular_draw_forced_1_shuffle(self):
+        # Intenta robar una carta de forma forzada barajando la baraja
+        self.game.drawCounter = 1
+        pile = self.game.drawPile
+        self.game.drawPile = []
+        self.game.playPile.extend(pile)
+        self.game.player_action_draw_forced()
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 5)
+
+    def test_regular_draw_forced_100_shuffle(self):
+        # Intenta robar 100, agotando por tanto la baraja
+        self.game.drawCounter = 100
+        self.game.player_action_draw_forced()
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), DECK_SIZE - 3*4)
+
+    def test_abnormal_draw_forced_empty(self):
+        # Intenta robar forzadamemente cuando el contador es cero
+        try:
+            self.game.drawCounter = 0
+            self.game.player_action_draw_forced()
+        except IllegalMoveException as e:
+            if(str(e) != "Cannot draw if the counter is zero already!"):
+                raise
+
+    def test_abnormal_draw_forced_notbeginning(self):
+        # Intenta robar forzadamemente cuando se ha hecho otra cosa
+        try:
+            self.game.drawCounter = 1
+            self.game.turn.add_action(ActionType.DRAW)
+            self.game.player_action_draw_forced()
+        except IllegalMoveException as e:
+            if(str(e) != "Draw from draw counter must be done at the beginning of turn!"):
+                raise
+
+    def test_regular_play_one(self):
+        # Intenta jugar un ONE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.ONE), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.assertEquals(self.game.drawCounter, 1)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_two(self):
+        # Intenta jugar un TWO
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.TWO), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.assertEquals(self.game.drawCounter, 2)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    # TODO Todas las posibilidades de COPY
+
+    def test_regular_play_divine(self):
+        # Intenta jugar un DIVINE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_flip_clockwise(self):
+        # Intenta jugar un FLIP
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.FLIP), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 3)
+        self.assertEquals(self.game.turnDirection, TurnDirection.COUNTERCLOCKWISE)
+
+    def test_regular_play_flip_counterclockwise(self):
+        # Intenta jugar un FLIP
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.FLIP), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 1)
+        self.assertEquals(self.game.turnDirection, TurnDirection.CLOCKWISE)
+
+    def test_regular_play_jump_clockwise(self):
+        # Intenta jugar un JUMP
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.JUMP), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 2)
+
+    def test_regular_play_jump_counterclockwise(self):
+        # Intenta jugar un JUMP
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.update_next_player(self.game.currentPlayer)
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.JUMP), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 2)
+
+    def test_regular_play_king(self):
+        # Intenta jugar un KING
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.KING), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
 
     def test_regular_endturn_drawtwice(self):
         # Intenta robar dos cartas y terminar turno

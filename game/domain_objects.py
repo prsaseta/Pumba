@@ -212,7 +212,7 @@ class Game():
     # Devuelve la carta robada
     def player_action_draw(self):
         if(self.lock):
-            raise ConcurrencyError
+            raise ConcurrencyError()
         self.lock = True
 
         # Un jugador puede robar una carta si:
@@ -249,7 +249,7 @@ class Game():
     # Roba por la pila de robo
     def player_action_draw_forced(self):
         if(self.lock):
-            raise ConcurrencyError
+            raise ConcurrencyError()
         self.lock = True
 
         # Para poder hacer esta acción:
@@ -285,7 +285,7 @@ class Game():
     # El jugador juega una carta
     def player_action_play(self, index):
         if(self.lock):
-            raise ConcurrencyError
+            raise ConcurrencyError()
         self.lock = True
 
         # Hay los siguientes casos posibles para jugar una carta
@@ -297,7 +297,7 @@ class Game():
         #   3.1 Debe tener el mismo palo que el rey
 
         # Carta a jugar
-        card = self.players[self.currentPlayer].cards[index]
+        card = self.players[self.currentPlayer].hand[index]
 
         # Si hay que robar carta:
         if (self.drawCounter > 0):
@@ -335,7 +335,7 @@ class Game():
                 raise IllegalMoveException("That card does not share a suit or number with the last card played!")
             
             # Quitamos la carta de la mano del jugador
-            card = self.players[self.currentPlayer].cards.pop(index)
+            card = self.players[self.currentPlayer].hand.pop(index)
 
             # Ejecutamos los efectos de la carta
             self.execute_card_effect(card)
@@ -417,4 +417,3 @@ class Game():
         random.shuffle(pile)
         # La ponemos como pila de robo
         self.drawPile = pile
-
