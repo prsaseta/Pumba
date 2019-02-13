@@ -184,10 +184,151 @@ class GameTestCase(TestCase):
         self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
 
     # TODO Todas las posibilidades de COPY
+    def test_regular_play_copy_none(self):
+        # Intenta copiar un NONE
+        self.game.lastEffect = CardNumber.NONE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_copy_one(self):
+        # Intenta copiar un ONE
+        self.game.lastEffect = CardNumber.ONE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.assertEquals(self.game.drawCounter, 1)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_copy_two(self):
+        # Intenta copiar un TWO
+        self.game.lastEffect = CardNumber.TWO
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.assertEquals(self.game.drawCounter, 2)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_copy_divine(self):
+        # Intenta copiar un DIVINE
+        self.game.lastEffect = CardNumber.DIVINE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_copy_switch(self):
+        # Intenta copiar un DIVINE
+        self.game.lastEffect = CardNumber.SWITCH
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_copy_flip_clockwise(self):
+        # Intenta copiar un FLIP
+        self.game.lastEffect = CardNumber.FLIP
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 3)
+        self.assertEquals(self.game.turnDirection, TurnDirection.COUNTERCLOCKWISE)
+
+    def test_regular_play_copy_flip_counterclockwise(self):
+        # Intenta copiar un FLIP
+        self.game.lastEffect = CardNumber.FLIP
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 1)
+        self.assertEquals(self.game.turnDirection, TurnDirection.CLOCKWISE)
+
+    def test_regular_play_copy_jump_clockwise(self):
+        # Intenta copiar un JUMP
+        self.game.lastEffect = CardNumber.JUMP
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 2)
+
+    def test_regular_play_copy_jump_counterclockwise(self):
+        # Intenta copiar un JUMP
+        self.game.lastEffect = CardNumber.JUMP
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.update_next_player(self.game.currentPlayer)
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+        self.assertEquals(self.game.nextPlayer, 2)
+
+    def test_regular_play_copy_king(self):
+        # Intenta copiar un KING
+        self.game.lastEffect = CardNumber.KING
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.COPY), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
 
     def test_regular_play_divine(self):
         # Intenta jugar un DIVINE
         self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        count = 0
+        for p in self.game.players:
+            count = count + len(p.hand)
+        count = count + len(self.game.playPile) + len(self.game.drawPile)
+        self.assertEquals(count, DECK_SIZE - 2)
+        self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
+
+    def test_regular_play_switch(self):
+        # Intenta jugar un SWITCH
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.SWITCH), Card(Suit.ESPADAS, CardNumber.ONE)]
         self.game.player_action_play(0)
         count = 0
         for p in self.game.players:

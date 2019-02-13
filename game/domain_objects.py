@@ -394,8 +394,14 @@ class Game():
             self.lastEffect = CardNumber.JUMP
             self.lastNumber = CardNumber.JUMP
             self.lastSuit = card.suit
-
             self.update_next_player(self.nextPlayer)
+            self.turn.add_action(ActionType.PLAY)
+        elif (card.number == CardNumber.SWITCH):
+            # El estado interno del juego no cambia; hay que gestionar el efecto
+            # de forma exterior
+            self.lastEffect = CardNumber.SWITCH
+            self.lastNumber = CardNumber.SWITCH
+            self.lastSuit = card.suit
             self.turn.add_action(ActionType.PLAY)
         elif (card.number == CardNumber.KING):
             self.lastEffect = CardNumber.KING
