@@ -401,6 +401,76 @@ class GameTestCase(TestCase):
         self.assertEquals(count, DECK_SIZE - 2)
         self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), 1)
 
+    def test_regular_play_two_deflect(self):
+        # Intenta reflejar con un TWO
+        self.game.drawCounter = 1
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.TWO), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+
+    def test_regular_play_one_deflect(self):
+        # Intenta reflejar con un ONE
+        self.game.drawCounter = 1
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.ONE), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+
+    def test_abnormal_play_drawcounter(self):
+        # Intenta jugar una carta con el contador de robo activo
+        try:
+            self.game.drawCounter = 1
+            self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+            self.game.player_action_play(0)
+        except IllegalMoveException as e:
+            if(str(e) != "Must deflect card draw with One or Two!"):
+                raise
+
+    def test_regular_play_playking(self):
+        # Intenta jugar una carta después de jugar un KING
+        self.game.turn.add_action(ActionType.PLAYKING)
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.ONE), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.assertEqual(self.game.lastEffect, CardNumber.NONE)
+
+    def test_abnormal_play_playking_wrongsuit(self):
+        # Intenta jugar una carta de un palo erróneo después de jugar un KING
+        try:
+            self.game.turn.add_action(ActionType.PLAYKING)
+            self.game.lastSuit = Suit.ESPADAS
+            self.game.players[self.game.currentPlayer].hand = [Card(Suit.BASTOS, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+            self.game.player_action_play(0)
+        except IllegalMoveException as e:
+            if(str(e) != "This card is not of a suitable suit!"):
+                raise
+
+    def test_abnormal_play_wrongsuit(self):
+        # Intenta jugar una carta de un palo y número erróneo
+        try:
+            self.game.lastSuit = Suit.BASTOS
+            self.game.lastNumber = CardNumber.ONE
+            self.game.players[self.game.currentPlayer].hand = [Card(Suit.ESPADAS, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+            self.game.player_action_play(0)
+        except IllegalMoveException as e:
+            if(str(e) != "That card does not share a suit or number with the last card played!"):
+                raise
+
+    def test_nextplayer_clockwise(self):
+        self.game.turnDirection = TurnDirection.CLOCKWISE
+        self.game.update_next_player(2)
+        self.assertEquals(self.game.nextPlayer, 3)
+
+    def test_nextplayer_clockwise_limit(self):
+        self.game.turnDirection = TurnDirection.CLOCKWISE
+        self.game.update_next_player(3)
+        self.assertEquals(self.game.nextPlayer, 0)
+
+    def test_nextplayer_counterclockwise(self):
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.update_next_player(2)
+        self.assertEquals(self.game.nextPlayer, 1)
+
+    def test_nextplayer_counterclockwise_limit(self):
+        self.game.turnDirection = TurnDirection.COUNTERCLOCKWISE
+        self.game.update_next_player(0)
+        self.assertEquals(self.game.nextPlayer, 3)
 
     def test_regular_endturn_drawtwice(self):
         # Intenta robar dos cartas y terminar turno
@@ -408,3 +478,44 @@ class GameTestCase(TestCase):
         self.game.player_action_draw()
         self.game.begin_turn()
         self.assertEqual(self.game.currentPlayer, 1)
+
+    def test_regular_endturn_playcard(self):
+        # Juega una carta y termina el turno
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.TWO), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.game.begin_turn()
+
+    def test_regular_endturn_playking(self):
+        # Juega un KING y termina el turno
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.KING), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.game.begin_turn()
+
+    def test_regular_endturn_forceddraw(self):
+        # Roba forzadamente y termina turno
+        self.game.drawCounter = 2
+        self.game.player_action_draw_forced()
+        self.game.begin_turn()
+
+    def test_regular_endturn_nocards(self):
+        # Termina turno sin hacer nada por no haber cartas en juego
+        self.game.playPile = []
+        self.game.drawPile = []
+        self.game.begin_turn()
+
+    def test_abnormal_endturn_none(self):
+        # Intenta terminar turno sin hacer nada
+        try:
+            self.game.begin_turn()
+        except IllegalMoveException as e:
+            if(str(e) != "Cannot end turn without playing or drawing cards!"):
+                raise
+
+    def test_abnormal_endturn_onedraw(self):
+        # Intenta terminar turno robando una sola carta
+        try:
+            self.game.begin_turn()
+            self.game.player_action_draw()
+        except IllegalMoveException as e:
+            if(str(e) != "Cannot end turn without playing or drawing cards!"):
+                raise

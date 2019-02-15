@@ -305,7 +305,7 @@ class Game():
                 raise IllegalMoveException("Must deflect card draw with One or Two!")
             
             # Quitamos la carta de la mano del jugador
-            card = self.players[self.currentPlayer].cards.pop(index)
+            card = self.players[self.currentPlayer].hand.pop(index)
 
             # Ejecutamos los efectos de la carta
             self.execute_card_effect(card)
@@ -320,7 +320,7 @@ class Game():
                 raise IllegalMoveException("This card is not of a suitable suit!")
             
             # Quitamos la carta de la mano del jugador
-            card = self.players[self.currentPlayer].cards.pop(index)
+            card = self.players[self.currentPlayer].hand.pop(index)
 
             # Actualizamos el estado de juego para reflejarlo
             self.lastEffect = CardNumber.NONE
