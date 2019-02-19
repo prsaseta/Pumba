@@ -32,6 +32,8 @@ class ActionType(enum.Enum):
     DRAW = 2
     PLAY = 3
     PLAYKING = 4
+    SWITCH = 5
+    PLAYSWITCH = 6
 
 class TurnDirection(enum.Enum):
     CLOCKWISE = 1
@@ -179,7 +181,7 @@ class Game():
         if(self.currentPlayer is not None):
             # Si no ha jugado una carta o sido forzado a robar, comprueba que ha robado dos cartas
             # Alternativamente, contempla que no se puedan robar cartas y te deja ir
-            if not (self.turn.has(ActionType.PLAY) or self.turn.has(ActionType.PLAYKING) or self.turn.has(ActionType.DRAWCOUNTER) or len(self.playPile) + len(self.drawPile) == 0):
+            if not (self.turn.has(ActionType.PLAYSWITCH) or self.turn.has(ActionType.PLAY) or self.turn.has(ActionType.PLAYKING) or self.turn.has(ActionType.DRAWCOUNTER) or len(self.playPile) + len(self.drawPile) == 0):
                 count = 0
                 for a in self.turn.actions:
                     if(a.type == ActionType.DRAW):
@@ -343,11 +345,16 @@ class Game():
             # Ponemos la carta en la pila de juego
             self.playPile.append(card)
 
-        # Actualiza el historial de turnos
-        self.turn.add_action(ActionType.PLAY)
-
         self.lock = False
 
+    def player_action_switch(self, suit):
+        if (self.turn.has(ActionType.PLAYSWITCH) and not self.turn.has(ActionType.SWITCH)):
+            if (suit in Suit):
+                self.lastSuit = suit
+            else:
+                raise ValueError("Invalid suit!")
+        else:
+            raise IllegalMoveException("Cannot switch!")
 
     def execute_card_effect(self, card):
         if (card.number == CardNumber.ONE):
@@ -402,7 +409,7 @@ class Game():
             self.lastEffect = CardNumber.SWITCH
             self.lastNumber = CardNumber.SWITCH
             self.lastSuit = card.suit
-            self.turn.add_action(ActionType.PLAY)
+            self.turn.add_action(ActionType.PLAYSWITCH)
         elif (card.number == CardNumber.KING):
             self.lastEffect = CardNumber.KING
             self.lastNumber = CardNumber.KING

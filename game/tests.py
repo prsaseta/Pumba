@@ -519,3 +519,26 @@ class GameTestCase(TestCase):
         except IllegalMoveException as e:
             if(str(e) != "Cannot end turn without playing or drawing cards!"):
                 raise
+
+    def test_regular_switch(self):
+        # Cambia el palo
+        self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.SWITCH), Card(Suit.ESPADAS, CardNumber.ONE)]
+        self.game.player_action_play(0)
+        self.game.player_action_switch(Suit.ESPADAS)
+
+    def test_abnormal_switch_error(self):
+        # Cambia el palo a uno que no existe
+        try:
+            self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.SWITCH), Card(Suit.ESPADAS, CardNumber.ONE)]
+            self.game.player_action_play(0)
+            self.game.player_action_switch(89)
+        except ValueError as e:
+            pass
+    
+    def test_abnormal_switch_noplay(self):
+        # Cambia el palo sin haber jugado un switch
+        try:
+            self.game.player_action_switch(Suit.ESPADAS)
+        except IllegalMoveException as e:
+            if(str(e) != "Cannot switch!"):
+                raise
