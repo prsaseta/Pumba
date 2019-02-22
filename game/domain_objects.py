@@ -49,13 +49,13 @@ class PlayerController():
         self.isAI = isAI
         self.user = user
         self.player = player
-        self.hand = []
 
 class Player():
-    def __init__(self, game = None, controller = None):
+    def __init__(self, game = None, controller = None, name = None):
         self.game = game
         self.controller = controller
         self.hand = []
+        self.name = name
 
     # Añade una carta a la mano
     def gain_card(self, card):
@@ -110,6 +110,8 @@ class Game():
         self.players = []
         self.host = None
         self.turn = None
+        self.title = "Quick game"
+        self.maxPlayerCount = 4
         # Para evitar problemas de concurrencia, añadimos un cerrojo
         self.lock = False
 

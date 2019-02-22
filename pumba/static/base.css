@@ -1,0 +1,21 @@
+body {
+    background-color: aquamarine;
+}
+.header {
+    text-align: center
+}
+.matchmaking_table {
+    margin-left:auto; 
+    margin-right:auto;
+    border: 3px solid skyblue;
+}
+
+.matchmaking_table_row {
+    border: 3px solid skyblue;
+}
+
+.error {
+    color: red;
+    text-align: center;
+    font-size: large
+}

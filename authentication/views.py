@@ -107,6 +107,7 @@ def logout_view(request):
 
 def do_email_verification(username, password, email):
     # Generamos la ID de verificación
+    # TODO Comprobar repeticiones
     verification = get_random_string(length = 20)
     
     # Creamos el objeto de preregistro

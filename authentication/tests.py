@@ -48,7 +48,7 @@ class LoginTestCase(TestCase):
 class RegisterTestCase(TestCase):
     def setUp(self):
         # Nos aseguramos de que la verificación está activada
-        settings.IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = True
+        #settings.IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = True
         # Usuario de prueba para comprobar conflictos
         user2 = User.objects.create_user("john2", "john2@gmail.com", "john2")
     
@@ -60,9 +60,12 @@ class RegisterTestCase(TestCase):
         c = Client()
         # 1. Registrarse
         response = c.post('/authentication/register/', {'username': 'john1', 'password': 'john1', 'confirm': 'john1', 'email': 'john1@gmail.com'})
-        self.assertTrue(response.status_code == 200)
-        self.assertIsNone(response.context.get('error'))
-        self.assertEqual(len(mail.outbox), 1)
+        if(settings.IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY):
+            self.assertTrue(response.status_code == 200)
+            self.assertIsNone(response.context.get('error'))
+            self.assertEqual(len(mail.outbox), 1)
+        else:
+            self.assertTrue(response.status_code == 302)
 
         # 2. Verificar
         # Vamos a hacer un poco de trampa y coger directamente de la BD el código
