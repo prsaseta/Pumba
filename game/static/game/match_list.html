@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if error %}
+<p class="error">{{error}}</p>
+{% endif %}
+<table class="matchmaking_table">
+    <tr>
+        <th>
+            Name
+        </th>
+        <th>
+            Player count
+        </th>
+        <th>
+            Players
+        </th>
+        <th>
+            
+        </th>
+    </tr>
+    {% for game in games %}
+    <tr>
+        <th class="matchmaking_table_row">{{ game.0.title }}</th>
+        <th class="matchmaking_table_row">{{ game.0.players|length }} / {{ game.0.maxPlayerCount }}</th>
+        <th class="matchmaking_table_row">
+            {% for player in game.0.players %}
+                {{ player.name }}<br/>
+            {% endfor %}
+        </th>
+        <th class="matchmaking_table_row">
+            {% if game.2 %}
+                <a href="/game/join?id={{ game.1 }}">Join</a>
+            {% else %}
+                <p>Full</p>
+            {% endif %}
+        </th>
+    </tr>
+    {% endfor %}
+</table>
+<div style="text-align: center">
+<form method="post" action="{% url 'create_match' %}">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit">Create match</button>
+</form>
+</div>
+
+{% endblock %}

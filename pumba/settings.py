@@ -145,6 +145,14 @@ VERIFICATION_MAIL_URL = "http://localhost:8000"
 
 # Channels
 ASGI_APPLICATION = "pumba.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 # Por si intentas acceder sin permisos, que te redirija
 # TODO Testear

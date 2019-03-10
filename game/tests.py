@@ -1,5 +1,8 @@
 from django.test import TestCase
 from game.domain_objects import *
+from django.core.cache import cache 
+from django.contrib.auth.models import User
+import game.matchmaking
 
 # Create your tests here.
 DECK_SIZE = 8 * 4
@@ -542,3 +545,63 @@ class GameTestCase(TestCase):
         except IllegalMoveException as e:
             if(str(e) != "Cannot switch!"):
                 raise
+
+    class MatchmakingTestCase(TestCase):
+        def setUp(self):
+            self.user1 = User.objects.create_user("testuser1", "testuser1@gmail.com", "testuser1")
+            self.user2 = User.objects.create_user("testuser2", "testuser2@gmail.com", "testuser2")
+            self.user3 = User.objects.create_user("testuser3", "testuser3@gmail.com", "testuser3")
+            self.user4 = User.objects.create_user("testuser4", "testuser4@gmail.com", "testuser4")
+
+        def test_regular_create(self):
+            # Intenta crear una partida normalmente
+            id = matchmaking.create(4, user1, "Test game")
+            game = cache.get("match_"+id)
+            self.assertIsNotNone(cache.get("match_"+id))
+            self.assertEquals(self.user1, game.host)
+
+        def test_abnormal_create_users(self):
+            # Intenta crear una partida con demasiados pocos usuarios
+            try:
+                id = matchmaking.create(1, user1, "Test game")
+            except ValueError as e:
+                self.assertEquals(str(e), "The number of users must be at least two!")
+
+        def test_regular_join(self):
+            # Se une a una partida normalmente
+            id = matchmaking.create(4, user1, "Test game")
+            matchmaking.join(self.user2, id)
+
+        def test_regular_join_already(self):
+            # Se une a una partida normalmente habiendo estado antes
+            id = matchmaking.create(4, user1, "Test game")
+            matchmaking.join(self.user2, id)
+            matchmaking.join(self.user2, id)
+
+        def test_abnormal_join_inexistent(self):
+            # Intenta unirse a una partida que no existe
+            try:
+                matchmaking.join(self.user2, "test")
+            except PumbaException as e:
+                self.assertEquals(str(e), "The match doesn't exist!")
+
+        def test_abnormal_join_full(self):
+            # Intenta unirse a una partida llena
+            try:
+                id = matchmaking.create(2, user1, "Test game")
+                matchmaking.join(self.user2, id)
+                matchmaking.join(self.user3, id)
+            except PumbaException as e:
+                self.assertEquals(str(e), "The game is full!")
+
+        def test_abnormal_join_started(self):
+            # Intenta unirse a una partida llena
+            try:
+                id = matchmaking.create(2, user1, "Test game")
+                game = cache.get("match_" + id)
+                game.status = GameStatus.PLAYING
+                cache.set("match_" + id, game, None)
+                matchmaking.join(self.user2, id)
+            except PumbaException as e:
+                self.assertEquals(str(e), "The game is already started!")
+
