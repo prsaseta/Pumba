@@ -15,6 +15,7 @@ def index_view(request):
 
 @login_required
 def match_list2(request):
+    # TODO ¿Lista de partidas en las que estás?
     # Cogemos todas las llaves de la BD
     keys = GameKey.objects.all()
     # Reconstruimos la lista de partidas
@@ -50,13 +51,14 @@ def join_match(request):
         game.matchmaking.join(request.user, id)
     except PumbaException as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
-    return render(request, "game.html", {"id": id})
+    return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
 
 @login_required
 def create_match(request):
     # Te crea una partida y te mete en ella
     if request.POST:
         form = MatchForm(request.POST)
+        # Si quitas este print deja de funcionar porque ???
         print(form)
         max_players = form.cleaned_data['max_players']
         title = form.cleaned_data['title']
@@ -67,7 +69,7 @@ def create_match(request):
         except PumbaException as e:
             return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-        return render(request, "game.html", {"id": id})
+        return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
     else:
         return HttpResponseRedirect("/game/matchmaking")
 

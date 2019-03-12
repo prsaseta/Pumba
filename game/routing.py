@@ -4,5 +4,6 @@ from django.conf.urls import url
 from . import consumers
 
 websocket_urlpatterns = [
-    url(r'^ws/game/(?P<room_name>[^/]+)/$', consumers.GameConsumer),
+    # El primer argumento, independientemente de como se llame, el consumer lo recibe como "match_id"
+    url(r'^ws/game/(?P<match_id>[^/]+)/$', consumers.GameConsumer),
 ]

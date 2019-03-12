@@ -1,38 +1,61 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>You joined game {{ id }}</p>
+<h2>{{ game_name }}</h2>
+<p id="error-msg" class = "error"></p>
 <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
 <input id="chat-message-input" type="text" size="100"/><br/>
-<input id="chat-message-submit" type="button" value="Send"/>
+<input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+<input id="begin-match" type="button" value="Begin match">
 <script>
+    // ID de la partida
     var roomName = "{{ id }}";
 
-    var chatSocket = new WebSocket(
+    // Websocket al servidor
+    var gameSocket = new WebSocket(
         'ws://' + window.location.host +
         '/ws/game/' + roomName + '/');
 
-    chatSocket.onmessage = function(e) {
+    // Procesamiento a hacer cuando se recibe un mensaje
+    // TODO De momento solamente acepta mensajes de chat
+    gameSocket.onmessage = function(e) {
+        // Parsea el JSON
         var data = JSON.parse(e.data);
-        var message = data['message'];
-        document.querySelector('#chat-log').value += (message + '\n');
+        // Recupera el tipo del mensaje
+        var message_type = data['type']
+        // Le da un procesamiento u otro dependiendo de qué sea
+        // Mensaje de chat
+        if (message_type == "chat_message"){
+            var message = data['message'];
+            var username = data['username'];
+            var composed = username + ": " + message
+            document.querySelector('#chat-log').value += (composed + '\n');
+        // Notificación de chat de sistema
+        } else if (message_type == "chat_notification"){
+            document.querySelector('#chat-log').value += (data['message'] + '\n');
+        }
     };
 
-    chatSocket.onclose = function(e) {
+    // Qué hacer si se cierra el websocket de forma inesperada
+    gameSocket.onclose = function(e) {
         console.error('Chat socket closed unexpectedly');
+        document.getElementById("error-msg").textContent += "The connection to the server was lost";
     };
 
+    // Hace autofocus en el chat al entrar en partida
     document.querySelector('#chat-message-input').focus();
+    // Cuando presionas Enter, envía el mensaje
     document.querySelector('#chat-message-input').onkeyup = function(e) {
         if (e.keyCode === 13) {  // enter, return
             document.querySelector('#chat-message-submit').click();
         }
     };
 
+    // Envía un mensaje de chat al servidor
     document.querySelector('#chat-message-submit').onclick = function(e) {
         var messageInputDom = document.querySelector('#chat-message-input');
         var message = messageInputDom.value;
-        chatSocket.send(JSON.stringify({
+        gameSocket.send(JSON.stringify({
             'message': message
         }));
 
