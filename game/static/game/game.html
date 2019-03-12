@@ -6,6 +6,7 @@
 <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
 <input id="chat-message-input" type="text" size="100"/><br/>
 <input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+<!--Botones para enviar comandos-->
 <input id="begin-match" type="button" value="Begin match">
 <script>
     // ID de la partida
@@ -33,6 +34,10 @@
         // Notificación de chat de sistema
         } else if (message_type == "chat_notification"){
             document.querySelector('#chat-log').value += (data['message'] + '\n');
+        } else if (message_type == "chat_error") {
+            document.querySelector('#chat-log').value += ("Error: " + data['message'] + '\n');
+        } else if (message_type == "ok"){
+            document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
         }
     };
 
@@ -56,10 +61,18 @@
         var messageInputDom = document.querySelector('#chat-message-input');
         var message = messageInputDom.value;
         gameSocket.send(JSON.stringify({
+            'type': "chat_message",
             'message': message
         }));
 
         messageInputDom.value = '';
+    };
+
+    // Comando "Begin match"
+    document.querySelector('#begin-match').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "begin_match"
+        }));
     };
 </script>
 {% endblock %}

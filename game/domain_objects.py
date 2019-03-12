@@ -1,7 +1,7 @@
 import enum
 import random
 import math
-from game.exceptions import ConcurrencyError, IllegalMoveException
+from game.exceptions import ConcurrencyError, IllegalMoveException, PumbaException
 from copy import deepcopy
 
 # Enumerados
@@ -60,7 +60,7 @@ class Player():
     # Añade una carta a la mano
     def gain_card(self, card):
         if card is None:
-            raise ValueError("Card received is None")
+            raise PumbaException("Card received is None")
         self.hand.append(card)
 
     # Elimina la carta i de la mano y la devuelve
@@ -70,16 +70,16 @@ class Player():
 class Card():
     def __init__(self, suit, number):
         if suit is None:
-            raise ValueError("Suit cannot be none")
+            raise PumbaException("Suit cannot be none")
         if number is None:
-            raise ValueError("Number cannot be none")
+            raise PumbaException("Number cannot be none")
         self.suit = suit
         self.number = number
 
 class Action():
     def __init__(self, type):
         if type is None:
-            raise ValueError("Type cannot be none")
+            raise PumbaException("Type cannot be none")
         self.type = type
 
 class Turn():
@@ -98,17 +98,25 @@ class Turn():
 class Game():
     def __init__(self):
         self.status = GameStatus.WAITING
+        # Suit
         self.lastSuit = None
+        # CardNumbers
         self.lastNumber = None
         self.lastEffect = None
+        # Integers
         self.currentPlayer = None
         self.nextPlayer = None
+        # TurnDirection
         self.turnDirection = None
+        # Integer
         self.drawCounter = None
+        # Arrays ordenados de Card
         self.drawPile = []
         self.playPile = []
         self.players = []
+        # User
         self.host = None
+        # Turn
         self.turn = None
         self.title = "Quick game"
         self.maxPlayerCount = 4
@@ -122,11 +130,13 @@ class Game():
             raise ConcurrencyError()
         self.lock = True
 
+        if self.status is GameStatus.PLAYING:
+            raise PumbaException("The game is already started!")
         if self.host is None:
-            raise ValueError("There is no defined host for the game")
+            raise PumbaException("There is no defined host for the game")
 
         if len(self.players) < 2:
-            raise ValueError("Not enough players! " + len(self.players))
+            raise PumbaException("Not enough players! " + str(len(self.players)))
         
         # Puede aceptar una colección de cartas específica en vez de la estándar
         pile = []
@@ -354,7 +364,7 @@ class Game():
             if (suit in Suit):
                 self.lastSuit = suit
             else:
-                raise ValueError("Invalid suit!")
+                raise PumbaException("Invalid suit!")
         else:
             raise IllegalMoveException("Cannot switch!")
 

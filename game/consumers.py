@@ -2,6 +2,8 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
 from django.core.cache import cache 
+from game.exceptions import PumbaException
+import traceback
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -50,27 +52,18 @@ class GameConsumer(WebsocketConsumer):
                 self.channel_name
             )
             # Enviamos notificación por chat
-            async_to_sync(self.channel_layer.group_send)(
-            self.match_group_name,
-            {
-                'type': 'chat_notification',
-                'message': "User " + game.players[self.player_index].name + " joined the game"
-            }
-        )
+            notificationmsg = "User " + game.players[self.player_index].name + " joined the game"
+            self.send_notification_global(notificationmsg)
             self.accept()
 
     def disconnect(self, close_code):
         # TODO Darle control a la IA
+        # TODO Borrar la partida si no quedan usuarios
         game = cache.get(self.match_group_name)
         username = game.players[self.player_index].name
         # Avisamos al resto de jugadores
-        async_to_sync(self.channel_layer.group_send)(
-            self.match_group_name,
-            {
-                'type': 'chat_notification',
-                'message': "User " + username + " disconnected from the game"
-            }
-        )
+        notificationmsg = "User " + username + " disconnected from the game"
+        self.send_notification_global(notificationmsg)
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
             self.match_group_name,
@@ -80,25 +73,89 @@ class GameConsumer(WebsocketConsumer):
     # Recibe mensajes del websocket
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        pkgtype = text_data_json['type']
 
         game = cache.get(self.match_group_name)
         username = game.players[self.player_index].name
 
-        # Reenvía mensaje de chat a todos los canales, incluyéndose a sí mismo
-        # El "type" indica qué método ejecutar de los consumidores que reciban el mensaje
-        # Cuidado: el type no significa lo mismo mandándoselo al grupo que mandándoselo al cliente
-        # En el grupo dice método a ejecutar, en cliente indica tipo de mensaje
+        # Procesamiento cuando recibe un mensaje de chat
+        if pkgtype == "chat_message":
+            # Reenvía mensaje de chat a todos los canales, incluyéndose a sí mismo
+            # El "type" indica qué método ejecutar de los consumidores que reciban el mensaje
+            # Cuidado: el type no significa lo mismo mandándoselo al grupo que mandándoselo al cliente
+            # En el grupo dice método a ejecutar, en cliente indica tipo de mensaje
+            message = text_data_json['message']
+            async_to_sync(self.channel_layer.group_send)(
+                self.match_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'username': username
+                }
+            )
+        # Procesamiento de orden "empezar partida"
+        elif pkgtype == "begin_match":
+            try:
+                # Comprueba que es el host
+                user = self.scope["user"]
+                if game.host.id is not user.id:
+                    raise PumbaException("You are not the host!")
+                else:
+                    # Hace el procesamiento de empezar la partida
+                    game.begin_match()
+                    cache.set("match_" + self.match_id, game, None)
+                    # Le da el OK
+                    self.send_ok()
+                    # Notifica a todos
+                    self.send_notification_global("The match has begun!")
+            except PumbaException as e:
+                self.send_error_msg(e)
+            except Exception as e:
+                self.send_error_msg_generic(e)
+                
+    # Imprime en pantalla la stack trace y devuelve un mensaje de error al cliente actual
+    def send_error_msg(self, exception):
+        traceback.print_tb(exception.__traceback__)
+        self.send(text_data=json.dumps({
+            'type': 'chat_error',
+            'message': str(exception),
+        }))
+
+    def send_error_msg_generic(self, exception):
+        traceback.print_tb(exception.__traceback__)
+        self.send(text_data=json.dumps({
+            'type': 'chat_error',
+            'message': "An unexpected server error ocurred",
+        }))
+
+    # Le envía un mensaje de OK al cliente actual
+    def send_ok(self):
+        self.send(text_data=json.dumps({
+            'type': 'ok'
+        }))
+
+    # Envía el estado de juego al cliente actual
+    def send_game_state(self, curgame = None):
+        if curgame is None:
+            game = cache.get(self.match_group_name)
+        else:
+            game = curgame
+        self.send(text_data=json.dumps({
+            'type': 'game_state'
+            # TODO Stub
+        }))
+    
+    # Envía un mensaje de notificación a todos los clientes
+    def send_notification_global(self, text):
         async_to_sync(self.channel_layer.group_send)(
             self.match_group_name,
             {
-                'type': 'chat_message',
-                'message': message,
-                'username': username
+                'type': 'chat_notification',
+                'message': text
             }
         )
 
-    # Receive message from room group
+    # Replica mensaje de chat de usuario
     def chat_message(self, event):
         message = event['message']
         username = event['username']
