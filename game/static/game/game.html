@@ -3,11 +3,28 @@
 {% block content %}
 <h2>{{ game_name }}</h2>
 <p id="error-msg" class = "error"></p>
-<textarea id="chat-log" cols="100" rows="20"></textarea><br/>
+<textarea id="chat-log" cols="100" rows="20" style="float: left;"></textarea><br/>
+<div style="float: left; padding-left: 10px">
+    <div id="game-status-display"></div>
+    <div id="last-suit-display"></div>
+    <div id="last-number-display"></div>
+    <div id="last-effect-display"></div>
+    <div id="current-player-display"></div>
+    <div id="next-player-display"></div>
+    <div id="turn-direction-display"></div>
+    <div id="draw-counter-display"></div>
+    <div id="draw-pile-display"></div>
+    <div id="play-pile-display"></div>
+    <div id="hand-display"><p></p></div>
+</div>
 <input id="chat-message-input" type="text" size="100"/><br/>
 <input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+
 <!--Botones para enviar comandos-->
 <input id="begin-match" type="button" value="Begin match">
+<input id="end-turn" type="button" value="End turn">
+<input id="update-state" type="button" value="Update game state">
+<label for="autoupdate-state">Update state automatically?</label><input id="autoupdate-state" type="checkbox" checked>
 <script>
     // ID de la partida
     var roomName = "{{ id }}";
@@ -38,6 +55,42 @@
             document.querySelector('#chat-log').value += ("Error: " + data['message'] + '\n');
         } else if (message_type == "ok"){
             document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
+            after_change()
+        } else if (message_type == "game_state"){
+            console.log(data)
+            document.querySelector('#game-status-display').innerHTML = "Game status: " + data['game_status']
+            document.querySelector('#last-suit-display').innerHTML = "Last suit: " + data['last_suit']
+            document.querySelector('#last-number-display').innerHTML = "Last number: " + data['last_number']
+            document.querySelector('#last-suit-display').innerHTML = "Last suit: " + data['last_suit']
+            document.querySelector('#last-effect-display').innerHTML = "Last effect: " + data['last_effect']
+            document.querySelector('#current-player-display').innerHTML = "Current player: " + data['current_player']
+            document.querySelector('#next-player-display').innerHTML = "Next player: " + data['next_player']
+            document.querySelector('#turn-direction-display').innerHTML = "Turn direction: " + data['turn_direction']
+            document.querySelector('#draw-counter-display').innerHTML = "Draw counter: " + data['draw_counter']
+            document.querySelector('#draw-pile-display').innerHTML = "Draw pile size: " + data['draw_pile']
+            document.querySelector('#play-pile-display').innerHTML = "Play pile size: " + data['play_pile']
+            
+            // Coge el div para mostrar la mano
+            var hand_display = document.querySelector('#hand-display')
+            // Borra todo lo que hubiera dentro
+            hand_display.innerHTML = ""
+            // Añade un párrafo de texto aclaratorio
+            var par = document.createElement('p');
+            par.innerText = "Your hand: "
+            hand_display.appendChild(par)
+            // Coge la lista de cartas del JSON
+            var hand = data['hand']
+            // Crea una nueva lista en el DOM
+            var ol = document.createElement('ol');
+            ol.setAttribute("start", 0)
+            // Pone la lista en el div
+            hand_display.appendChild(ol)
+            // Itera sobre la mano del JSON
+            hand.forEach(function(item){
+                var li = document.createElement("li")
+                ol.appendChild(li)
+                li.innerHTML = item[0] + " | " + item[1]
+            });
         }
     };
 
@@ -73,6 +126,37 @@
         gameSocket.send(JSON.stringify({
             'type': "begin_match"
         }));
+    };
+
+    // Comando "End turn"
+    document.querySelector('#end-turn').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "begin_turn"
+        }));
+    };
+
+    // Comando "Update game state"
+    document.querySelector('#update-state').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+    };
+
+    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
+    // al servidor
+    gameSocket.onopen = function(event) {
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+    }
+    // Se ejecuta después de cada comando
+    function after_change() {
+        var checkbox = document.querySelector('#autoupdate-state')
+        if(checkbox.checked){
+            gameSocket.send(JSON.stringify({
+                'type': "game_state"
+            }));
+        }
     };
 </script>
 {% endblock %}

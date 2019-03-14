@@ -4,6 +4,7 @@ import json
 from django.core.cache import cache 
 from game.exceptions import PumbaException
 import traceback
+from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -112,6 +113,24 @@ class GameConsumer(WebsocketConsumer):
                 self.send_error_msg(e)
             except Exception as e:
                 self.send_error_msg_generic(e)
+        elif pkgtype == "begin_turn":
+            try:
+                # Comprueba que es su turno
+                if self.player_index is not game.currentPlayer:
+                    raise PumbaException("It's not your turn!")
+                # Intenta terminar el turno
+                game.begin_turn()
+                cache.set("match_" + self.match_id, game, None)
+                # Le da el OK
+                self.send_ok()
+                # Notifica a todos
+                self.send_notification_global("Player " + username + " ends their turn")
+            except PumbaException as e:
+                self.send_error_msg(e)
+            except Exception as e:
+                self.send_error_msg_generic(e)
+        elif pkgtype == "game_state":
+            self.send_game_state()
                 
     # Imprime en pantalla la stack trace y devuelve un mensaje de error al cliente actual
     def send_error_msg(self, exception):
@@ -136,13 +155,54 @@ class GameConsumer(WebsocketConsumer):
 
     # Envía el estado de juego al cliente actual
     def send_game_state(self, curgame = None):
+        # Recupera el estado de juego
         if curgame is None:
             game = cache.get(self.match_group_name)
         else:
             game = curgame
+        # Recupera las cartas de la mano
+        cards = game.players[self.player_index].hand
+        hand = []
+        # Las transforma a un formato más cómodo
+        for card in cards:
+            hand.append([Suit(card.suit).name, CardNumber(card.number).name])
+
+        # Sustituye estos campos si no tienen valor
+        lastnumber = None
+        lastsuit = None
+        lasteffect = None
+        turndir = None
+        if game.lastNumber is None:
+            lastnumber = "None"
+        else:
+            lastnumber = CardNumber(game.lastNumber).name,
+        if game.lastSuit is None:
+            lastsuit = "None"
+        else:
+            lastsuit = Suit(game.lastSuit).name,
+        if game.lastEffect is None:
+            lasteffect = "None"
+        else:
+            lasteffect = CardNumber(game.lastEffect).name,
+        if game.turnDirection is None:
+            turndir = "None"
+        else:
+            turndir = TurnDirection(game.turnDirection).name,
+
+
         self.send(text_data=json.dumps({
-            'type': 'game_state'
-            # TODO Stub
+            'type': 'game_state',
+            'game_status': GameStatus(game.status).name,
+            'last_suit': lastsuit,
+            'last_number': lastnumber,
+            'last_effect': lasteffect,
+            'current_player': game.currentPlayer,
+            'next_player': game.nextPlayer,
+            'turn_direction': turndir,
+            'draw_counter': game.drawCounter,
+            'draw_pile': len(game.drawPile),
+            'play_pile': len(game.playPile),
+            'hand': hand
         }))
     
     # Envía un mensaje de notificación a todos los clientes

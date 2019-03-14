@@ -188,6 +188,9 @@ class Game():
             raise ConcurrencyError()
         self.lock = True
 
+        if self.status is not GameStatus.PLAYING:
+            raise PumbaException("The game is not started!")
+
         # Si no ha empezado la partida, seguimos;
         # si no, hay que asegurarse de que se puede terminar el turno
         if(self.currentPlayer is not None):
@@ -229,6 +232,9 @@ class Game():
             raise ConcurrencyError()
         self.lock = True
 
+        if self.status is not GameStatus.PLAYING:
+            raise PumbaException("The game is not started!")
+
         # Un jugador puede robar una carta si:
         # 1. El contador de robo está a 0
         # 2. No ha hecho otra cosa este turno que no sea robar carta una vez
@@ -266,6 +272,9 @@ class Game():
             raise ConcurrencyError()
         self.lock = True
 
+        if self.status is not GameStatus.PLAYING:
+            raise PumbaException("The game is not started!")
+
         # Para poder hacer esta acción:
         # 1. No se puede haber hecho nada este turno
         # 2. El contador de robo no puede ser cero
@@ -301,6 +310,12 @@ class Game():
         if(self.lock):
             raise ConcurrencyError()
         self.lock = True
+
+        if self.status is not GameStatus.PLAYING:
+            raise PumbaException("The game is not started!")
+
+        if index < 0 or index -1 > len(self.players[self.currentPlayer].hand):
+            raise PumbaException("Invalid card index!")
 
         # Hay los siguientes casos posibles para jugar una carta
         # 1. Si el contador de robo no es 0, se puede jugar solamente 1 o 2
@@ -360,11 +375,18 @@ class Game():
         self.lock = False
 
     def player_action_switch(self, suit):
+        if(self.lock):
+            raise ConcurrencyError()
+        self.lock = True
+        
+        if self.status is not GameStatus.PLAYING:
+            raise PumbaException("The game is not started!")
+
         if (self.turn.has(ActionType.PLAYSWITCH) and not self.turn.has(ActionType.SWITCH)):
             if (suit in Suit):
                 self.lastSuit = suit
             else:
-                raise PumbaException("Invalid suit!")
+                raise ValueError("Invalid suit!")
         else:
             raise IllegalMoveException("Cannot switch!")
 
