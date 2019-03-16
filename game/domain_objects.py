@@ -42,7 +42,7 @@ class TurnDirection(enum.Enum):
 # Entidades
 # Estas entidades no se persisten en la BD, y por eso no están en models.py
 class PlayerController():
-    def __init__(self, isAI = False, user = None, player = None):
+    def __init__(self, isAI = True, user = None, player = None):
         # Hay que definir si es una IA desde el principio, el resto se puede poner luego
         if isAI is None:
             isAI = False
@@ -127,7 +127,7 @@ class Game():
     def begin_match(self, cards = None):
         # Se encarga de asegurar la concurrencia
         if self.lock:
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
 
         if self.status is GameStatus.PLAYING:
@@ -137,6 +137,15 @@ class Game():
 
         if len(self.players) < 2:
             raise PumbaException("Not enough players! " + str(len(self.players)))
+
+        # Reinicia el estado en caso de que se esté reiniciando una partida
+        self.playPile = []
+        self.drawPile = []
+        self.currentPlayer = 0
+        self.nextPlayer = 1
+        self.turnDirection = TurnDirection.CLOCKWISE
+        self.drawCounter = 0
+        self.turn = None
         
         # Puede aceptar una colección de cartas específica en vez de la estándar
         pile = []
@@ -154,6 +163,7 @@ class Game():
         random.shuffle(pile)
         # Le damos a cada jugador cuatro cartas
         for player in self.players:
+            player.hand = []
             for i in range(4):
                 player.gain_card(pile.pop())
         # Ponemos la primera carta en la pila de juego
@@ -185,7 +195,7 @@ class Game():
     # Le cede el turno al siguiente jugador
     def begin_turn(self):
         if(self.lock):
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
 
         if self.status is not GameStatus.PLAYING:
@@ -229,7 +239,7 @@ class Game():
     # Devuelve la carta robada
     def player_action_draw(self):
         if(self.lock):
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
 
         if self.status is not GameStatus.PLAYING:
@@ -269,7 +279,7 @@ class Game():
     # Roba por la pila de robo
     def player_action_draw_forced(self):
         if(self.lock):
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
 
         if self.status is not GameStatus.PLAYING:
@@ -308,7 +318,7 @@ class Game():
     # El jugador juega una carta
     def player_action_play(self, index):
         if(self.lock):
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
 
         if self.status is not GameStatus.PLAYING:
@@ -362,6 +372,10 @@ class Game():
             # Se comprueba que se puede jugar la carta
             if(self.lastSuit != card.suit and self.lastNumber != card.number):
                 raise IllegalMoveException("That card does not share a suit or number with the last card played!")
+
+            # Se comprueba que no se ha jugado otra carta este último turno
+            if(self.turn.has(ActionType.PLAYSWITCH) or self.turn.has(ActionType.PLAY)):
+                raise IllegalMoveException("You already played a card this turn!")
             
             # Quitamos la carta de la mano del jugador
             card = self.players[self.currentPlayer].hand.pop(index)
@@ -376,7 +390,7 @@ class Game():
 
     def player_action_switch(self, suit):
         if(self.lock):
-            raise ConcurrencyError()
+            raise ConcurrencyError("Server concurrency error")
         self.lock = True
         
         if self.status is not GameStatus.PLAYING:
@@ -389,6 +403,8 @@ class Game():
                 raise ValueError("Invalid suit!")
         else:
             raise IllegalMoveException("Cannot switch!")
+
+        self.lock = False
 
     def execute_card_effect(self, card):
         if (card.number == CardNumber.ONE):
@@ -447,7 +463,7 @@ class Game():
         elif (card.number == CardNumber.KING):
             self.lastEffect = CardNumber.KING
             self.lastNumber = CardNumber.KING
-            self.lastSuit = CardNumber.KING
+            self.lastSuit = card.suit
             self.turn.add_action(ActionType.PLAYKING)
         elif(card.number == CardNumber.NONE):
             self.lastEffect = CardNumber.NONE

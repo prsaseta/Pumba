@@ -426,6 +426,16 @@ class GameTestCase(TestCase):
             if(str(e) != "Must deflect card draw with One or Two!"):
                 raise
 
+    def test_abnormal_play_twice(self):
+        # Intenta jugar dos cartas
+        try:
+            self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.DIVINE), Card(self.game.lastSuit, CardNumber.DIVINE), Card(Suit.ESPADAS, CardNumber.ONE)]
+            self.game.player_action_play(0)
+            self.game.player_action_play(0)
+        except IllegalMoveException as e:
+            if(str(e) != "You already played a card this turn!"):
+                raise
+
     def test_regular_play_playking(self):
         # Intenta jugar una carta después de jugar un KING
         self.game.turn.add_action(ActionType.PLAYKING)

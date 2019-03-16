@@ -31,7 +31,9 @@ def join(user, match_id):
             raise PumbaException("The game is full!")
 
         # Crea el controlador y el jugador y lo añade al juego
-        controller = PlayerController(False, user, None)
+        # Se le dice que es IA porque se usa ese mismo Boolean para saber si el cliente está conectado
+        # por websocket o no
+        controller = PlayerController(True, user, None)
         player = Player(game, controller, user.username)
         game.players.append(player)
 
@@ -47,7 +49,7 @@ def create(max_users, host, title):
     game.title = title
 
     # Crea el jugador del host
-    controller = PlayerController(False, host, None)
+    controller = PlayerController(True, host, None)
     player = Player(game, controller, host.username)
     game.players.append(player)
     

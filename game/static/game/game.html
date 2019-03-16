@@ -3,7 +3,11 @@
 {% block content %}
 <h2>{{ game_name }}</h2>
 <p id="error-msg" class = "error"></p>
-<textarea id="chat-log" cols="100" rows="20" style="float: left;"></textarea><br/>
+<div style="float: left;">
+<textarea id="chat-log" cols="100" rows="20" style="width: 100%"></textarea><br/>
+<input id="chat-message-input" type="text" size="100"/><br/>
+<input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+</div>
 <div style="float: left; padding-left: 10px">
     <div id="game-status-display"></div>
     <div id="last-suit-display"></div>
@@ -16,18 +20,24 @@
     <div id="draw-pile-display"></div>
     <div id="play-pile-display"></div>
     <div id="hand-display"><p></p></div>
+    <div id="switch-buttons"><p></p></div>
 </div>
-<input id="chat-message-input" type="text" size="100"/><br/>
-<input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+<div id="player-list" style="float:right; padding-left: 10px"><p></p></div>
+
 
 <!--Botones para enviar comandos-->
+<div style="clear:both">
 <input id="begin-match" type="button" value="Begin match">
+<input id="draw-card" type="button" value="Draw card">
 <input id="end-turn" type="button" value="End turn">
 <input id="update-state" type="button" value="Update game state">
-<label for="autoupdate-state">Update state automatically?</label><input id="autoupdate-state" type="checkbox" checked>
+</div>
 <script>
     // ID de la partida
     var roomName = "{{ id }}";
+
+    // Mano actual
+    var current_hand = []
 
     // Websocket al servidor
     var gameSocket = new WebSocket(
@@ -54,8 +64,8 @@
         } else if (message_type == "chat_error") {
             document.querySelector('#chat-log').value += ("Error: " + data['message'] + '\n');
         } else if (message_type == "ok"){
-            document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
-            after_change()
+            //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
+            //after_change()
         } else if (message_type == "game_state"){
             console.log(data)
             document.querySelector('#game-status-display').innerHTML = "Game status: " + data['game_status']
@@ -70,6 +80,30 @@
             document.querySelector('#draw-pile-display').innerHTML = "Draw pile size: " + data['draw_pile']
             document.querySelector('#play-pile-display').innerHTML = "Play pile size: " + data['play_pile']
             
+            // Coge el div de la lista de jugadores
+            var playerlist = document.querySelector('#player-list')
+            // Borra todo lo que hubiera dentro
+            playerlist.innerHTML = ""
+            // Coge la lista de jugadores del JSON
+            var players = data['players']
+            // Crea una nueva lista en el DOM
+            var olist = document.createElement('ol');
+            olist.setAttribute("start", 0)
+            // Pone la lista en el div
+            playerlist.appendChild(olist)
+            // Itera sobre la lista de jugadores
+            players.forEach(function(player) {
+                // Crea las tags de lista
+                var li = document.createElement("li")
+                olist.appendChild(li)
+                var playerconstatus = "Connected"
+                console.log(player[2])
+                if (player[2]){
+                    playerconstatus = "AI"
+                }
+                li.innerHTML = player[0] + " | " + player[1] + " cards" + " | " + playerconstatus
+            })
+
             // Coge el div para mostrar la mano
             var hand_display = document.querySelector('#hand-display')
             // Borra todo lo que hubiera dentro
@@ -86,10 +120,35 @@
             // Pone la lista en el div
             hand_display.appendChild(ol)
             // Itera sobre la mano del JSON
+            var index = 0
+            current_hand = []
             hand.forEach(function(item){
+                // Guarda la mano fuera (Suit | Number)
+                current_hand.push([item[0], item[1]])
+                // Crea las tags de lista
                 var li = document.createElement("li")
+                // Crea un botón
+                var btn = document.createElement("input")
+                btn.setAttribute("type", "button")
+                btn.setAttribute("value", "Play")
+                // Le pone un atributo arbitrario con el índice
+                btn.setAttribute("index", index)
+                // Al pulsar el botón, juega la carta
+                btn.onclick = function (e) {
+                    var indx = e.target.getAttribute('index');
+                    gameSocket.send(JSON.stringify({
+                        'type': "play_card",
+                        'index': indx
+                    }));
+                    // Si es un SWITCH, añade botones para elegir nuevo palo
+                    if (current_hand[indx][1] == "SWITCH"){
+                        display_switch_buttons()
+                    }
+                }
                 ol.appendChild(li)
                 li.innerHTML = item[0] + " | " + item[1]
+                li.appendChild(btn)
+                index = index + 1
             });
         }
     };
@@ -130,6 +189,10 @@
 
     // Comando "End turn"
     document.querySelector('#end-turn').onclick = function(e) {
+        // Borra los botones de SWITCH si existen
+        // TODO Buscar alguna solución más elegante
+        var switch_buttons = document.querySelector('#switch-buttons')
+        switch_buttons.innerHTML = ""
         gameSocket.send(JSON.stringify({
             'type': "begin_turn"
         }));
@@ -142,6 +205,13 @@
         }));
     };
 
+    // Comando "Draw card"
+    document.querySelector('#draw-card').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "draw_card"
+        }));
+    };
+
     // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
     // al servidor
     gameSocket.onopen = function(event) {
@@ -151,12 +221,72 @@
     }
     // Se ejecuta después de cada comando
     function after_change() {
-        var checkbox = document.querySelector('#autoupdate-state')
-        if(checkbox.checked){
+        //var checkbox = document.querySelector('#autoupdate-state')
+        // checkbox.checked
+        if(false){
             gameSocket.send(JSON.stringify({
                 'type': "game_state"
             }));
         }
     };
+
+    // Pone los botones para hacer SWITCH
+    function display_switch_buttons(){
+        // Coge el div correspondiente y lo vacía
+        var switch_buttons = document.querySelector('#switch-buttons')
+        switch_buttons.innerHTML = ""
+        
+        // Crea los botones
+        var bastos = document.createElement("input")
+        bastos.setAttribute("type", "button")
+        bastos.setAttribute("value", "BASTOS")
+
+        var espadas = document.createElement("input")
+        espadas.setAttribute("type", "button")
+        espadas.setAttribute("value", "ESPADAS")
+
+        var oros = document.createElement("input")
+        oros.setAttribute("type", "button")
+        oros.setAttribute("value", "OROS")
+
+        var copas = document.createElement("input")
+        copas.setAttribute("type", "button")
+        copas.setAttribute("value", "COPAS")
+
+        // Pone callbacks para enviar el comando al servidor
+        bastos.onclick = function (e) {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "BASTOS"
+            }));
+        }
+
+        espadas.onclick = function (e) {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "ESPADAS"
+            }));
+        }
+
+        oros.onclick = function (e) {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "OROS"
+            }));
+        }
+
+        copas.onclick = function (e) {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "COPAS"
+            }));
+        }
+
+        // Añade los hijos
+        switch_buttons.appendChild(bastos)
+        switch_buttons.appendChild(copas)
+        switch_buttons.appendChild(oros)
+        switch_buttons.appendChild(espadas)
+    }
 </script>
 {% endblock %}
