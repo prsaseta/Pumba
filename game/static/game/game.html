@@ -39,6 +39,9 @@
     // Mano actual
     var current_hand = []
 
+    // Último palo
+    var last_effect = undefined
+
     // Websocket al servidor
     var gameSocket = new WebSocket(
         'ws://' + window.location.host +
@@ -52,22 +55,26 @@
         // Recupera el tipo del mensaje
         var message_type = data['type']
         // Le da un procesamiento u otro dependiendo de qué sea
+        var chatbox = document.querySelector('#chat-log')
         // Mensaje de chat
         if (message_type == "chat_message"){
             var message = data['message'];
             var username = data['username'];
             var composed = username + ": " + message
-            document.querySelector('#chat-log').value += (composed + '\n');
+            chatbox.value += (composed + '\n');
+            chatbox.scrollTop = chatbox.scrollHeight
         // Notificación de chat de sistema
         } else if (message_type == "chat_notification"){
-            document.querySelector('#chat-log').value += (data['message'] + '\n');
+            chatbox.value += (data['message'] + '\n');
+            chatbox.scrollTop = chatbox.scrollHeight
         } else if (message_type == "chat_error") {
-            document.querySelector('#chat-log').value += ("Error: " + data['message'] + '\n');
+            chatbox.value += ("Error: " + data['message'] + '\n');
+            chatbox.scrollTop = chatbox.scrollHeight
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
             //after_change()
         } else if (message_type == "game_state"){
-            console.log(data)
+            //console.log(data)
             document.querySelector('#game-status-display').innerHTML = "Game status: " + data['game_status']
             document.querySelector('#last-suit-display').innerHTML = "Last suit: " + data['last_suit']
             document.querySelector('#last-number-display').innerHTML = "Last number: " + data['last_number']
@@ -80,6 +87,8 @@
             document.querySelector('#draw-pile-display').innerHTML = "Draw pile size: " + data['draw_pile']
             document.querySelector('#play-pile-display').innerHTML = "Play pile size: " + data['play_pile']
             
+            // Si se usa un COPY con SWITCH, hay que mostrar los botones, así que guardamos esto para luego
+            last_effect = data['last_effect']
             // Coge el div de la lista de jugadores
             var playerlist = document.querySelector('#player-list')
             // Borra todo lo que hubiera dentro
@@ -97,7 +106,6 @@
                 var li = document.createElement("li")
                 olist.appendChild(li)
                 var playerconstatus = "Connected"
-                console.log(player[2])
                 if (player[2]){
                     playerconstatus = "AI"
                 }
@@ -141,7 +149,7 @@
                         'index': indx
                     }));
                     // Si es un SWITCH, añade botones para elegir nuevo palo
-                    if (current_hand[indx][1] == "SWITCH"){
+                    if (current_hand[indx][1] == "SWITCH" || (current_hand[indx][1] == "COPY" && last_effect == "SWITCH")){
                         display_switch_buttons()
                     }
                 }

@@ -48,12 +48,9 @@ class GameConsumer(WebsocketConsumer):
 
         # Si ya está conectado en otra pestaña no le dejamos
         if not game.players[self.player_index].controller.isAI:
-            print("Entra en el if")
-            print(error)
             error = True
 
         if not error:
-            print("Debería aceptar conexión")
             # Anotamos que el jugador está online
             game.players[self.player_index].controller.isAI = False
             cache.set("match_" + self.match_id, game, None)
@@ -207,7 +204,7 @@ class GameConsumer(WebsocketConsumer):
                 # Notifica a todos
                 self.send_notification_global("Player " + username + " plays " + CardNumber(card.number).name + " of " + Suit(card.suit).name)
                 # Envía el efecto de DIVINE si se aplica
-                if card.number is CardNumber.DIVINE and not game.turn.has(ActionType.PLAYKING):
+                if (card.number is CardNumber.DIVINE and not game.turn.has(ActionType.PLAYKING)) or (card.number is CardNumber.COPY and game.lastEffect is CardNumber.DIVINE):
                     if len(game.drawPile) > 0:
                         top = game.drawPile[len(game.drawPile) - 1]
                         self.send(text_data=json.dumps({

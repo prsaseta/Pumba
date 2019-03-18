@@ -157,3 +157,6 @@ CHANNEL_LAYERS = {
 # Por si intentas acceder sin permisos, que te redirija
 # TODO Testear
 LOGIN_URL = "/authentication/login"
+
+# Ngrok
+ALLOWED_HOSTS = ["0365c3b9.ngrok.io", "localhost"]
