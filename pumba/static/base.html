@@ -7,8 +7,17 @@
     </head>
     <body>
         <div class="header">
-            <h1><img src="{% static 'logo.png' %}"/></h1>
+            <h1><a href="/"><img src="{% static 'logo.png' %}"/></a></h1>
+            {% if user.is_authenticated %}
+            <div style="float: right;"><a href = "{% url 'feedback' %}">Bug report / Feedback</a></div>
+            {% endif %}
         </div>
+        {% if notification %}
+            <p class="notification">{{notification}}</p>
+        {% endif %}
+        {% if error %}
+            <p class="error">{{error}}</p>
+        {% endif %}
         <div class="content">
                 {% block content %}
                 {% endblock %}

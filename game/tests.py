@@ -1,8 +1,13 @@
-from django.test import TestCase
+from django.test import TestCase, LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from channels.testing import ChannelsLiveServerTestCase
 from game.domain_objects import *
 from django.core.cache import cache 
 from django.contrib.auth.models import User
 import game.matchmaking
+import time
+from selenium import webdriver
+from game.models import GameKey
 
 # Create your tests here.
 DECK_SIZE = 8 * 4
@@ -605,7 +610,7 @@ class GameTestCase(TestCase):
                 self.assertEquals(str(e), "The game is full!")
 
         def test_abnormal_join_started(self):
-            # Intenta unirse a una partida llena
+            # Intenta unirse a una partida que ya haya empezado
             try:
                 id = matchmaking.create(2, user1, "Test game")
                 game = cache.get("match_" + id)
@@ -614,4 +619,3 @@ class GameTestCase(TestCase):
                 matchmaking.join(self.user2, id)
             except PumbaException as e:
                 self.assertEquals(str(e), "The game is already started!")
-

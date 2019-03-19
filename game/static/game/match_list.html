@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if error %}
-<p class="error">{{error}}</p>
-{% endif %}
 <table class="matchmaking_table">
     <tr>
         <th>
@@ -39,7 +36,7 @@
     {% endfor %}
 </table>
 <div style="text-align: center">
-<form method="post" action="{% url 'create_match' %}">
+<form method="post" action="{% url 'create_match' %}" id="create-match-form">
     {% csrf_token %}
     {{ form }}
     <button type="submit">Create match</button>

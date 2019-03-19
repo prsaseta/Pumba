@@ -141,6 +141,8 @@
                 btn.setAttribute("value", "Play")
                 // Le pone un atributo arbitrario con el índice
                 btn.setAttribute("index", index)
+                // Le pone una ID
+                btn.setAttribute("id", "hand-play")
                 // Al pulsar el botón, juega la carta
                 btn.onclick = function (e) {
                     var indx = e.target.getAttribute('index');

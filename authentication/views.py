@@ -19,7 +19,7 @@ def login_view(request):
         form = LoginForm(request.POST)
         # Si el formulario no está bien relleno, redirigimos
         if not form.is_valid():
-            return render(request, "login.html", {"form": LoginForm(), "error": True})
+            return render(request, "login.html", {"form": LoginForm(), "error": "Your username and password didn't match. Please try again."})
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
         
@@ -32,10 +32,10 @@ def login_view(request):
             return HttpResponseRedirect("/")
         # Si no, devolvemos al formulario con un error
         else:
-            return render(request, "login.html", {"form": LoginForm({"username": username, "password": ""}), "error": True})
+            return render(request, "login.html", {"form": LoginForm({"username": username, "password": ""}), "error": "Your username and password didn't match. Please try again."})
     # Si no es una petición POST, devolvemos el formulario vacío
     else:
-        return render(request, "login.html", {"form": LoginForm(), "error": False})
+        return render(request, "login.html", {"form": LoginForm()})
 
 def register_view(request):
     # Si ya está autenticado, lo devolvemos al índice
@@ -78,7 +78,7 @@ def register_view(request):
 
     # Si no es una petición POST, devolvemos el formulario vacío
     else:
-        return render(request, "register.html", {"form": RegisterForm(), "error": False})
+        return render(request, "register.html", {"form": RegisterForm()})
 
 def verification_view(request):
     # Cogemos el código de verificación

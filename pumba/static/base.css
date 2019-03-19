@@ -19,3 +19,9 @@ body {
     text-align: center;
     font-size: large
 }
+
+.notification {
+    color: green;
+    text-align: center;
+    font-size: large
+}
