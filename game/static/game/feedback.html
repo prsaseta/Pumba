@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if error %}
+<p class="error">{{error}}</p>
+{% endif %}
+<div style="text-align: center">
+    <h2>You can send any feedback or bug report about Pumba! here</h2>
+<form method="post" action="{% url 'feedback' %}">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit">Send!</button>
+</form>
+</div>
+
+{% endblock %}

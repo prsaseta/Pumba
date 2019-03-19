@@ -160,3 +160,6 @@ LOGIN_URL = "/authentication/login"
 
 # Ngrok
 ALLOWED_HOSTS = ["0365c3b9.ngrok.io", "localhost"]
+
+# Para enviarme el feedback por correo
+FEEDBACK_MAIL_ADDRESS = "rodriguezsaseta@hotmail.com"

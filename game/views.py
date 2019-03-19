@@ -5,8 +5,11 @@ from game.domain_objects import *
 from django.http import HttpResponseRedirect
 import game.matchmaking
 from game.exceptions import PumbaException
-from game.forms import MatchForm
-from game.models import GameKey
+from game.forms import MatchForm, FeedbackForm
+from game.models import GameKey, FeedbackMail
+import traceback
+from pumba.settings import FEEDBACK_MAIL_ADDRESS
+from django.core.mail import send_mail
 
 # Create your views here.
 
@@ -59,19 +62,49 @@ def create_match(request):
     if request.POST:
         form = MatchForm(request.POST)
         # Si quitas este print deja de funcionar porque ???
-        print(form)
-        max_players = form.cleaned_data['max_players']
-        title = form.cleaned_data['title']
-        user = request.user
-        id = None
-        try:
-            id = game.matchmaking.create(max_players, user, title)
-        except PumbaException as e:
-            return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
+        #print(form)
+        if form.is_valid():
+            max_players = form.cleaned_data['max_players']
+            title = form.cleaned_data['title']
+            user = request.user
+            id = None
+            try:
+                id = game.matchmaking.create(max_players, user, title)
+            except PumbaException as e:
+                return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-        return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
+            return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
+        else:
+            return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     else:
         return HttpResponseRedirect("/game/matchmaking")
 
+@login_required
+def feedback(request):
+    # Si está enviando el formulario:
+    if request.POST:
+        # Recogemos el formulario
+        form = FeedbackForm(request.POST)
+        # Lo ponemos bonito
+        if form.is_valid():
+            # Intentamos guardar el feedback en la BD
+            try:
+                feedback = FeedbackMail(body = form.cleaned_data["body"], email = form.cleaned_data["email"], subject = form.cleaned_data["subject"], user = request.user)
+                feedback.save()
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                print(e)
+                return (request, "feedback.html", {"form": FeedbackForm, "error": "Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later."})
 
+            # Intentamos enviar un correo con el feedback
+            try:
+                send_mail('Feedback: ' + form.cleaned_data["subject"], "From " + form.cleaned_data["email"] + ": \n" + form.cleaned_data["body"], "feedback@pumba.com", [FEEDBACK_MAIL_ADDRESS], fail_silently=False)
+            except:
+                pass
+            
+            return HttpResponseRedirect("/", {"notification": "Your feedback was sent successfully, thank you for your time!"})
+        else:
+            return render (request, "feedback.html", {"form": FeedbackForm, "error": "Invalid data"})
+    else:
+        return render (request, "feedback.html", {"form": FeedbackForm})
     
