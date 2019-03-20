@@ -92,10 +92,15 @@ class DriverTestCase(TestCase):
         chat_input.send_keys("PROBANDO")
         driver1.execute_script("document.querySelector('#chat-message-submit').onclick()")
 
-        # Esperamos a que al mensaje le de tiempo de ir y venir
+        # El segundo cliente envía un mensaje de chat
+        chat_input = driver2.find_element_by_id("chat-message-input")
+        chat_input.send_keys("TESTEANDO")
+        driver2.execute_script("document.querySelector('#chat-message-submit').onclick()")
+
+        # Esperamos a que a los mensajes les de tiempo de ir y venir
         time.sleep(2)
 
-        # Vemos si ha llegado correctamente
+        # Vemos si han llegado correctamente
         chatbox = driver1.find_element_by_id("chat-log")
         text = chatbox.get_property('value')
         self.assertTrue("PROBANDO" in text)
@@ -103,6 +108,14 @@ class DriverTestCase(TestCase):
         chatbox = driver2.find_element_by_id("chat-log")
         text = chatbox.get_property('value')
         self.assertTrue("PROBANDO" in text)
+
+        chatbox = driver1.find_element_by_id("chat-log")
+        text = chatbox.get_property('value')
+        self.assertTrue("TESTEANDO" in text)
+
+        chatbox = driver2.find_element_by_id("chat-log")
+        text = chatbox.get_property('value')
+        self.assertTrue("TESTEANDO" in text)
 
         time.sleep(2)
 
@@ -154,8 +167,18 @@ class DriverTestCase(TestCase):
         time.sleep(3)
 
         # Le damos al botón de empezar partida
-        #driver1.execute_script("document.querySelector('#begin-match').onclick()")
-        #time.sleep(3)
+        driver1.execute_script("document.querySelector('#begin-match').onclick()")
+        time.sleep(3)
+
+        # Probamos que todo funciona correctamente
+        chatbox = driver1.find_element_by_id("chat-log")
+        text = chatbox.get_property('value')
+        self.assertTrue("The match has begun!" in text)
+
+        chatbox = driver2.find_element_by_id("chat-log")
+        text = chatbox.get_property('value')
+        self.assertTrue("The match has begun!" in text)
+
 
         # Hacemos trampa como quien no quiere la cosa
         #game = cache.get("match_" + str(id))

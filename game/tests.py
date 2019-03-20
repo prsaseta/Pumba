@@ -582,6 +582,21 @@ class GameTestCase(TestCase):
             except ValueError as e:
                 self.assertEquals(str(e), "The number of users must be at least two!")
 
+        def test_abnormal_create_title(self):
+            # Intenta crear una partida con demasiados pocos usuarios
+            try:
+                id = matchmaking.create(1, user1, "    ")
+            except ValueError as e:
+                self.assertEquals(str(e), "The title cannot be empty!")
+
+        def test_abnormal_create_users_many(self):
+            # Intenta crear una partida con demasiados usuarios
+            try:
+                id = matchmaking.create(10, user1, "Test game")
+            except ValueError as e:
+                self.assertEquals(str(e), "The number of users cannot be more than eight!")
+
+
         def test_regular_join(self):
             # Se une a una partida normalmente
             id = matchmaking.create(4, user1, "Test game")

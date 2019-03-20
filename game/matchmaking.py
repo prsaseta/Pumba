@@ -44,9 +44,13 @@ def create(max_users, host, title):
     game = Game()
     if(max_users < 2):
         raise ValueError("The number of users must be at least two!")
+    if(max_users > 8):
+        raise ValueError("The number of users cannot be more than eight!")
+    if title is None or str(title).strip() is "":
+        raise ValueError("The title cannot be empty!")
     game.maxPlayerCount = max_users
     game.host = host
-    game.title = title
+    game.title = str(title).strip()
 
     # Crea el jugador del host
     controller = PlayerController(True, host, None)
