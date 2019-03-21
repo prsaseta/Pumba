@@ -43,9 +43,17 @@
     var last_effect = undefined
 
     // Websocket al servidor
-    var gameSocket = new WebSocket(
-        'ws://' + window.location.hostname +
+    var gameSocket = undefined
+    try {
+        gameSocket = new WebSocket(
+        'ws://' + window.location.host +
         '/ws/game/' + roomName + '/');
+    } catch (error) {
+        gameSocket = new WebSocket(
+        'ws://' + "https://pumba-game.herokuapp.com" +
+        '/ws/game/' + roomName + '/');
+    }
+    
 
     // Procesamiento a hacer cuando se recibe un mensaje
     // TODO De momento solamente acepta mensajes de chat
