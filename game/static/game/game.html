@@ -44,13 +44,14 @@
 
     // Websocket al servidor
     var gameSocket = undefined
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     try {
         gameSocket = new WebSocket(
-        'ws://' + window.location.host +
+        ws_scheme + window.location.host +
         '/ws/game/' + roomName + '/');
     } catch (error) {
         gameSocket = new WebSocket(
-        'wss://' + "https://pumba-game.herokuapp.com" +
+        ws_scheme + "https://pumba-game.herokuapp.com" +
         '/ws/game/' + roomName + '/');
     }
     
