@@ -146,11 +146,18 @@ VERIFICATION_MAIL_URL = "http://localhost:8000"
 
 # Channels
 ASGI_APPLICATION = "pumba.routing.application"
+
+heroku_redis = None
+if os.environ.get('REDIS_URL') is not None:
+    heroku_redis = os.environ.get('REDIS_URL')
+else:
+    heroku_redis = ('127.0.0.1', 6379)
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [heroku_redis],
         },
     },
 }
