@@ -1,2 +1,1 @@
-web: gunicorn pumba.wsgi
-worker: python manage.py runworker -v2
+web: daphne django_channels_heroku.asgi:application --port $PORT --bind 0.0.0.0
