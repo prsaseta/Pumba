@@ -8,7 +8,7 @@ from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, Act
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Entra en el consumer")
+        #print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Entra en el consumer")
         # Si ocurre algo, rechazamos la conexión
         error = False
         # TODO ¿Hacer algo si se conecta desde dos pestañas?
