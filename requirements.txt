@@ -3,3 +3,4 @@ gunicorn
 django-heroku
 channels
 daphne
+channels-redis
