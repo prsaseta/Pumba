@@ -47,7 +47,7 @@
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     try {
         gameSocket = new WebSocket(
-        ws_scheme + window.location.host +
+        ws_scheme + "://" + window.location.host +
         '/ws/game/' + roomName + '/');
     } catch (error) {
         gameSocket = new WebSocket(
