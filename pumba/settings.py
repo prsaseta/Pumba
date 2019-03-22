@@ -167,7 +167,7 @@ CHANNEL_LAYERS = {
 LOGIN_URL = "/authentication/login"
 
 # Ngrok
-ALLOWED_HOSTS = ["0365c3b9.ngrok.io", "localhost"]
+ALLOWED_HOSTS = ["*"]
 
 # Para enviarme el feedback por correo
 FEEDBACK_MAIL_ADDRESS = "rodriguezsaseta@hotmail.com"
