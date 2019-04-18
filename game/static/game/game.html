@@ -55,35 +55,68 @@
         '/ws/game/' + roomName + '/');
     }
     
+    function appendToChatbox(message) {
+        var chatbox = document.querySelector('#chat-log')
+        chatbox.value += (message + '\n');
+        chatbox.scrollTop = chatbox.scrollHeight
+    }
 
     // Procesamiento a hacer cuando se recibe un mensaje
-    // TODO De momento solamente acepta mensajes de chat
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
         var data = JSON.parse(e.data);
         // Recupera el tipo del mensaje
         var message_type = data['type']
         // Le da un procesamiento u otro dependiendo de qué sea
-        var chatbox = document.querySelector('#chat-log')
         // Mensaje de chat
         if (message_type == "chat_message"){
             var message = data['message'];
             var username = data['username'];
             var composed = username + ": " + message
-            chatbox.value += (composed + '\n');
-            chatbox.scrollTop = chatbox.scrollHeight
-        // Notificación de chat de sistema
-        } else if (message_type == "chat_notification"){
-            chatbox.value += (data['message'] + '\n');
-            chatbox.scrollTop = chatbox.scrollHeight
-        } else if (message_type == "chat_error") {
-            chatbox.value += ("Error: " + data['message'] + '\n');
-            chatbox.scrollTop = chatbox.scrollHeight
+            appendToChatbox(composed);
+        // Notificación de sistema
+        } else if (message_type == "notification"){
+            appendToChatbox(data['message'])
+        } else if (message_type == "error") {
+            appendToChatbox("Error: " + data['message'])
+        // ACK del servidor (ahora mismo no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
-            //after_change()
+        // Para cuando se usa DIVINE
+        } else if (message_type == "divination") {
+            appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+        // Actualización del estado de juego junto con la acción que lo ha provocado
         } else if (message_type == "game_state"){
-            //console.log(data)
+            // Recuperamos lo que ha pasado y lo ponemos en el chat
+            if (data['action'] != undefined) {
+                var action = data['action']
+                var cbox_message = undefined
+                switch(String(action['type'])) {
+                    case "begin_match":
+                        cbox_message = "The match has begun!"
+                        break;
+                    case "end_turn":
+                        cbox_message = "Player " + action['player'] + " ends their turn."
+                        break;
+                    case "draw_card":
+                        cbox_message = "Player " + action['player'] + " draws a card."
+                        break;
+                    case "draw_card_forced":
+                        cbox_message = "Player " + action['player'] + " draws " + action['number'] + " cards and ends their turn."
+                        break;
+                    case "play_card":
+                        cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
+                        break;
+                    case "game_won":
+                        cbox_message = action['player'] + " wins the match!"
+                        break;
+                    case "switch":
+                        cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
+                        break;
+                }
+                appendToChatbox(cbox_message)
+            }
+            // Actualizamos todos los displays
             document.querySelector('#game-status-display').innerHTML = "Game status: " + data['game_status']
             document.querySelector('#last-suit-display').innerHTML = "Last suit: " + data['last_suit']
             document.querySelector('#last-number-display').innerHTML = "Last number: " + data['last_number']
@@ -238,16 +271,6 @@
             'type': "game_state"
         }));
     }
-    // Se ejecuta después de cada comando
-    function after_change() {
-        //var checkbox = document.querySelector('#autoupdate-state')
-        // checkbox.checked
-        if(false){
-            gameSocket.send(JSON.stringify({
-                'type': "game_state"
-            }));
-        }
-    };
 
     // Pone los botones para hacer SWITCH
     function display_switch_buttons(){
