@@ -31,12 +31,19 @@ def match_list2(request):
             continue
         # 0: Game
         # 1: ID
-        # 2: Filled
+        # 2: Can join
         row = []
         row.append(g)
         row.append(key.key)
+        # Hay que comprobar si el jugador es uno de los de la partida para que se pueda reconectar
         if(len(g.players) == g.maxPlayerCount):
-            row.append(False)
+            canjoin = False
+            for player in g.players:
+                if player.controller.user is not None:
+                    if player.controller.user.id is request.user.id:
+                        canjoin = True
+                        break
+            row.append(canjoin)
         else:
             row.append(True)
         rows.append(row)

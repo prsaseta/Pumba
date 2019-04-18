@@ -8,9 +8,9 @@ from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, Act
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
-        #print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Entra en el consumer")
         # Si ocurre algo, rechazamos la conexión
         error = False
+        self.disconnected_by_substitute = False
 
         # TODO Revisar la lógica de desconexión y borrado de partidas
 
@@ -22,6 +22,8 @@ class GameConsumer(WebsocketConsumer):
                 error = True
         except:
             error = True
+
+        self.user_id = user.id
 
         # Intentamos obtener la partida
         self.match_id = self.scope['url_route']['kwargs']['match_id']
@@ -47,8 +49,17 @@ class GameConsumer(WebsocketConsumer):
         self.player_index = index
 
         # Si ya está conectado en otra pestaña no le dejamos
+        # Desconecta el otro consumidor (si lo hay) y nos conectamos nosotros
+        # El self.close() ejecuta disconnect.
         if not game.players[self.player_index].controller.isAI:
-            error = True
+            async_to_sync(self.channel_layer.group_send)(
+                self.match_group_name,
+                {
+                    'type': 'substitute_disconnect',
+                    'user_id': self.user_id
+                }
+            )
+            #error = True
 
         if not error:
             # Anotamos que el jugador está online
@@ -64,11 +75,28 @@ class GameConsumer(WebsocketConsumer):
             self.send_notification_global(notificationmsg)
             self.was_connected_successfully_to_game = True
             self.accept()
+            # TODO Comprobar si hay consumidores que no respondan pero sus jugadores aparezcan
+            # conectados y desconectarlos.
         else:
             self.was_connected_successfully_to_game = False
+            #self.close()
+
+    def substitute_disconnect(self, event):
+        user_id = event['user_id']
+        if user_id is self.user_id:
+            # Cuando se conecta el usuario abriendo un websocket nuevo, cerramos el viejo
+            # Se avisa al cliente
+            self.send(text_data=json.dumps({
+                'type': 'notification',
+                'message': "You opened the game on another window; closing this one"
+            }))
+            # Dejamos el canal
+            self.disconnected_by_substitute = True
+            self.close()
+
 
     def disconnect(self, close_code):
-        if self.was_connected_successfully_to_game:
+        if self.was_connected_successfully_to_game and not self.disconnected_by_substitute:
             # Cogemos la partida
             game = cache.get(self.match_group_name)
             # Anotamos que el jugador está desconectado
@@ -175,6 +203,7 @@ class GameConsumer(WebsocketConsumer):
             # TODO No se envían los game states bien cuando los envía la IA
             # O bien que el send_game_state_global envíe opcionalmente el game actual o bien
             # decirle al frontend que ignore los estados de la IA (apaño mierder)
+            # TODO Si la IA no puede robar cartas porque no hay cartas en la pila se queda pillada
             while game.players[game.currentPlayer].controller.isAI:
                 ai_player = game.players[game.currentPlayer]
                 ai_hand = game.players[game.currentPlayer].hand
