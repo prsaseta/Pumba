@@ -171,6 +171,58 @@ class GameConsumer(WebsocketConsumer):
             self.send_ok()
             # Actualiza el estado de todos
             self.send_game_state_global({"type": "end_turn", "player": username})
+            # Si el siguiente jugador es una IA, que haga cosas de IA
+            # TODO No se envían los game states bien cuando los envía la IA
+            # O bien que el send_game_state_global envíe opcionalmente el game actual o bien
+            # decirle al frontend que ignore los estados de la IA (apaño mierder)
+            while game.players[game.currentPlayer].controller.isAI:
+                ai_player = game.players[game.currentPlayer]
+                ai_hand = game.players[game.currentPlayer].hand
+                # Si hay contador de robo, o refleja o roba.
+                if game.drawCounter > 0:
+                    needs_draw = True
+                    for i in range(len(ai_hand)):
+                        card = ai_hand[i]
+                        if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
+                            game.player_action_play(i)
+                            self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                            game.begin_turn()
+                            cache.set("match_" + self.match_id, game, None)
+                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name, "ai": True})
+                            needs_draw = False
+                            break
+                    if (needs_draw):
+                        forced_draw = game.drawCounter
+                        game.player_action_draw_forced()
+                        self.send_game_state_global({"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
+                        game.begin_turn()
+                        cache.set("match_" + self.match_id, game, None)
+                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                # Si no hay contador de robo:
+                else:
+                    # Busca una carta cualquiera que jugar
+                    cannot_play = True
+                    for i in range(len(ai_hand)):
+                        card = ai_hand[i]
+                        if card.suit is game.lastSuit or card.number is game.lastNumber:
+                            cannot_play = False
+                            game.player_action_play(i)
+                            self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                            game.begin_turn()
+                            cache.set("match_" + self.match_id, game, None)
+                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                            break
+                    # Si no puede jugar ninguna, roba dos cartas y termina su turno
+                    if cannot_play:
+                        game.player_action_draw()
+                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                        game.player_action_draw()
+                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                        game.begin_turn()
+                        cache.set("match_" + self.match_id, game, None)
+                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                cache.set("match_" + self.match_id, game, None)
+                self.send_game_state_global()
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
@@ -295,6 +347,10 @@ class GameConsumer(WebsocketConsumer):
             game = cache.get(self.match_group_name)
         else:
             game = curgame
+        #print("Current: " + str(game.currentPlayer))
+        #print("Next: " + str(game.nextPlayer))
+        #print("Draw: " + str(len(game.drawPile)))
+        #print("Play: " + str(len(game.playPile)))
         # Recupera las cartas de la mano
         cards = game.players[self.player_index].hand
         hand = []

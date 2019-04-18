@@ -51,10 +51,11 @@ def join_match(request):
     if (id is None):
         return HttpResponseRedirect("/game/matchmaking")
     try:
-        game.matchmaking.join(request.user, id)
+        player_id = game.matchmaking.join(request.user, id)
+        return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
     except PumbaException as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
-    return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
+    
 
 @login_required
 def create_match(request):
@@ -65,15 +66,16 @@ def create_match(request):
         #print(form)
         if form.is_valid():
             max_players = form.cleaned_data['max_players']
+            ai_players = form.cleaned_data['ai_players']
             title = form.cleaned_data['title']
             user = request.user
             id = None
             try:
-                id = game.matchmaking.create(max_players, user, title)
-            except PumbaException as e:
+                id = game.matchmaking.create(max_players, user, title, ai_players)
+            except ValueError as e:
                 return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-            return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title})
+            return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0})
         else:
             return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     else:

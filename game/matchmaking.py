@@ -3,6 +3,7 @@ from game.domain_objects import Player, PlayerController, GameStatus, Game
 from game.exceptions import PumbaException
 from django.utils.crypto import get_random_string
 from game.models import GameKey
+import random
 # Métodos para hacer matchmaking
 
 # Mete al usuario en partida
@@ -37,15 +38,22 @@ def join(user, match_id):
         player = Player(game, controller, user.username)
         game.players.append(player)
 
+        player_id = len(game.players) - 1
+
         cache.set("match_" + match_id, game, None)
 
-def create(max_users, host, title):
+        # Devuelve tu ID de jugador
+        return player_id
+
+def create(max_users, host, title, ai_players):
     # Crea la partida y le pone los parámetros
     game = Game()
     if(max_users < 2):
         raise ValueError("The number of users must be at least two!")
-    if(max_users > 8):
-        raise ValueError("The number of users cannot be more than eight!")
+    if(max_users > 6):
+        raise ValueError("The number of users cannot be more than six!")
+    if (ai_players >= max_users):
+        raise ValueError("Too many AIs! Are you trying to start a revolution?")
     if title is None or str(title).strip() is "":
         raise ValueError("The title cannot be empty!")
     game.maxPlayerCount = max_users
@@ -56,6 +64,12 @@ def create(max_users, host, title):
     controller = PlayerController(True, host, None)
     player = Player(game, controller, host.username)
     game.players.append(player)
+
+    # Crea los jugadores de las IAs
+    for i in range(ai_players):
+        ai_controller = PlayerController(True, None, None)
+        ai_player = Player(game, ai_controller, getAIName())
+        game.players.append(ai_player)
     
     # Añade la partida  a la lista
     check = "One"
@@ -69,3 +83,6 @@ def create(max_users, host, title):
     # Devuelve la ID de la partida creada
     return id
     
+def getAIName():
+    names = ["GLaDOS", "HAL 9000", "Felicity", "Cephalon Ordis", "Bob"]
+    return random.choice(names)
