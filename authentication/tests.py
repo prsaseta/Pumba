@@ -64,18 +64,18 @@ class RegisterTestCase(TestCase):
             self.assertTrue(response.status_code == 200)
             self.assertIsNone(response.context.get('error'))
             self.assertEqual(len(mail.outbox), 1)
+            # 2. Verificar
+            # Vamos a hacer un poco de trampa y coger directamente de la BD el código
+            preregister = PreRegister.objects.get(username = 'john1')
+            response2 = c.post('/authentication/verification/?id='+preregister.verification)
+            self.assertTrue(response2.status_code == 200)
+            # 3. Loguearse
+            response3 = c.post('/authentication/login/', {'username': 'john1', 'password': 'john1'})
+            self.assertTrue(response3.status_code == 302)
         else:
             self.assertTrue(response.status_code == 302)
 
-        # 2. Verificar
-        # Vamos a hacer un poco de trampa y coger directamente de la BD el código
-        preregister = PreRegister.objects.get(username = 'john1')
-        response2 = c.post('/authentication/verification/?id='+preregister.verification)
-        self.assertTrue(response2.status_code == 200)
-
-        # 3. Loguearse
-        response3 = c.post('/authentication/login/', {'username': 'john1', 'password': 'john1'})
-        self.assertTrue(response3.status_code == 302)
+        
 
     def test_incorrect_email(self):
         # Nos registramos con un correo repetido

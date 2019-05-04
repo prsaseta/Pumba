@@ -117,8 +117,3 @@ def do_email_verification(username, password, email):
     # Enviamos el correo
     url = VERIFICATION_MAIL_URL + "/authentication/verification?id=" + verification
     send_mail('Confirm registration at Pumba', 'Please confirm your registration with the following link: ' + url, 'register@pumba.com', [email], fail_silently=False)
-    
-def test_view(request):
-    User.objects.all().delete()
-    PreRegister.objects.all().delete()
-    return HttpResponse("Éxito")
