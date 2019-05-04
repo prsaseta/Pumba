@@ -321,6 +321,7 @@ class GameConsumer(WebsocketConsumer):
             if len(game.players[self.player_index].hand) == 0:
                 self.send_game_state_global(self.send_game_state_global({"type": "game_won", "player": username}))
                 game.status = GameStatus.ENDING
+                game.points[self.player_index] = game.points[self.player_index] + 1
                 cache.set("match_" + self.match_id, game, None)
         except PumbaException as e:
             self.send_error_msg(e)
@@ -393,8 +394,8 @@ class GameConsumer(WebsocketConsumer):
         # 2: Estado de conexión (Conectado, IA)
         players = []
         for player in game.players:
-            players.append([player.name, len(player.hand), player.controller.isAI])
-
+            #players.append([player.name, len(player.hand), player.controller.isAI, 0])
+            players.append([player.name, len(player.hand), player.controller.isAI, game.points[game.players.index(player)]])
 
         # Sustituye estos campos si no tienen valor
         lastnumber = None

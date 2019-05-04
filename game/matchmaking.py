@@ -37,6 +37,7 @@ def join(user, match_id):
         controller = PlayerController(True, user, None)
         player = Player(game, controller, user.username)
         game.players.append(player)
+        game.points.append(0)
 
         player_id = len(game.players) - 1
 
@@ -64,12 +65,14 @@ def create(max_users, host, title, ai_players):
     controller = PlayerController(True, host, None)
     player = Player(game, controller, host.username)
     game.players.append(player)
+    game.points.append(0)
 
     # Crea los jugadores de las IAs
     for i in range(ai_players):
         ai_controller = PlayerController(True, None, None)
         ai_player = Player(game, ai_controller, getAIName())
         game.players.append(ai_player)
+        game.points.append(0)
     
     # Añade la partida  a la lista
     check = "One"
@@ -84,5 +87,5 @@ def create(max_users, host, title, ai_players):
     return id
     
 def getAIName():
-    names = ["GLaDOS", "HAL 9000", "Felicity", "Cephalon Ordis", "Bob"]
+    names = ["GLaDOS", "HAL 9000", "Felicity", "Cephalon Ordis", "Bastion", "HAN-D", "The Defect", "Bob", "Jane"]
     return random.choice(names)

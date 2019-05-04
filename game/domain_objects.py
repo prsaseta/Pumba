@@ -113,7 +113,10 @@ class Game():
         # Arrays ordenados de Card
         self.drawPile = []
         self.playPile = []
+        # Jugadores de la partida
         self.players = []
+        # Marcador
+        self.points = []
         # User
         self.host = None
         # Turn
