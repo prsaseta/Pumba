@@ -4,3 +4,5 @@ django-heroku
 channels
 daphne
 channels-redis
+psycopg2-binary
+coverage
