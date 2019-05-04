@@ -87,5 +87,5 @@ def create(max_users, host, title, ai_players):
     return id
     
 def getAIName():
-    names = ["GLaDOS", "HAL 9000", "Felicity", "Cephalon Ordis", "Bastion", "HAN-D", "The Defect", "Bob", "Jane"]
+    names = ["GLaDOS", "HAL 9000", "Felicity", "Cephalon Ordis", "Bastion", "HAN-D", "The Defect", "E.V.E", "CL4P-TP", "ATHENA", "President Eden", "EDI", "Bob", "Jane"]
     return random.choice(names)
