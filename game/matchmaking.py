@@ -26,10 +26,16 @@ def join(user, match_id):
     
     if not already_ingame:
         # Se asegura de que se puede unir a la partida
-        if (game.status is not GameStatus.WAITING):
+        if (not (game.status is GameStatus.WAITING or game.status is GameStatus.ENDING)):
             raise PumbaException("The game is already started!")
         if(len(game.players) >= game.maxPlayerCount):
             raise PumbaException("The game is full!")
+
+        # Actualiza la GameKey
+        key = GameKey.objects.get(key = match_id)
+        key.users.add(user)
+        key.current_users = key.current_users + 1
+        key.save()
 
         # Crea el controlador y el jugador y lo añade al juego
         # Se le dice que es IA porque se usa ese mismo Boolean para saber si el cliente está conectado
@@ -80,7 +86,9 @@ def create(max_users, host, title, ai_players):
         id = get_random_string(length = 20)
         check = cache.get("match_" + id)
     cache.set("match_" + id, game, None)
-    key = GameKey(key = id)
+    key = GameKey(key = id, current_users = 1, max_users = max_users, name=title, ai_count = ai_players)
+    key.save()
+    key.users.add(host)
     key.save()
 
     # Devuelve la ID de la partida creada

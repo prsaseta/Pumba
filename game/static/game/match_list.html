@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
+{% load mathfilters %}
+
 {% block content %}
+
+{% if yours is not None %}
+<h2>
+    Your matches:
+</h2>
 <table class="matchmaking_table">
     <tr>
         <th>
@@ -8,6 +15,51 @@
         </th>
         <th>
             Player count
+        </th>
+        <th>
+            AIs
+        </th>
+        <th>
+            Players
+        </th>
+        <th>
+            
+        </th>
+    </tr>
+    {% for game in yours %}
+    <tr>
+        <th class="matchmaking_table_row">{{ game.name }}</th>
+        <th class="matchmaking_table_row">{{ game.current_users }} / {{ game.max_users|sub:game.ai_count }}</th>
+        <th class="matchmaking_table_row">{{ game.ai_count }}</th>
+        <th class="matchmaking_table_row">
+            {% for player in game.users.all %}
+                {{ player.username }}<br/>
+            {% endfor %}
+        </th>
+        <th class="matchmaking_table_row">
+            {% if game.current_users < game.max_users %}
+                <a href="/game/join?id={{ game.key }}">Join</a>
+            {% else %}
+                <p>Full</p>
+            {% endif %}
+        </th>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<h2>Join match</h2>
+
+<table class="matchmaking_table">
+    <tr>
+        <th>
+            Name
+        </th>
+        <th>
+            Player count
+        </th>
+        <th>
+            AIs
         </th>
         <th>
             Players
@@ -18,16 +70,17 @@
     </tr>
     {% for game in games %}
     <tr>
-        <th class="matchmaking_table_row">{{ game.0.title }}</th>
-        <th class="matchmaking_table_row">{{ game.0.players|length }} / {{ game.0.maxPlayerCount }}</th>
+        <th class="matchmaking_table_row">{{ game.name }}</th>
+        <th class="matchmaking_table_row">{{ game.current_users }} / {{ game.max_users|sub:game.ai_count }}</th>
+        <th class="matchmaking_table_row">{{ game.ai_count }}</th>
         <th class="matchmaking_table_row">
-            {% for player in game.0.players %}
-                {{ player.name }}<br/>
+            {% for player in game.users.all %}
+                {{ player.username }}<br/>
             {% endfor %}
         </th>
         <th class="matchmaking_table_row">
-            {% if game.2 %}
-                <a href="/game/join?id={{ game.1 }}">Join</a>
+            {% if game.current_users < game.max_users %}
+                <a href="/game/join?id={{ game.key }}">Join</a>
             {% else %}
                 <p>Full</p>
             {% endif %}
@@ -35,6 +88,7 @@
     </tr>
     {% endfor %}
 </table>
+<h2>Create match</h2>
 <div style="text-align: center">
 <form method="post" action="{% url 'create_match' %}" id="create-match-form">
     {% csrf_token %}

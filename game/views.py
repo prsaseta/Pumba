@@ -10,6 +10,7 @@ from game.models import GameKey, FeedbackMail
 import traceback
 from pumba.settings import FEEDBACK_MAIL_ADDRESS
 from django.core.mail import send_mail
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -26,7 +27,7 @@ def match_list2(request):
     for key in keys:
         g = cache.get("match_"+str(key.key))
         if g is None:
-            key.delete()
+            #key.delete()
             print("Borrando partida de la BD que no estaba en memoria")
             continue
         # 0: Game
@@ -51,6 +52,22 @@ def match_list2(request):
     return render(request, "match_list.html", {"games" : rows, "error": error, "form": MatchForm()})
 
 @login_required
+def match_list3(request):
+    # Cogemos de la BD todas las partidas en curso
+    keys = GameKey.objects.all()
+    # Filtramos además las partidas en las que estás metido
+    user = User.objects.get(id = request.user.id)
+    yours = []
+    for key in keys:
+        if user in key.users.all():
+            yours.append(key)
+    # Para hacer más fácil el template, si no estás en ninguna partida pasamos None
+    if len(yours) == 0:
+        yours = None
+    error = request.GET.get("error", None)
+    return render(request, "match_list.html", {"games" : keys, "yours": yours, "error": error, "form": MatchForm()})
+
+@login_required
 def join_match(request):
     # Te une a una partida
     # Coge la ID de la partida
@@ -58,6 +75,10 @@ def join_match(request):
     if (id is None):
         return HttpResponseRedirect("/game/matchmaking")
     try:
+        g = cache.get("match_"+str(id), None)
+        if g is None:
+            key = GameKey.objects.get(key = id)
+            return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
         return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
     except PumbaException as e:

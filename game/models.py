@@ -7,6 +7,11 @@ from django.contrib.auth.models import User
 # Representa una partida en memoria
 class GameKey(models.Model):
     key = models.CharField(max_length = 100)
+    name = models.CharField(max_length = 200)
+    users = models.ManyToManyField(User)
+    max_users = models.PositiveSmallIntegerField()
+    current_users = models.PositiveSmallIntegerField()
+    ai_count = models.PositiveSmallIntegerField()
 
 class FeedbackMail(models.Model):
     email = models.CharField(max_length = 1000)
