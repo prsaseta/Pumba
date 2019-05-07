@@ -1,3 +1,4 @@
 *.pyc
 staticfiles/
 htmlcov/
+db.sqlite3
