@@ -5,6 +5,7 @@ from django.core.cache import cache
 from game.exceptions import PumbaException
 import traceback
 from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType
+from game.models import GameKey
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -114,6 +115,10 @@ class GameConsumer(WebsocketConsumer):
                     
             if not anyone_connected:
                 cache.set("match_" + self.match_id, None, 1)
+                try:
+                    GameKey.objects.get(key = self.match_id).delete()
+                except:
+                    pass
             else:
                 cache.set("match_" + self.match_id, game, None)
         
