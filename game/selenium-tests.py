@@ -17,7 +17,7 @@ class DriverTestCase(TestCase):
         self.user4 = User.objects.create_user("test4", "testuser4@gmail.com", "test4")
     # Comprueba que ChromeDriver funciona
     def test(self):
-        #driver = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")  # Optional argument, if not specified will search path.
+        #driver = webdriver.Chrome()  # Optional argument, if not specified will search path.
         #driver.get('http://www.google.com/xhtml')
         #time.sleep(5) # Let the user actually see something!
         #search_box = driver.find_element_by_name('q')
@@ -29,8 +29,8 @@ class DriverTestCase(TestCase):
     
     # Intenta autenticarse en dos ventanas diferentes
     def test_login(self):
-        driver1 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
-        driver2 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
+        driver1 = webdriver.Chrome()
+        driver2 = webdriver.Chrome()
 
         driver1.get('http://localhost:8000/authentication/login/')
         driver2.get('http://localhost:8000/authentication/login/')
@@ -54,8 +54,8 @@ class DriverTestCase(TestCase):
     def test_create_match(self):
         # Se loguea, se une a una partida y comprueba que se envía bien un mensaje de chat
         # Abre dos clientes
-        driver1 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
-        driver2 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
+        driver1 = webdriver.Chrome()
+        driver2 = webdriver.Chrome()
 
         # Se loguea con ambos clientes
         driver1.get('http://localhost:8000/authentication/login/')
@@ -133,8 +133,8 @@ class DriverTestCase(TestCase):
     def test_play_match(self):
         # Juega una partida "falsa"
         # Abre dos clientes
-        driver1 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
-        driver2 = webdriver.Chrome("C:\Program Files\Chromedriver\chromedriver.exe")
+        driver1 = webdriver.Chrome()
+        driver2 = webdriver.Chrome()
 
         # Se loguea con ambos clientes
         driver1.get('http://localhost:8000/authentication/login/')

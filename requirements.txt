@@ -8,3 +8,4 @@ psycopg2-binary
 coverage
 django-mathfilters
 service_identity
+selenium

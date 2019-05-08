@@ -11,9 +11,8 @@ class GameConsumer(WebsocketConsumer):
     def connect(self):
         # Si ocurre algo, rechazamos la conexión
         error = False
+        # Este atributo sirve luego para saber si este websocket queda cerrado por abrir otro por el mismo usuario en la misma partida
         self.disconnected_by_substitute = False
-
-        # TODO Revisar la lógica de desconexión y borrado de partidas
 
         # Cogemos el usuario autenticado
         user = None
@@ -24,9 +23,10 @@ class GameConsumer(WebsocketConsumer):
         except:
             error = True
 
+        # Guardamos la ID del usuario
         self.user_id = user.id
 
-        # Intentamos obtener la partida
+        # Intentamos obtener la partida de la caché
         self.match_id = self.scope['url_route']['kwargs']['match_id']
         self.match_group_name = 'match_%s' % self.match_id
         game = None
@@ -49,7 +49,7 @@ class GameConsumer(WebsocketConsumer):
             error = True
         self.player_index = index
 
-        # Si ya está conectado en otra pestaña no le dejamos
+        # Si ya está conectado en otra pestaña no le dejamos tener dos consumidores abiertos
         # Desconecta el otro consumidor (si lo hay) y nos conectamos nosotros
         # El self.close() ejecuta disconnect.
         if not game.players[self.player_index].controller.isAI:
@@ -62,27 +62,33 @@ class GameConsumer(WebsocketConsumer):
             )
             #error = True
 
+        # Si todo ha ido bien, nos conectamos normalmente
         if not error:
             # Anotamos que el jugador está online
             game.players[self.player_index].controller.isAI = False
+            # Actualizamos la caché
             cache.set("match_" + self.match_id, game, None)
             # Se une al grupo de canales de la partida
             async_to_sync(self.channel_layer.group_add)(
                 self.match_group_name,
                 self.channel_name
             )
-            # Enviamos notificación por chat
+            # Enviamos notificación por chat de que un usuario se ha unido
             notificationmsg = "User " + game.players[self.player_index].name + " joined the game"
             self.send_notification_global(notificationmsg)
             self.was_connected_successfully_to_game = True
+            # Finalmente, aceptamos la conexión
             self.accept()
             # TODO Comprobar si hay consumidores que no respondan pero sus jugadores aparezcan
             # conectados y desconectarlos.
         else:
+            # Si ha pasado algo, rechazamos la conexión
             self.was_connected_successfully_to_game = False
             #self.close()
 
+    # Se ejecuta cuando otro websocket del mismo jugador se conecta y le envía un evento para decirle que este se desconecte (en connect(self))
     def substitute_disconnect(self, event):
+        # Connect envía el mensaje de desconectarse a todo el canal, así que comprobamos primero si va a nosotros
         user_id = event['user_id']
         if user_id is self.user_id:
             # Cuando se conecta el usuario abriendo un websocket nuevo, cerramos el viejo
@@ -120,7 +126,17 @@ class GameConsumer(WebsocketConsumer):
                 except:
                     pass
             else:
+                # Si el host se desconecta, ponemos a otro de host
+                if game.host is game.players[self.player_index].controller.user:
+                    for player in game.players:
+                        if not player.controller.isAI:
+                            game.host = player.controller.user
+                            self.send_notification_global(player.name + " is the new host")
+                            break
                 cache.set("match_" + self.match_id, game, None)
+
+        # Antes de irse, hace jugar a la IA si es necesario
+        self.do_ai(game)
         
         # Dejamos el canal
         async_to_sync(self.channel_layer.group_discard)(
@@ -184,6 +200,8 @@ class GameConsumer(WebsocketConsumer):
                 self.send_ok()
                 # Actualiza el estado de todos
                 self.send_game_state_global({"type": "begin_match"})
+                # Si el primer jugador es una IA:
+                self.do_ai(game)
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
@@ -209,58 +227,63 @@ class GameConsumer(WebsocketConsumer):
             # O bien que el send_game_state_global envíe opcionalmente el game actual o bien
             # decirle al frontend que ignore los estados de la IA (apaño mierder)
             # TODO Si la IA no puede robar cartas porque no hay cartas en la pila se queda pillada
-            while game.players[game.currentPlayer].controller.isAI:
-                ai_player = game.players[game.currentPlayer]
-                ai_hand = game.players[game.currentPlayer].hand
-                # Si hay contador de robo, o refleja o roba.
-                if game.drawCounter > 0:
-                    needs_draw = True
-                    for i in range(len(ai_hand)):
-                        card = ai_hand[i]
-                        if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
-                            game.player_action_play(i)
-                            self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                            game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
-                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name, "ai": True})
-                            needs_draw = False
-                            break
-                    if (needs_draw):
-                        forced_draw = game.drawCounter
-                        game.player_action_draw_forced()
-                        self.send_game_state_global({"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
-                        game.begin_turn()
-                        cache.set("match_" + self.match_id, game, None)
-                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                # Si no hay contador de robo:
-                else:
-                    # Busca una carta cualquiera que jugar
-                    cannot_play = True
-                    for i in range(len(ai_hand)):
-                        card = ai_hand[i]
-                        if card.suit is game.lastSuit or card.number is game.lastNumber:
-                            cannot_play = False
-                            game.player_action_play(i)
-                            self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                            game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
-                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                            break
-                    # Si no puede jugar ninguna, roba dos cartas y termina su turno
-                    if cannot_play:
-                        game.player_action_draw()
-                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                        game.player_action_draw()
-                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                        game.begin_turn()
-                        cache.set("match_" + self.match_id, game, None)
-                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                cache.set("match_" + self.match_id, game, None)
-                self.send_game_state_global()
+            self.do_ai(game)
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
             self.send_error_msg_generic(e)
+
+    # Inicia un loop que hace jugar a la IA hasta el siguiente jugador humano
+    # Llamar cada vez que sea posible que el jugador actual sea una IA
+    def do_ai(self, game):
+        while game.players[game.currentPlayer].controller.isAI:
+            ai_player = game.players[game.currentPlayer]
+            ai_hand = game.players[game.currentPlayer].hand
+            # Si hay contador de robo, o refleja o roba.
+            if game.drawCounter > 0:
+                needs_draw = True
+                for i in range(len(ai_hand)):
+                    card = ai_hand[i]
+                    if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
+                        game.player_action_play(i)
+                        self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                        game.begin_turn()
+                        cache.set("match_" + self.match_id, game, None)
+                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name, "ai": True})
+                        needs_draw = False
+                        break
+                if (needs_draw):
+                    forced_draw = game.drawCounter
+                    game.player_action_draw_forced()
+                    self.send_game_state_global({"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
+                    game.begin_turn()
+                    cache.set("match_" + self.match_id, game, None)
+                    self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+            # Si no hay contador de robo:
+            else:
+                # Busca una carta cualquiera que jugar
+                cannot_play = True
+                for i in range(len(ai_hand)):
+                    card = ai_hand[i]
+                    if card.suit is game.lastSuit or card.number is game.lastNumber:
+                        cannot_play = False
+                        game.player_action_play(i)
+                        self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                        game.begin_turn()
+                        cache.set("match_" + self.match_id, game, None)
+                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                        break
+                # Si no puede jugar ninguna, roba dos cartas y termina su turno
+                if cannot_play:
+                    game.player_action_draw()
+                    self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                    game.player_action_draw()
+                    self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                    game.begin_turn()
+                    cache.set("match_" + self.match_id, game, None)
+                    self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+            cache.set("match_" + self.match_id, game, None)
+            self.send_game_state_global()
 
     def trigger_draw_card(self):
         try:
