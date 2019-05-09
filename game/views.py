@@ -14,6 +14,8 @@ from django.contrib.auth.models import User
 
 # Create your views here.
 
+GAME_TEMPLATE = "game_phaser.html"
+
 def index_view(request):
     return render(request, "index.html")
 
@@ -80,7 +82,7 @@ def join_match(request):
             key = GameKey.objects.get(key = id)
             return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
-        return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
+        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
     except PumbaException as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     
@@ -103,7 +105,7 @@ def create_match(request):
             except ValueError as e:
                 return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-            return render(request, "game.html", {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0})
+            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0})
         else:
             return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     else:

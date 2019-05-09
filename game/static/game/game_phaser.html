@@ -1,0 +1,436 @@
+{% block content %}
+
+{% load static %}
+
+<script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
+
+<div id="game-div"></div>
+
+<div style="clear:both">
+        <input id="begin-match" type="button" value="Begin match">
+        <input id="draw-card" type="button" value="Draw card">
+        <input id="end-turn" type="button" value="End turn">
+        <input id="update-state" type="button" value="Update game state">
+    </div>
+
+<div style="float: left;">
+        <textarea id="chat-log" cols="100" rows="20" style="width: 100%"></textarea><br/>
+        <input id="chat-message-input" type="text" size="100"/><br/>
+        <input id="chat-message-submit" type="button" value="Send"/><br/><br/>
+        </div>
+
+<script>
+
+    // ID de la partida
+    var roomName = "{{ id }}";
+
+    // Cuál es nuestro player index
+    var playerIndex = {{ your_id }}
+
+    // Websocket al servidor
+    var gameSocket = undefined
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    try {
+        gameSocket = new WebSocket(
+        ws_scheme + "://" + window.location.host +
+        '/ws/game/' + roomName + '/');
+    } catch (error) {
+        gameSocket = new WebSocket(
+        ws_scheme + "://pumba-game.herokuapp.com" +
+        '/ws/game/' + roomName + '/');
+    }
+
+    function appendToChatbox(message) {
+        var chatbox = document.querySelector('#chat-log')
+        chatbox.value += (message + '\n');
+        chatbox.scrollTop = chatbox.scrollHeight
+    }
+
+    // Hace lo que haga falta cuando llega un mensaje
+    gameSocket.onmessage = function(e) {
+        // Parsea el JSON
+        var data = JSON.parse(e.data);
+        console.log(data)
+        // Recupera el tipo del mensaje
+        var message_type = data['type']
+        if (message_type == "game_state"){
+            game_state["game_status"] = data["game_status"]
+            game_state["last_suit"] = data["last_suit"]
+            game_state["last_number"] = data["last_number"]
+            game_state["last_effect"] = data["last_effect"]
+            game_state["current_player"] = data["current_player"]
+            game_state["next_player"] = data["next_player"]
+            game_state["turn_direction"] = data["turn_direction"]
+            game_state["draw_counter"] = data["draw_counter"]
+            game_state["draw_pile"] = data["draw_pile"]
+            game_state["play_pile"] = data["play_pile"]
+            game_state["hand"] = data["hand"]
+            game_state["players"] = data["players"]
+            updateDisplay()
+
+            // Recuperamos lo que ha pasado y lo ponemos en el chat
+            if (data['action'] != undefined) {
+                var action = data['action']
+                var cbox_message = undefined
+                switch(String(action['type'])) {
+                    case "begin_match":
+                        cbox_message = "The match has begun!"
+                        break;
+                    case "end_turn":
+                        cbox_message = "Player " + action['player'] + " ends their turn."
+                        break;
+                    case "draw_card":
+                        cbox_message = "Player " + action['player'] + " draws a card."
+                        break;
+                    case "draw_card_forced":
+                        cbox_message = "Player " + action['player'] + " draws " + action['number'] + " cards and resets the counter."
+                        break;
+                    case "play_card":
+                        cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
+                        break;
+                    case "game_won":
+                        cbox_message = action['player'] + " wins the match!"
+                        break;
+                    case "switch":
+                        cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
+                        break;
+                }
+                appendToChatbox(cbox_message)
+            }
+        } else if (message_type == "chat_message"){
+            var message = data['message'];
+            var username = data['username'];
+            var composed = username + ": " + message
+            appendToChatbox(composed);
+        // Notificación de sistema
+        } else if (message_type == "notification"){
+            appendToChatbox(data['message'])
+        } else if (message_type == "error") {
+            appendToChatbox("Error: " + data['message'])
+        // ACK del servidor (ahora mismo no hace nada)
+        } else if (message_type == "ok"){
+            //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
+        // Para cuando se usa DIVINE
+        } else if (message_type == "divination") {
+            appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+        }
+    }
+
+    // Qué hacer si se cierra el websocket de forma inesperada
+    gameSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+        //document.getElementById("error-msg").textContent += "The connection to the server was lost";
+    };
+
+    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
+    // al servidor
+    gameSocket.onopen = function(event) {
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+    }
+
+    var config = {
+        type: Phaser.AUTO,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 0 }
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create
+        },
+        scale: {
+            parent: 'game-div',
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+            width: 1920,
+            height: 1080
+        }
+    };
+
+    // Objeto de juego global
+    var game = new Phaser.Game(config);
+
+    // Escena
+    var scene = undefined
+
+    // Estado de juego interno
+    var game_state = {
+
+    }
+
+    // Colecciones de imágenes y eso
+    var sprite_groups = {
+
+    }
+
+    // Representación del juego
+    //
+
+    // Cola de acciones
+    //
+
+    // Carga las imágenes que vamos a necesitar
+    function preload ()
+    {
+        // Sin loops ni nada porque se tiene que hacer en servidor
+        this.load.image('BASTOS-ONE', "{% static 'BASTOS-ONE.png' %}")
+        this.load.image('BASTOS-TWO', "{% static 'BASTOS-TWO.png' %}")
+        this.load.image('BASTOS-COPY', "{% static 'BASTOS-COPY.png' %}")
+        this.load.image('BASTOS-DIVINE', "{% static 'BASTOS-DIVINE.png' %}")
+        this.load.image('BASTOS-FLIP', "{% static 'BASTOS-FLIP.png' %}")
+        this.load.image('BASTOS-SWITCH', "{% static 'BASTOS-SWITCH.png' %}")
+        this.load.image('BASTOS-JUMP', "{% static 'BASTOS-JUMP.png' %}")
+        this.load.image('BASTOS-KING', "{% static 'BASTOS-KING.png' %}")
+
+        this.load.image('COPAS-ONE', "{% static 'COPAS-ONE.png' %}")
+        this.load.image('COPAS-TWO', "{% static 'COPAS-TWO.png' %}")
+        this.load.image('COPAS-COPY', "{% static 'COPAS-COPY.png' %}")
+        this.load.image('COPAS-DIVINE', "{% static 'COPAS-DIVINE.png' %}")
+        this.load.image('COPAS-FLIP', "{% static 'COPAS-FLIP.png' %}")
+        this.load.image('COPAS-SWITCH', "{% static 'COPAS-SWITCH.png' %}")
+        this.load.image('COPAS-JUMP', "{% static 'COPAS-JUMP.png' %}")
+        this.load.image('COPAS-KING', "{% static 'COPAS-KING.png' %}")
+
+        this.load.image('ESPADAS-ONE', "{% static 'ESPADAS-ONE.png' %}")
+        this.load.image('ESPADAS-TWO', "{% static 'ESPADAS-TWO.png' %}")
+        this.load.image('ESPADAS-COPY', "{% static 'ESPADAS-COPY.png' %}")
+        this.load.image('ESPADAS-DIVINE', "{% static 'ESPADAS-DIVINE.png' %}")
+        this.load.image('ESPADAS-FLIP', "{% static 'ESPADAS-FLIP.png' %}")
+        this.load.image('ESPADAS-SWITCH', "{% static 'ESPADAS-SWITCH.png' %}")
+        this.load.image('ESPADAS-JUMP', "{% static 'ESPADAS-JUMP.png' %}")
+        this.load.image('ESPADAS-KING', "{% static 'ESPADAS-KING.png' %}")
+
+        this.load.image('OROS-ONE', "{% static 'OROS-ONE.png' %}")
+        this.load.image('OROS-TWO', "{% static 'OROS-TWO.png' %}")
+        this.load.image('OROS-COPY', "{% static 'OROS-COPY.png' %}")
+        this.load.image('OROS-DIVINE', "{% static 'OROS-DIVINE.png' %}")
+        this.load.image('OROS-FLIP', "{% static 'OROS-FLIP.png' %}")
+        this.load.image('OROS-SWITCH', "{% static 'OROS-SWITCH.png' %}")
+        this.load.image('OROS-JUMP', "{% static 'OROS-JUMP.png' %}")
+        this.load.image('OROS-KING', "{% static 'OROS-KING.png' %}")
+
+        this.load.image('card-back', "{% static 'card-back.png' %}")
+    }
+
+    // Inicializa el juego
+    function create ()
+    {
+        console.log(game)
+        console.log(this)
+        // "This" es la escena de juego
+        scene = this
+        // Stub para probar
+        game_state = {
+            'game_status': "PLAYING",
+            'last_suit': "BASTOS",
+            'last_number': "ONE",
+            'last_effect': "ONE",
+            'current_player': 0,
+            'next_player': 1,
+            'turn_direction': "CLOCKWISE",
+            'draw_counter': 0,
+            'draw_pile': 15,
+            'play_pile': 14,
+            'hand': [
+                ["ESPADAS", "ONE"],
+                ["OROS", "DIVINE"],
+                ["COPAS", "KING"],
+                ["COPAS", "KING"],
+                ["COPAS", "KING"],
+                ["BASTOS", "JUMP"]
+            ],
+            'players': [
+                ["Yop", 2, "False", 0],
+                ["Bob", 3, "False", 0],
+                ["HAL-9000", 2, "True", 1],
+                ["Cephalon Ordis", 3, "True", 0],
+                ["Jane", 3, "False", 0],
+                ["Tiamat", 3, "False", 0],
+            ]
+        }
+        //updateDisplay()
+    }
+
+    function updateDisplay() {
+        drawYourHand()
+        drawPlayers()
+        drawPiles()
+    }
+
+    // Pone en pantalla las pilas de juego
+    // TODO Poner las cartas una encima de otra visualmente para ponerlo bonito
+    function drawPiles() {
+        // Borramos lo que hubiera, si lo hay
+        var piles_group = undefined
+        if ("piles" in sprite_groups) {
+            sprite_groups["piles"].clear(true, true)
+            piles_group = sprite_groups["piles"]
+        } else {
+            piles_group = scene.add.group()
+            sprite_groups["players"] = piles_group
+        }
+
+        var playPileDisp = scene.add.sprite(1920 / 2, 1080 / 3, game_state["last_suit"] + "-" + game_state["last_number"])
+        var drawPileDisp = scene.add.sprite(300 + 1920 / 2, 1080 / 3, "card-back")
+        piles_group.add(playPileDisp)
+        piles_group.add(drawPileDisp)
+    }
+
+    // Pone en pantalla los indicadores de otros jugadores
+    function drawPlayers(){
+        // Borramos lo que hubiera, si lo hay
+        // TODO No borra bien
+        var players_group = undefined
+        if ("players" in sprite_groups) {
+            console.log("Los borra")
+            sprite_groups["players"].clear(true, false)
+            players_group = sprite_groups["players"]
+        } else {
+            players_group = scene.add.group()
+            sprite_groups["players"] = players_group
+        }
+
+        var num_players = game_state["players"].length
+        var players_left = Math.ceil((num_players - 1) / 2)
+        var players_right = Math.floor((num_players - 1) / 2)
+
+        // Como el orden es izquierda-derecha y clockwise por defecto, le damos la vuelta
+        // No trivial ponerlo bonito por los bordes, así que una lista simple y a tomar por culo
+        /*
+        for(i = 1; i <= players_right; i++){
+            scene.add.text(100, 100 + i * 100, game_state["players"][modulo(playerIndex + i, num_players)][0], { fontFamily: 'Verdana', fontSize: 40 });
+            scene.add.text(100, 100 + i * 100 + 50, game_state["players"][modulo(playerIndex + i, num_players)][1], { fontFamily: 'Verdana', fontSize: 40 });
+        }
+        for(i = 1; i <= players_left; i++){
+            scene.add.text(1920 - 100, 100 + i * 100, game_state["players"][modulo(0 + i, num_players)][0], { fontFamily: 'Verdana', fontSize: 40 });
+            scene.add.text(1920 - 100, 100 + i * 100 + 50, game_state["players"][modulo(0 + i, num_players)][1], { fontFamily: 'Verdana', fontSize: 40 });
+        }
+        */
+
+        for(i = 0; i < num_players; i++){
+            var text = game_state["players"][i][0] + " " + game_state["players"][i][1]
+            if (game_state["players"][i][2] == "True") {
+                text = "(AI) " + text
+            }
+            if (game_state["current_player"] == i) {
+                text = text + " | CURRENT"
+            }
+            var ptext = scene.add.text(100, 100 + i * 80, text, { fontFamily: 'Verdana', fontSize: 36 });
+            players_group.add(ptext)
+            //scene.add.text(100, 100 + i * 100 + 50, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 40 });
+        }
+    }
+
+    // Pone en pantalla tu mano actual, borrando lo que hubiere
+    function drawYourHand() {
+        // Buscamos el grupo, y si no está, lo borramos
+        var hand_group = undefined
+        if ("hand" in sprite_groups) {
+            sprite_groups["hand"].clear(true, true)
+            hand_group = sprite_groups["hand"]
+        } else {
+            hand_group = scene.add.group()
+            sprite_groups["hand"] = hand_group
+        }
+
+        // Creamos los sprites
+        // Centro alrededor del cual se ponen las cartas
+        var center = 1920 / 2
+        // Número de cartas que hay que distribuir
+        var card_count = game_state["hand"].length
+        // Ángulo alrededor del cual distribuir las cartas
+        var angle = 45
+        // Radio horizontal alrededor del cual distribuir las cartas (pixeles)
+        var radius = 500 + (card_count - 1) * 100
+        radius = Math.min(radius, 1920)
+        for (i = 0; i < card_count; i++){
+            // Carta actual
+            var card = game_state["hand"][i]
+            var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
+            disp.setScale(2 / Math.log(card_count))
+            //disp.setAngle((-angle) + (angle / card_count) * (i + 1))
+            // TODO Probar esto: this.add.image(0, 0, 'sky').setOrigin(0, 0)
+            // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
+            // Se usa para ordenar la mano gráficamente y enviar comandos al servidor
+            disp.custom_var = i
+            hand_group.add(disp)
+
+            // Los muertos de JavaScript y su retraso con las funciones me cago en dios
+            // Hace que al hacer mouseover en la carta la ponga más grande
+            var child = disp
+            function changeScale2(child) {
+                return function() {
+                    child.setScale(1.5)
+                    child.setDepth(10000)
+                    child.setY(child.y - 100)
+                }
+            }
+            function changeScale1(child) {
+                return function() {
+                    child.setScale(2 / Math.log(card_count))
+                    child.setDepth(child.custom_var)
+                    child.setY(child.y + 100)
+                }
+            }
+            function playCardFromHand(child) {
+                return function() {
+                    gameSocket.send(JSON.stringify({
+                        'type': "play_card",
+                        'index': child.custom_var
+                    }));
+                }
+            }
+            child.on('pointerover',changeScale2(child))
+            child.on('pointerout',changeScale1(child))
+            child.on('pointerup',playCardFromHand(child))
+        }
+    }
+
+    // Recibido un porcentaje, devuelve los píxeles
+    function calculateCoordsX(x) {
+        return x * game.scale.baseSize._width
+    }
+    function calculateCoordsY(y) {
+        return y * game.scale.baseSize._height
+    }
+    // Función módulo porque JavaScript tiene retraso
+    function modulo(n, m) {
+        return ((n % m) + m) % m;
+    }
+    </script>
+
+<script>
+    // Comando "Begin match"
+    document.querySelector('#begin-match').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "begin_match"
+        }));
+    };
+
+    // Comando "End turn"
+    document.querySelector('#end-turn').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "begin_turn"
+        }));
+    };
+
+    // Comando "Update game state"
+    document.querySelector('#update-state').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+    };
+
+    // Comando "Draw card"
+    document.querySelector('#draw-card').onclick = function(e) {
+        gameSocket.send(JSON.stringify({
+            'type': "draw_card"
+        }));
+    };
+</script>
+
+{% endblock %}
