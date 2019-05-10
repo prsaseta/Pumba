@@ -53,6 +53,7 @@
         console.log(data)
         // Recupera el tipo del mensaje
         var message_type = data['type']
+        // Actualiza el estado de juego
         if (message_type == "game_state"){
             game_state["game_status"] = data["game_status"]
             game_state["last_suit"] = data["last_suit"]
@@ -66,6 +67,7 @@
             game_state["play_pile"] = data["play_pile"]
             game_state["hand"] = data["hand"]
             game_state["players"] = data["players"]
+            // Actualiza el display
             updateDisplay()
 
             // Recuperamos lo que ha pasado y lo ponemos en el chat
@@ -75,6 +77,8 @@
                 switch(String(action['type'])) {
                     case "begin_match":
                         cbox_message = "The match has begun!"
+                        // Borramos el botón para empezar la partida
+                        deleteBeginMatch()
                         break;
                     case "end_turn":
                         cbox_message = "Player " + action['player'] + " ends their turn."
@@ -90,6 +94,7 @@
                         break;
                     case "game_won":
                         cbox_message = action['player'] + " wins the match!"
+                        gameWon(action['player'])
                         break;
                     case "switch":
                         cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
@@ -113,6 +118,7 @@
         // Para cuando se usa DIVINE
         } else if (message_type == "divination") {
             appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+            drawDivine(data['card']['suit'], data['card']['number'])
         }
     }
 
@@ -162,16 +168,18 @@
 
     }
 
-    // Colecciones de imágenes y eso
-    var sprite_groups = {
-
-    }
-
-    // Representación del juego
-    //
-
-    // Cola de acciones
-    //
+    // Grupos de sprites y texto
+    var piles_group = undefined
+    var players_group = undefined
+    var piles_group = undefined
+    var hand_group = undefined
+    var drawCounter_group = undefined
+    var turnDirection_group = undefined
+    var switchButtons_group = undefined
+    var ui_group = undefined
+    var beginMatch_group = undefined
+    var wonMatch_group = undefined
+    var divine_group = undefined
 
     // Carga las imágenes que vamos a necesitar
     function preload ()
@@ -214,6 +222,8 @@
         this.load.image('OROS-KING', "{% static 'OROS-KING.png' %}")
 
         this.load.image('card-back', "{% static 'card-back.png' %}")
+        this.load.image('draw-card', "{% static 'draw-card.png' %}")
+        this.load.image('end-turn', "{% static 'end-turn.png' %}")
     }
 
     // Inicializa el juego
@@ -223,76 +233,242 @@
         console.log(this)
         // "This" es la escena de juego
         scene = this
-        // Stub para probar
-        game_state = {
-            'game_status': "PLAYING",
-            'last_suit': "BASTOS",
-            'last_number': "ONE",
-            'last_effect': "ONE",
-            'current_player': 0,
-            'next_player': 1,
-            'turn_direction': "CLOCKWISE",
-            'draw_counter': 0,
-            'draw_pile': 15,
-            'play_pile': 14,
-            'hand': [
-                ["ESPADAS", "ONE"],
-                ["OROS", "DIVINE"],
-                ["COPAS", "KING"],
-                ["COPAS", "KING"],
-                ["COPAS", "KING"],
-                ["BASTOS", "JUMP"]
-            ],
-            'players': [
-                ["Yop", 2, "False", 0],
-                ["Bob", 3, "False", 0],
-                ["HAL-9000", 2, "True", 1],
-                ["Cephalon Ordis", 3, "True", 0],
-                ["Jane", 3, "False", 0],
-                ["Tiamat", 3, "False", 0],
-            ]
+        drawBeginMatch()
+
+    }
+
+    // Se ejecuta cuando recibes un divine
+    function drawDivine(suit, number) {
+        if (divine_group == undefined) {
+            divine_group = scene.add.group()
+        } else {
+            divine_group.clear(true, true)
         }
-        //updateDisplay()
+
+        var divination = scene.add.sprite(-30 -254 - 254 / 2 + 1920 / 2, 1080 / 3, suit + "-" + number)
+        var divText = scene.add.text(-30 - 60 -254 - 254 / 2 + 1920 / 2, 20 + 352 / 2 + 1080 / 3, "Divination", { fontFamily: 'Verdana', fontSize: 36 })
+        divine_group.add(divination)
+        divine_group.add(divText)
+
+        function clearDivination() {
+            divine_group.clear(true, true)
+        }
+
+        divination.setInteractive()
+        divination.on("pointerup", clearDivination)
+    }
+
+    // Se ejecuta cuando la partida termina
+    function gameWon(player) {
+        drawBeginMatch()
+        drawWinner(player)
+    }
+
+    function drawWinner(player) {
+        if (wonMatch_group == undefined) {
+            wonMatch_group = scene.add.group()
+        } else {
+            wonMatch_group.clear(true, true)
+        }
+        var winner = scene.add.text(1920 / 3, 150 + 1080 - 1080 / 3, player + " wins the match!", { fontFamily: 'Verdana', fontSize: 80 })
+        wonMatch_group.add(winner)
+    }
+
+    // Pone el botón para empezar la partida
+    function drawBeginMatch() {
+        if (beginMatch_group == undefined) {
+            beginMatch_group = scene.add.group()
+        }
+        var begin_match = scene.add.text(1920 / 3, 1080 - 1080 / 3, "Begin match", { fontFamily: 'Verdana', fontSize: 80 })
+        beginMatch_group.add(begin_match)
+        begin_match.setInteractive()
+
+        function beginMatch() {
+            gameSocket.send(JSON.stringify({
+                'type': "begin_match"
+            }));
+        }
+
+        begin_match.on("pointerup", beginMatch)
+    }
+
+    // Borra el botón de empezar partida y la notificación de quién la ha ganado
+    function deleteBeginMatch() {
+        if (beginMatch_group != undefined) {
+            beginMatch_group.clear(true, true)
+        }
+        if (wonMatch_group != undefined){
+            wonMatch_group.clear(true, true)
+        }
     }
 
     function updateDisplay() {
+        drawUI()
         drawYourHand()
         drawPlayers()
         drawPiles()
+        drawDrawCounter()
+        drawTurnDirection()
+    }
+
+    // Dibuja la UI básica
+    function drawUI() {
+        if (ui_group == undefined) {
+            ui_group = scene.add.group()
+            var end_turn = scene.add.sprite(1920 - 200, 650, "end-turn")
+            var draw_card = scene.add.sprite(1920 - 200, 500, "draw-card")
+
+            end_turn.setInteractive()
+            draw_card.setInteractive()
+
+            ui_group.add(end_turn)
+            ui_group.add(draw_card)
+
+            function endTurn() {
+                gameSocket.send(JSON.stringify({
+                    'type': "begin_turn"
+                }));
+            }
+
+            function drawCard() {
+                gameSocket.send(JSON.stringify({
+                    'type': "draw_card"
+                }));
+            }
+
+            end_turn.on("pointerup", endTurn)
+            draw_card.on("pointerup", drawCard)
+        }
+    }
+
+    // Crea los botones de SWITCH
+    // Ojo: Hay que borrarlos después y poner que aparezcan solamente cuando haga falta
+    function drawSwitchButtons() {
+        if (switchButtons_group != undefined) {
+            //switchButtons_group.clear(true, true)
+        } else {
+            switchButtons_group = scene.add.group()
+        }
+
+        var espadas = scene.add.text(1920 - 200, 200, "ESPADAS", { fontFamily: 'Verdana', fontSize: 30 });
+        var bastos = scene.add.text(1920 - 200, 200 + 50, "BASTOS", { fontFamily: 'Verdana', fontSize: 30 });
+        var copas = scene.add.text(1920 - 200, 200 + 100, "COPAS", { fontFamily: 'Verdana', fontSize: 30 });
+        var oros = scene.add.text(1920 - 200, 200 + 150, "OROS", { fontFamily: 'Verdana', fontSize: 30 });
+
+        espadas.setInteractive()
+        bastos.setInteractive()
+        copas.setInteractive()
+        oros.setInteractive()
+
+        function switchEspadas() {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "ESPADAS"
+            }));
+            deleteSwitchButtons()
+        }
+        
+        function switchBastos() {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "BASTOS"
+            }));
+            deleteSwitchButtons()
+        }
+
+        function switchCopas() {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "COPAS"
+            }));
+            deleteSwitchButtons()
+        }
+
+        function switchOros() {
+            gameSocket.send(JSON.stringify({
+                'type': "switch_effect",
+                'switch': "OROS"
+            }));
+            deleteSwitchButtons()
+        }
+
+        espadas.on('pointerup',switchEspadas)
+        bastos.on('pointerup',switchBastos)
+        copas.on('pointerup',switchCopas)
+        oros.on('pointerup',switchOros)
+
+        switchButtons_group.add(espadas)
+        switchButtons_group.add(bastos)
+        switchButtons_group.add(copas)
+        switchButtons_group.add(oros)
+        
+    }
+
+    function deleteSwitchButtons() {
+        if (switchButtons_group != undefined) {
+            switchButtons_group.clear(true, true)
+        }
+    }
+
+    function drawTurnDirection() {
+        if (turnDirection_group != undefined) {
+            turnDirection_group.clear(true, true)
+        } else {
+            turnDirection_group = scene.add.group()
+        }
+
+        var turnDirText = scene.add.text(1920 / 2, 20, game_state["turn_direction"], { fontFamily: 'Verdana', fontSize: 30 });
+        turnDirection_group.add(turnDirText)
+    }
+
+    // Muestra en pantalla el contador de robo (si hay)
+    function drawDrawCounter() {
+        // Borramos lo que hubiera, si lo hay
+        if (drawCounter_group != undefined) {
+            drawCounter_group.clear(true, true)
+        } else {
+            drawCounter_group = scene.add.group()
+        }
+
+        if (game_state["draw_counter"] > 0) {
+            var drawCounterText = scene.add.text(1600, 20, "Counter: " + game_state["draw_counter"], { fontFamily: 'Verdana', fontSize: 30 });
+            drawCounter_group.add(drawCounterText)
+        }
     }
 
     // Pone en pantalla las pilas de juego
     // TODO Poner las cartas una encima de otra visualmente para ponerlo bonito
     function drawPiles() {
         // Borramos lo que hubiera, si lo hay
-        var piles_group = undefined
-        if ("piles" in sprite_groups) {
-            sprite_groups["piles"].clear(true, true)
-            piles_group = sprite_groups["piles"]
+        if (piles_group != undefined) {
+            piles_group.clear(true, true)
         } else {
             piles_group = scene.add.group()
-            sprite_groups["players"] = piles_group
         }
 
-        var playPileDisp = scene.add.sprite(1920 / 2, 1080 / 3, game_state["last_suit"] + "-" + game_state["last_number"])
-        var drawPileDisp = scene.add.sprite(300 + 1920 / 2, 1080 / 3, "card-back")
+        var playPileDisp = scene.add.sprite(-254 / 2 + 1920 / 2, 1080 / 3, game_state["last_suit"] + "-" + game_state["last_number"])
+        var playPileText = scene.add.text(-254 / 2 + 1920 / 2, 50 + 254 / 2 + 1080 / 3, game_state["play_pile"], { fontFamily: 'Verdana', fontSize: 36 });
+        var drawPileDisp = scene.add.sprite(-254 / 2 + 300 + 1920 / 2, 1080 / 3, "card-back")
+        var drawPileText = scene.add.text(-254 / 2 + 300 + 1920 / 2, 50 + 254 / 2 + 1080 / 3, game_state["draw_pile"], { fontFamily: 'Verdana', fontSize: 36 });
         piles_group.add(playPileDisp)
         piles_group.add(drawPileDisp)
+        piles_group.add(drawPileText)
+        piles_group.add(playPileText)
     }
 
     // Pone en pantalla los indicadores de otros jugadores
     function drawPlayers(){
         // Borramos lo que hubiera, si lo hay
-        // TODO No borra bien
-        var players_group = undefined
-        if ("players" in sprite_groups) {
-            console.log("Los borra")
-            sprite_groups["players"].clear(true, false)
-            players_group = sprite_groups["players"]
+        if (players_group != undefined) {
+            players_group.clear(true, false)
         } else {
             players_group = scene.add.group()
-            sprite_groups["players"] = players_group
         }
+        console.log(players_group)
+        console.log(players_group.children)
+        console.log(players_group.children.size)
+        console.log(players_group.children.entries)
+        console.log(players_group.children.entries.length)
 
         var num_players = game_state["players"].length
         var players_left = Math.ceil((num_players - 1) / 2)
@@ -319,7 +495,7 @@
             if (game_state["current_player"] == i) {
                 text = text + " | CURRENT"
             }
-            var ptext = scene.add.text(100, 100 + i * 80, text, { fontFamily: 'Verdana', fontSize: 36 });
+            var ptext = scene.add.text(20, 20 + i * 70, text, { fontFamily: 'Verdana', fontSize: 36 });
             players_group.add(ptext)
             //scene.add.text(100, 100 + i * 100 + 50, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 40 });
         }
@@ -328,18 +504,15 @@
     // Pone en pantalla tu mano actual, borrando lo que hubiere
     function drawYourHand() {
         // Buscamos el grupo, y si no está, lo borramos
-        var hand_group = undefined
-        if ("hand" in sprite_groups) {
-            sprite_groups["hand"].clear(true, true)
-            hand_group = sprite_groups["hand"]
+        if (hand_group != undefined) {
+            hand_group.clear(true, true)
         } else {
             hand_group = scene.add.group()
-            sprite_groups["hand"] = hand_group
         }
 
         // Creamos los sprites
         // Centro alrededor del cual se ponen las cartas
-        var center = 1920 / 2
+        var center = (1920 / 2) + 254 / 2
         // Número de cartas que hay que distribuir
         var card_count = game_state["hand"].length
         // Ángulo alrededor del cual distribuir las cartas
@@ -351,7 +524,7 @@
             // Carta actual
             var card = game_state["hand"][i]
             var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
-            disp.setScale(2 / Math.log(card_count))
+            disp.setScale(Math.min(2 / Math.log(card_count), 1.25))
             //disp.setAngle((-angle) + (angle / card_count) * (i + 1))
             // TODO Probar esto: this.add.image(0, 0, 'sky').setOrigin(0, 0)
             // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
@@ -371,22 +544,25 @@
             }
             function changeScale1(child) {
                 return function() {
-                    child.setScale(2 / Math.log(card_count))
+                    child.setScale(Math.min(2 / Math.log(card_count), 1.25))
                     child.setDepth(child.custom_var)
                     child.setY(child.y + 100)
                 }
             }
-            function playCardFromHand(child) {
+            function playCardFromHand(child, suit, number) {
                 return function() {
                     gameSocket.send(JSON.stringify({
                         'type': "play_card",
                         'index': child.custom_var
                     }));
+                    if (number == "SWITCH") {
+                        drawSwitchButtons()
+                    }
                 }
             }
             child.on('pointerover',changeScale2(child))
             child.on('pointerout',changeScale1(child))
-            child.on('pointerup',playCardFromHand(child))
+            child.on('pointerup',playCardFromHand(child, card[0], card[1]))
         }
     }
 

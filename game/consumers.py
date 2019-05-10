@@ -454,7 +454,7 @@ class GameConsumer(WebsocketConsumer):
         # Se intenta obtener del evento que ha ejecutado esta función o como parámetro la
         # acción que ha llevado a este nuevo estado de juego
         # Si no hay evento ni acción por parámetro:
-        print("Enviando estado")
+        #print("Enviando estado")
         if action and event is None:
             self.send(text_data=json.dumps({
                 'type': 'game_state',
