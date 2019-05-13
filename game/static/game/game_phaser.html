@@ -15,7 +15,7 @@
 
 <div style="float: left;">
         <textarea id="chat-log" cols="100" rows="20" style="width: 100%"></textarea><br/>
-        <input id="chat-message-input" type="text" size="100"/><br/>
+        <input id="chat-message-input" type="text" size="100" maxlength="100"/><br/>
         <input id="chat-message-submit" type="button" value="Send"/><br/><br/>
         </div>
 
@@ -40,101 +40,7 @@
         '/ws/game/' + roomName + '/');
     }
 
-    function appendToChatbox(message) {
-        var chatbox = document.querySelector('#chat-log')
-        chatbox.value += (message + '\n');
-        chatbox.scrollTop = chatbox.scrollHeight
-    }
-
-    // Hace lo que haga falta cuando llega un mensaje
-    gameSocket.onmessage = function(e) {
-        // Parsea el JSON
-        var data = JSON.parse(e.data);
-        console.log(data)
-        // Recupera el tipo del mensaje
-        var message_type = data['type']
-        // Actualiza el estado de juego
-        if (message_type == "game_state"){
-            game_state["game_status"] = data["game_status"]
-            game_state["last_suit"] = data["last_suit"]
-            game_state["last_number"] = data["last_number"]
-            game_state["last_effect"] = data["last_effect"]
-            game_state["current_player"] = data["current_player"]
-            game_state["next_player"] = data["next_player"]
-            game_state["turn_direction"] = data["turn_direction"]
-            game_state["draw_counter"] = data["draw_counter"]
-            game_state["draw_pile"] = data["draw_pile"]
-            game_state["play_pile"] = data["play_pile"]
-            game_state["hand"] = data["hand"]
-            game_state["players"] = data["players"]
-            // Actualiza el display
-            updateDisplay()
-
-            // Recuperamos lo que ha pasado y lo ponemos en el chat
-            if (data['action'] != undefined) {
-                var action = data['action']
-                var cbox_message = undefined
-                switch(String(action['type'])) {
-                    case "begin_match":
-                        cbox_message = "The match has begun!"
-                        // Borramos el botón para empezar la partida
-                        deleteBeginMatch()
-                        break;
-                    case "end_turn":
-                        cbox_message = "Player " + action['player'] + " ends their turn."
-                        break;
-                    case "draw_card":
-                        cbox_message = "Player " + action['player'] + " draws a card."
-                        break;
-                    case "draw_card_forced":
-                        cbox_message = "Player " + action['player'] + " draws " + action['number'] + " cards and resets the counter."
-                        break;
-                    case "play_card":
-                        cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
-                        break;
-                    case "game_won":
-                        cbox_message = action['player'] + " wins the match!"
-                        gameWon(action['player'])
-                        break;
-                    case "switch":
-                        cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
-                        break;
-                }
-                appendToChatbox(cbox_message)
-            }
-        } else if (message_type == "chat_message"){
-            var message = data['message'];
-            var username = data['username'];
-            var composed = username + ": " + message
-            appendToChatbox(composed);
-        // Notificación de sistema
-        } else if (message_type == "notification"){
-            appendToChatbox(data['message'])
-        } else if (message_type == "error") {
-            appendToChatbox("Error: " + data['message'])
-        // ACK del servidor (ahora mismo no hace nada)
-        } else if (message_type == "ok"){
-            //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
-        // Para cuando se usa DIVINE
-        } else if (message_type == "divination") {
-            appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
-            drawDivine(data['card']['suit'], data['card']['number'])
-        }
-    }
-
-    // Qué hacer si se cierra el websocket de forma inesperada
-    gameSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-        //document.getElementById("error-msg").textContent += "The connection to the server was lost";
-    };
-
-    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
-    // al servidor
-    gameSocket.onopen = function(event) {
-        gameSocket.send(JSON.stringify({
-            'type': "game_state"
-        }));
-    }
+    
 
     var config = {
         type: Phaser.AUTO,
@@ -180,6 +86,18 @@
     var beginMatch_group = undefined
     var wonMatch_group = undefined
     var divine_group = undefined
+    var chat_group = undefined
+
+    // Mensajes de chat
+    var chat_messages = []
+    // Cuánto scroll se ha hecho
+    var chat_offset = 0
+    // Por defecto 10 mensajes
+    var max_messages_displayed = 10
+    // Cuánto debería tener de longitud horizontal la ventana de chat
+    var word_wrap_width = 300
+    // Tamaño de fuente del chat
+    var chat_text_size = 16
 
     // Carga las imágenes que vamos a necesitar
     function preload ()
@@ -234,7 +152,40 @@
         // "This" es la escena de juego
         scene = this
         drawBeginMatch()
+        drawChatbox()
 
+    }
+
+    // Dibuja la ventana de chat
+    function drawChatbox() {
+        console.log(chat_messages)
+        // Borra el grupo
+        if (chat_group == undefined) {
+            chat_group = scene.add.group(true, false)
+        } else {
+            chat_group.clear(true, true)
+        }
+
+        // Crea los objetos texto
+        // TODO Como empieza a mostrar desde el "principio", si los mensajes son largos a veces no te muestra el último mensaje enviado
+        var messages_left_to_display = Math.min(max_messages_displayed, chat_messages.length)
+        var next_offset = 100
+        i = 0
+        while (messages_left_to_display > 0) {
+            var last_text = scene.add.text(1920 - 300, next_offset, chat_messages[chat_offset + i], {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
+            var result = last_text.getWrappedText(chat_messages[chat_offset + i])
+            chat_group.add(last_text)
+            console.log(last_text)
+            next_offset += result.length * 25
+            messages_left_to_display -= result.length
+            i++
+        }
+        /*
+        for (j = 0; j < Math.min(max_messages_displayed, chat_messages.length); j++) {
+            console.log(":D????")
+            scene.add.text(1920 - 300, 300 + i*25, chat_messages[chat_offset + i], {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
+        }
+        */
     }
 
     // Se ejecuta cuando recibes un divine
@@ -350,10 +301,10 @@
             switchButtons_group = scene.add.group()
         }
 
-        var espadas = scene.add.text(1920 - 200, 200, "ESPADAS", { fontFamily: 'Verdana', fontSize: 30 });
-        var bastos = scene.add.text(1920 - 200, 200 + 50, "BASTOS", { fontFamily: 'Verdana', fontSize: 30 });
-        var copas = scene.add.text(1920 - 200, 200 + 100, "COPAS", { fontFamily: 'Verdana', fontSize: 30 });
-        var oros = scene.add.text(1920 - 200, 200 + 150, "OROS", { fontFamily: 'Verdana', fontSize: 30 });
+        var espadas = scene.add.text(1920 - 200, 700, "ESPADAS", { fontFamily: 'Verdana', fontSize: 30 });
+        var bastos = scene.add.text(1920 - 200, 700 + 50, "BASTOS", { fontFamily: 'Verdana', fontSize: 30 });
+        var copas = scene.add.text(1920 - 200, 700 + 100, "COPAS", { fontFamily: 'Verdana', fontSize: 30 });
+        var oros = scene.add.text(1920 - 200, 700 + 150, "OROS", { fontFamily: 'Verdana', fontSize: 30 });
 
         espadas.setInteractive()
         bastos.setInteractive()
@@ -524,7 +475,7 @@
             // Carta actual
             var card = game_state["hand"][i]
             var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
-            disp.setScale(Math.min(2 / Math.log(card_count), 1.25))
+            disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
             //disp.setAngle((-angle) + (angle / card_count) * (i + 1))
             // TODO Probar esto: this.add.image(0, 0, 'sky').setOrigin(0, 0)
             // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
@@ -544,7 +495,7 @@
             }
             function changeScale1(child) {
                 return function() {
-                    child.setScale(Math.min(2 / Math.log(card_count), 1.25))
+                    child.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
                     child.setDepth(child.custom_var)
                     child.setY(child.y + 100)
                 }
@@ -555,7 +506,8 @@
                         'type': "play_card",
                         'index': child.custom_var
                     }));
-                    if (number == "SWITCH") {
+                    // TODO Me parece que copiar un SWITCH no funciona
+                    if (number == "SWITCH" || (number == "COPY" && game_status["last_effect"] == "SWITCH")) {
                         drawSwitchButtons()
                     }
                 }
@@ -580,6 +532,111 @@
     </script>
 
 <script>
+
+function appendToChatbox(message) {
+        var chatbox = document.querySelector('#chat-log')
+        chatbox.value += (message + '\n');
+        chatbox.scrollTop = chatbox.scrollHeight
+        chat_messages.push(message)
+        if (chat_messages.length > max_messages_displayed){
+            chat_offset += 1
+        }
+        // Es posible que esto se ejecute mientras Phaser no está preparado todavía
+        if (scene != undefined) {
+            drawChatbox()
+        }
+    }
+
+    // Hace lo que haga falta cuando llega un mensaje
+    gameSocket.onmessage = function(e) {
+        // Parsea el JSON
+        var data = JSON.parse(e.data);
+        console.log(data)
+        // Recupera el tipo del mensaje
+        var message_type = data['type']
+        // Actualiza el estado de juego
+        if (message_type == "game_state"){
+            game_state["game_status"] = data["game_status"]
+            game_state["last_suit"] = data["last_suit"]
+            game_state["last_number"] = data["last_number"]
+            game_state["last_effect"] = data["last_effect"]
+            game_state["current_player"] = data["current_player"]
+            game_state["next_player"] = data["next_player"]
+            game_state["turn_direction"] = data["turn_direction"]
+            game_state["draw_counter"] = data["draw_counter"]
+            game_state["draw_pile"] = data["draw_pile"]
+            game_state["play_pile"] = data["play_pile"]
+            game_state["hand"] = data["hand"]
+            game_state["players"] = data["players"]
+            // Actualiza el display
+            updateDisplay()
+
+            // Recuperamos lo que ha pasado y lo ponemos en el chat
+            if (data['action'] != undefined) {
+                var action = data['action']
+                var cbox_message = undefined
+                switch(String(action['type'])) {
+                    case "begin_match":
+                        cbox_message = "The match has begun!"
+                        // Borramos el botón para empezar la partida
+                        deleteBeginMatch()
+                        break;
+                    case "end_turn":
+                        cbox_message = "Player " + action['player'] + " ends their turn."
+                        break;
+                    case "draw_card":
+                        cbox_message = "Player " + action['player'] + " draws a card."
+                        break;
+                    case "draw_card_forced":
+                        cbox_message = "Player " + action['player'] + " draws " + action['number'] + " cards and resets the counter."
+                        break;
+                    case "play_card":
+                        cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
+                        break;
+                    case "game_won":
+                        cbox_message = action['player'] + " wins the match!"
+                        gameWon(action['player'])
+                        break;
+                    case "switch":
+                        cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
+                        break;
+                }
+                appendToChatbox(cbox_message)
+            }
+        } else if (message_type == "chat_message"){
+            var message = data['message'];
+            var username = data['username'];
+            var composed = username + ": " + message
+            appendToChatbox(composed);
+        // Notificación de sistema
+        } else if (message_type == "notification"){
+            appendToChatbox(data['message'])
+        } else if (message_type == "error") {
+            appendToChatbox("Error: " + data['message'])
+        // ACK del servidor (ahora mismo no hace nada)
+        } else if (message_type == "ok"){
+            //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
+        // Para cuando se usa DIVINE
+        } else if (message_type == "divination") {
+            appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+            drawDivine(data['card']['suit'], data['card']['number'])
+        }
+    }
+
+    // Qué hacer si se cierra el websocket de forma inesperada
+    gameSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+        //document.getElementById("error-msg").textContent += "The connection to the server was lost";
+    };
+
+    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
+    // al servidor
+    gameSocket.onopen = function(event) {
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+    }
+
     // Comando "Begin match"
     document.querySelector('#begin-match').onclick = function(e) {
         gameSocket.send(JSON.stringify({
@@ -606,6 +663,18 @@
         gameSocket.send(JSON.stringify({
             'type': "draw_card"
         }));
+    };
+
+    // Envía un mensaje de chat al servidor
+    document.querySelector('#chat-message-submit').onclick = function(e) {
+        var messageInputDom = document.querySelector('#chat-message-input');
+        var message = messageInputDom.value;
+        gameSocket.send(JSON.stringify({
+            'type': "chat_message",
+            'message': message
+        }));
+
+        messageInputDom.value = '';
     };
 </script>
 
