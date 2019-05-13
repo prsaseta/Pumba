@@ -173,6 +173,10 @@ class GameConsumer(WebsocketConsumer):
         # El "type" indica qué método ejecutar de los consumidores que reciban el mensaje
         # Cuidado: el type no significa lo mismo mandándoselo al grupo que mandándoselo al cliente
         # En el grupo dice método a ejecutar, en cliente indica tipo de mensaje
+
+        # Lo cortamos a 100 caracteres
+        if len(text) > 100:
+            text = text[0:100]
         async_to_sync(self.channel_layer.group_send)(
             self.match_group_name,
             {
@@ -276,6 +280,11 @@ class GameConsumer(WebsocketConsumer):
                             break
                     # Si no puede jugar ninguna, roba dos cartas y termina su turno
                     if cannot_play:
+                        # Si la pila de cartas está vacía, termina el turno directamente
+                        if len(game.drawPile) == 0:
+                            game.begin_turn()
+                            cache.set("match_" + self.match_id, game, None)
+                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
                         game.player_action_draw()
                         self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
                         game.player_action_draw()
