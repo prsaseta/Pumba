@@ -52,7 +52,7 @@ def join(user, match_id):
         # Devuelve tu ID de jugador
         return player_id
 
-def create(max_users, host, title, ai_players):
+def create(max_users, host, title, ai_players = 0):
     # Crea la partida y le pone los parámetros
     game = Game()
     if(max_users < 2):

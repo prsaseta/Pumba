@@ -4,3 +4,6 @@ coverage html
 # Ejecuta tests
 # Nota: Los tests de Selenium requieren abrir un terminal aparte y ejecutar runserver ahí (además de Redis)
 coverage run --include=authentication/views.py,game/views.py,game/consumers.py,game/domain_objects.py,game/matchmaking.py, manage.py test game authentication game.selenium-tests
+
+# Ejecuta tests pero deja fuera los de selenium
+coverage run --include=authentication/views.py,game/views.py,game/domain_objects.py,game/matchmaking.py, manage.py test game authentication

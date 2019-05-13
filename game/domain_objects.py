@@ -64,8 +64,8 @@ class Player():
         self.hand.append(card)
 
     # Elimina la carta i de la mano y la devuelve
-    def lose_card(self, index = 0):
-        return self.hand.pop(index)
+    #def lose_card(self, index = 0):
+        #return self.hand.pop(index)
 
 class Card():
     def __init__(self, suit, number):
@@ -128,11 +128,6 @@ class Game():
 
     # Inicia una partida
     def begin_match(self, cards = None):
-        # Se encarga de asegurar la concurrencia
-        if self.lock:
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-
         if self.status is GameStatus.PLAYING:
             raise PumbaException("The game is already started!")
         if self.host is None:
@@ -191,16 +186,11 @@ class Game():
         self.drawCounter = 0
 
         # Ejecutamos el procesamiento de inicio de turno
-        self.lock = False
         self.begin_turn()
             
 
     # Le cede el turno al siguiente jugador
     def begin_turn(self):
-        if(self.lock):
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-
         if self.status is not GameStatus.PLAYING:
             raise PumbaException("The game is not started!")
 
@@ -226,9 +216,6 @@ class Game():
         # Añadimos un nuevo historial de acciones
         self.turn = Turn()
 
-        self.lock = False
-
-
     def update_next_player(self, current):
         if self.turnDirection == TurnDirection.CLOCKWISE:
             self.nextPlayer = (current + 1) % len(self.players)
@@ -241,10 +228,6 @@ class Game():
     # El jugador intenta robar una carta
     # Devuelve la carta robada
     def player_action_draw(self):
-        if(self.lock):
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-
         if self.status is not GameStatus.PLAYING:
             raise PumbaException("The game is not started!")
 
@@ -276,15 +259,10 @@ class Game():
         card = self.drawPile.pop()
         self.players[self.currentPlayer].gain_card(card)
         self.turn.add_action(ActionType.DRAW)
-        self.lock = False
         return card
 
     # Roba por la pila de robo
     def player_action_draw_forced(self):
-        if(self.lock):
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-
         if self.status is not GameStatus.PLAYING:
             raise PumbaException("The game is not started!")
 
@@ -314,16 +292,10 @@ class Game():
 
         self.drawCounter = 0
 
-        self.lock = False
-
         return drawn
 
     # El jugador juega una carta
     def player_action_play(self, index):
-        if(self.lock):
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-
         if self.status is not GameStatus.PLAYING:
             raise PumbaException("The game is not started!")
 
@@ -389,13 +361,7 @@ class Game():
             # Ponemos la carta en la pila de juego
             self.playPile.append(card)
 
-        self.lock = False
-
     def player_action_switch(self, suit):
-        if(self.lock):
-            raise ConcurrencyError("Server concurrency error")
-        self.lock = True
-        
         if self.status is not GameStatus.PLAYING:
             raise PumbaException("The game is not started!")
 
@@ -406,8 +372,6 @@ class Game():
                 raise ValueError("Invalid suit!")
         else:
             raise IllegalMoveException("Cannot switch!")
-
-        self.lock = False
 
     def execute_card_effect(self, card):
         if (card.number == CardNumber.ONE):
@@ -425,10 +389,11 @@ class Game():
         elif (card.number == CardNumber.COPY):
             # Crea una carta temporal para copiar el efecto
             if(self.lastEffect == CardNumber.NONE):
-                self.lastNumber = CardNumber.COPY
+                #self.lastNumber = CardNumber.COPY
                 self.lastEffect = CardNumber.NONE
                 self.lastSuit = card.suit
-                self.turn.add_action(ActionType.PLAY)
+                #self.turn.add_action(ActionType.PLAY)
+                self.execute_card_effect(Card(self.lastSuit, CardNumber.NONE))
             else:
                 self.execute_card_effect(Card(self.lastSuit, self.lastEffect))
         elif (card.number == CardNumber.DIVINE):

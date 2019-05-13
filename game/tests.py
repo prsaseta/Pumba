@@ -4,12 +4,55 @@ from channels.testing import ChannelsLiveServerTestCase
 from game.domain_objects import *
 from django.core.cache import cache 
 from django.contrib.auth.models import User
-import game.matchmaking
+from game import matchmaking
 import time
 from selenium import webdriver
 from game.models import GameKey
+from django.urls import reverse
+from django.test import Client
+from game.forms import MatchForm
 
 # Create your tests here.
+
+# Para llevar el coverage al 100%, aunque no hacen mucho
+class DomainModelTestCase(TestCase):
+    def setUp(self):
+        pass
+    
+    def test_player_controller(self):
+        PlayerController(None, None, None)
+        PlayerController(True, None, None)
+        PlayerController(False, None, None)
+
+    def test_card_suit_none(self):
+        try:
+            card = Card(None, CardNumber.ONE)
+        except PumbaException as e:
+            if(str(e) != "Suit cannot be none"):
+                raise
+
+    def test_card_number_none(self):
+        try:
+            card = Card(Suit.BASTOS, None)
+        except PumbaException as e:
+            if(str(e) != "Number cannot be none"):
+                raise
+
+    def test_action_none(self):
+        try:
+            action = Action(None)
+        except PumbaException as e:
+            if(str(e) != "Type cannot be none"):
+                raise
+
+    def test_gain_card_none(self):
+        try:
+            player = Player()
+            player.gain_card(None)
+        except PumbaException as e:
+            if(str(e) != "Card received is None"):
+                raise
+
 DECK_SIZE = 8 * 4
 class GameTestCase(TestCase):
     def setUp(self):
@@ -18,7 +61,43 @@ class GameTestCase(TestCase):
             self.game.players.append(Player(self.game))
         self.game.host = self.game.players[0]
         self.game.begin_match()
-    
+
+    def test_abnormal_begin_match_already_started(self):
+        try:
+            self.game.begin_match()
+        except PumbaException as e:
+            if(str(e) != "The game is already started!"):
+                raise
+
+    def test_abnormal_begin_match_no_host(self):
+        try:
+            game = Game()
+            for i in range(4):
+                game.players.append(Player(game))
+            game.begin_match()
+        except PumbaException as e:
+            if(str(e) != "There is no defined host for the game"):
+                raise
+
+    def test_abnormal_begin_match_no_players(self):
+        try:
+            game = Game()
+            game.host = Player(game)
+            game.begin_match()
+        except PumbaException as e:
+            if(str(e) != "Not enough players! 0"):
+                raise
+
+    def test_begin_match_custom_cards(self):
+        game = Game()
+        for i in range(4):
+            game.players.append(Player(game))
+        game.host = game.players[0]
+        cards = []
+        for i in range (100):
+            cards.append(Card(Suit.BASTOS, CardNumber.ONE))
+        game.begin_match(cards)
+        
     def test_regular_draw(self):
         # Roba una carta de manera normal
         self.game.player_action_draw()
@@ -57,6 +136,15 @@ class GameTestCase(TestCase):
             self.game.player_action_draw()
         except IllegalMoveException as e:
             if(str(e) != "Can only draw up to twice per turn!"):
+                raise
+
+    def test_abnormal_draw_not_started(self):
+        # Roba tres cartas, lo que no es legal
+        try:
+            game = Game()
+            game.player_action_draw()
+        except PumbaException as e:
+            if(str(e) != "The game is not started!"):
                 raise
 
     def test_abnormal_draw_counternotzero(self):
@@ -147,6 +235,14 @@ class GameTestCase(TestCase):
         count = count + len(self.game.playPile) + len(self.game.drawPile)
         self.assertEquals(count, DECK_SIZE)
         self.assertEquals(len(self.game.players[self.game.currentPlayer].hand), DECK_SIZE - 3*4)
+
+    def test_abnormal_draw_forced_not_started(self):
+        try:
+            game = Game()
+            game.player_action_draw_forced()
+        except PumbaException as e:
+            if(str(e) != "The game is not started!"):
+                raise
 
     def test_abnormal_draw_forced_empty(self):
         # Intenta robar forzadamemente cuando el contador es cero
@@ -421,6 +517,22 @@ class GameTestCase(TestCase):
         self.game.players[self.game.currentPlayer].hand = [Card(self.game.lastSuit, CardNumber.ONE), Card(Suit.ESPADAS, CardNumber.ONE)]
         self.game.player_action_play(0)
 
+
+    def test_abnormal_play_not_started(self):
+        try:
+            game = Game()
+            game.player_action_play(0)
+        except PumbaException as e:
+            if(str(e) != "The game is not started!"):
+                raise
+
+    def test_abnormal_play_invalid_index(self):
+        try:      
+            self.game.player_action_play(-1)
+        except PumbaException as e:
+            if(str(e) != "Invalid card index!"):
+                raise
+
     def test_abnormal_play_drawcounter(self):
         # Intenta jugar una carta con el contador de robo activo
         try:
@@ -521,6 +633,14 @@ class GameTestCase(TestCase):
         self.game.drawPile = []
         self.game.begin_turn()
 
+    def test_abnormal_endturn_not_started(self):
+        try:
+            game = Game()
+            game.begin_turn()
+        except PumbaException as e:
+            if(str(e) != "The game is not started!"):
+                raise
+
     def test_abnormal_endturn_none(self):
         # Intenta terminar turno sin hacer nada
         try:
@@ -561,76 +681,146 @@ class GameTestCase(TestCase):
             if(str(e) != "Cannot switch!"):
                 raise
 
-    class MatchmakingTestCase(TestCase):
-        def setUp(self):
-            self.user1 = User.objects.create_user("testuser1", "testuser1@gmail.com", "testuser1")
-            self.user2 = User.objects.create_user("testuser2", "testuser2@gmail.com", "testuser2")
-            self.user3 = User.objects.create_user("testuser3", "testuser3@gmail.com", "testuser3")
-            self.user4 = User.objects.create_user("testuser4", "testuser4@gmail.com", "testuser4")
+    def test_abnormal_switch_not_started(self):
+        try:
+            game = Game()
+            game.player_action_switch(Suit.ESPADAS)
+        except PumbaException as e:
+            if(str(e) != "The game is not started!"):
+                raise
 
-        def test_regular_create(self):
-            # Intenta crear una partida normalmente
-            id = matchmaking.create(4, user1, "Test game")
-            game = cache.get("match_"+id)
-            self.assertIsNotNone(cache.get("match_"+id))
-            self.assertEquals(self.user1, game.host)
+class MatchmakingTestCase(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user("testuser1", "testuser1@gmail.com", "testuser1")
+        self.user2 = User.objects.create_user("testuser2", "testuser2@gmail.com", "testuser2")
+        self.user3 = User.objects.create_user("testuser3", "testuser3@gmail.com", "testuser3")
+        self.user4 = User.objects.create_user("testuser4", "testuser4@gmail.com", "testuser4")
 
-        def test_abnormal_create_users(self):
-            # Intenta crear una partida con demasiados pocos usuarios
-            try:
-                id = matchmaking.create(1, user1, "Test game")
-            except ValueError as e:
-                self.assertEquals(str(e), "The number of users must be at least two!")
+    def test_regular_create(self):
+        # Intenta crear una partida normalmente
+        id = matchmaking.create(4, self.user1, "Test game")
+        game = cache.get("match_"+id)
+        self.assertIsNotNone(cache.get("match_"+id))
+        self.assertEquals(self.user1, game.host)
 
-        def test_abnormal_create_title(self):
-            # Intenta crear una partida con demasiados pocos usuarios
-            try:
-                id = matchmaking.create(1, user1, "    ")
-            except ValueError as e:
-                self.assertEquals(str(e), "The title cannot be empty!")
+    def test_regular_create_ais(self):
+        # Intenta crear una partida normalmente
+        id = matchmaking.create(4, self.user1, "Test game", 1)
+        game = cache.get("match_"+id)
+        self.assertIsNotNone(cache.get("match_"+id))
+        self.assertEquals(self.user1, game.host)
 
-        def test_abnormal_create_users_many(self):
-            # Intenta crear una partida con demasiados usuarios
-            try:
-                id = matchmaking.create(10, user1, "Test game")
-            except ValueError as e:
-                self.assertEquals(str(e), "The number of users cannot be more than eight!")
+    def test_abnormal_create_users(self):
+        # Intenta crear una partida con demasiados pocos usuarios
+        try:
+            id = matchmaking.create(1, self.user1, "Test game")
+        except ValueError as e:
+            self.assertEquals(str(e), "The number of users must be at least two!")
 
+    def test_abnormal_create_title(self):
+        # Intenta crear una partida con demasiados pocos usuarios
+        try:
+            id = matchmaking.create(2, self.user1, "    ")
+        except ValueError as e:
+            self.assertEquals(str(e), "The title cannot be empty!")
 
-        def test_regular_join(self):
-            # Se une a una partida normalmente
-            id = matchmaking.create(4, user1, "Test game")
+    def test_abnormal_create_users_many(self):
+        # Intenta crear una partida con demasiados usuarios
+        try:
+            id = matchmaking.create(10, self.user1, "Test game")
+        except ValueError as e:
+            self.assertEquals(str(e), "The number of users cannot be more than six!")
+
+    def test_abnormal_create_users_many_ais(self):
+        # Intenta crear una partida con demasiados usuarios
+        try:
+            id = matchmaking.create(5, self.user1, "Test game", 6)
+        except ValueError as e:
+            self.assertEquals(str(e), "Too many AIs! Are you trying to start a revolution?")
+
+    def test_regular_join(self):
+        # Se une a una partida normalmente
+        id = matchmaking.create(4, self.user1, "Test game")
+        matchmaking.join(self.user2, id)
+
+    def test_regular_join_already(self):
+        # Se une a una partida normalmente habiendo estado antes
+        id = matchmaking.create(4, self.user1, "Test game")
+        matchmaking.join(self.user2, id)
+        matchmaking.join(self.user2, id)
+
+    def test_abnormal_join_inexistent(self):
+        # Intenta unirse a una partida que no existe
+        try:
+            matchmaking.join(self.user2, "test")
+        except PumbaException as e:
+            self.assertEquals(str(e), "The match doesn't exist!")
+
+    def test_abnormal_join_full(self):
+        # Intenta unirse a una partida llena
+        try:
+            id = matchmaking.create(2, self.user1, "Test game")
             matchmaking.join(self.user2, id)
+            matchmaking.join(self.user3, id)
+        except PumbaException as e:
+            self.assertEquals(str(e), "The game is full!")
 
-        def test_regular_join_already(self):
-            # Se une a una partida normalmente habiendo estado antes
-            id = matchmaking.create(4, user1, "Test game")
+    def test_abnormal_join_started(self):
+        # Intenta unirse a una partida que ya haya empezado
+        try:
+            id = matchmaking.create(2, self.user1, "Test game")
+            game = cache.get("match_" + id)
+            game.status = GameStatus.PLAYING
+            cache.set("match_" + id, game, None)
             matchmaking.join(self.user2, id)
-            matchmaking.join(self.user2, id)
+        except PumbaException as e:
+            self.assertEquals(str(e), "The game is already started!")
 
-        def test_abnormal_join_inexistent(self):
-            # Intenta unirse a una partida que no existe
-            try:
-                matchmaking.join(self.user2, "test")
-            except PumbaException as e:
-                self.assertEquals(str(e), "The match doesn't exist!")
+class ViewTestCase(TestCase):
+    def setUp(self):
+        user1 = User.objects.create_user("john1", "john1@gmail.com", "john1")
+        user2 = User.objects.create_user("john2", "john2@gmail.com", "john2")
 
-        def test_abnormal_join_full(self):
-            # Intenta unirse a una partida llena
-            try:
-                id = matchmaking.create(2, user1, "Test game")
-                matchmaking.join(self.user2, id)
-                matchmaking.join(self.user3, id)
-            except PumbaException as e:
-                self.assertEquals(str(e), "The game is full!")
+    def test_index(self):
+        # Comprueba que una petición GET al índice devuelve un 200
+        c = Client()
+        response = c.get("")
+        self.assertTrue(response.status_code == 200)
 
-        def test_abnormal_join_started(self):
-            # Intenta unirse a una partida que ya haya empezado
-            try:
-                id = matchmaking.create(2, user1, "Test game")
-                game = cache.get("match_" + id)
-                game.status = GameStatus.PLAYING
-                cache.set("match_" + id, game, None)
-                matchmaking.join(self.user2, id)
-            except PumbaException as e:
-                self.assertEquals(str(e), "The game is already started!")
+    def test_matchmaking(self):
+        c = Client()
+        c.login(username='john1', password='john1')
+        response = c.get(reverse("matchmaking"))
+        self.assertTrue(response.status_code == 200 or response.status_code == 302)
+
+    def test_create_game(self):
+        # Comprueba que redirige si se está ya autenticado
+        c1 = Client()
+        c2 = Client()
+        c1.login(username='john1', password='john1')
+        c2.login(username='john2', password='john2')
+        response = c1.post(reverse("create_match"), {"max_players": 2, "ai_players": 0, "title": "test"})
+        self.assertTrue(response.status_code == 200)
+
+        id = response.context["id"]
+        response2 = c2.get(reverse("join_match"), {"id": id})
+        
+    def test_feedback(self):
+        c1 = Client()
+        c1.login(username='john1', password='john1')
+        response1 = c1.get(reverse("feedback"))
+        self.assertTrue(response1.status_code == 200)
+
+        response2 = c1.post(reverse("feedback"), {
+            "email": "test@gmail.com",
+            "subject": "test9999999999",
+            "body": "body9999999999999"
+        })
+        self.assertTrue(response2.status_code == 200 or response2.status_code == 302)
+
+        response3 = c1.post(reverse("feedback"), {
+            "email": "notanemail",
+            "subject": "",
+            "body": ""
+        })
+        self.assertTrue(response3.status_code == 200)

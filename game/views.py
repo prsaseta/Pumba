@@ -20,40 +20,6 @@ def index_view(request):
     return render(request, "index.html")
 
 @login_required
-def match_list2(request):
-    # TODO ¿Lista de partidas en las que estás?
-    # Cogemos todas las llaves de la BD
-    keys = GameKey.objects.all()
-    # Reconstruimos la lista de partidas
-    rows = []
-    for key in keys:
-        g = cache.get("match_"+str(key.key))
-        if g is None:
-            #key.delete()
-            print("Borrando partida de la BD que no estaba en memoria")
-            continue
-        # 0: Game
-        # 1: ID
-        # 2: Can join
-        row = []
-        row.append(g)
-        row.append(key.key)
-        # Hay que comprobar si el jugador es uno de los de la partida para que se pueda reconectar
-        if(len(g.players) == g.maxPlayerCount):
-            canjoin = False
-            for player in g.players:
-                if player.controller.user is not None:
-                    if player.controller.user.id is request.user.id:
-                        canjoin = True
-                        break
-            row.append(canjoin)
-        else:
-            row.append(True)
-        rows.append(row)
-    error = request.GET.get("error", None)
-    return render(request, "match_list.html", {"games" : rows, "error": error, "form": MatchForm()})
-
-@login_required
 def match_list3(request):
     # Cogemos de la BD todas las partidas en curso
     keys = GameKey.objects.all()
