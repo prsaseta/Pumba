@@ -98,6 +98,8 @@
     var word_wrap_width = 300
     // Tamaño de fuente del chat
     var chat_text_size = 16
+    // Se usa para calcular cuántas líneas tiene cada mensaje y romperlo adecuadamente
+    var example_text = undefined
 
     // Carga las imágenes que vamos a necesitar
     function preload ()
@@ -151,6 +153,7 @@
         console.log(this)
         // "This" es la escena de juego
         scene = this
+        example_text = scene.add.text(0, 0, "", {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
         drawBeginMatch()
         drawChatbox()
 
@@ -158,7 +161,6 @@
 
     // Dibuja la ventana de chat
     function drawChatbox() {
-        console.log(chat_messages)
         // Borra el grupo
         if (chat_group == undefined) {
             chat_group = scene.add.group(true, false)
@@ -534,12 +536,22 @@
 <script>
 
 function appendToChatbox(message) {
+        // Chatbox antigua
         var chatbox = document.querySelector('#chat-log')
         chatbox.value += (message + '\n');
         chatbox.scrollTop = chatbox.scrollHeight
-        chat_messages.push(message)
-        if (chat_messages.length > max_messages_displayed){
-            chat_offset += 1
+
+        // Chatbox de phaser
+        // Rompemos el mensaje en líneas
+        var strings = example_text.getWrappedText(message)
+        console.log(strings)
+        // Por cada línea, lo añadimos a la lista
+        for (i = 0; i < strings.length; i++){
+            chat_messages.push(strings[i])
+            // Si ya se ha llenado el chat, hacemos scroll
+            if (chat_messages.length > max_messages_displayed){
+                chat_offset += 1
+            }
         }
         // Es posible que esto se ejecute mientras Phaser no está preparado todavía
         if (scene != undefined) {
