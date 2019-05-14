@@ -281,7 +281,7 @@ class GameConsumer(WebsocketConsumer):
                     # Si no puede jugar ninguna, roba dos cartas y termina su turno
                     if cannot_play:
                         # Si la pila de cartas está vacía, termina el turno directamente
-                        if len(game.drawPile) == 0:
+                        if len(game.drawPile) == 0 and len(game.playPile) == 0:
                             game.begin_turn()
                             cache.set("match_" + self.match_id, game, None)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
