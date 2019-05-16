@@ -22,7 +22,9 @@ def join(user, match_id):
             already_ingame = True
             # Le quita control a la IA
             player.controller.isAI = False
-            break
+            player_id = game.players.index(player)
+            return player_id
+            #break
     
     if not already_ingame:
         # Se asegura de que se puede unir a la partida

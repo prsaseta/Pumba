@@ -515,6 +515,22 @@ class GameConsumer(WebsocketConsumer):
                 'players': players,
                 'action': event.get('action')
             }))
+        else:
+            self.send(text_data=json.dumps({
+                'type': 'game_state',
+                'game_status': GameStatus(game.status).name,
+                'last_suit': lastsuit,
+                'last_number': lastnumber,
+                'last_effect': lasteffect,
+                'current_player': game.currentPlayer,
+                'next_player': game.nextPlayer,
+                'turn_direction': turndir,
+                'draw_counter': game.drawCounter,
+                'draw_pile': len(game.drawPile),
+                'play_pile': len(game.playPile),
+                'hand': hand,
+                'players': players
+            }))
 
     
     # Envía el nuevo estado de juego a todos los jugadores conectados

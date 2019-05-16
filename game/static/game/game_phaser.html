@@ -6,13 +6,6 @@
 
 <div id="game-div"></div>
 
-<div style="clear:both">
-        <input id="begin-match" type="button" value="Begin match">
-        <input id="draw-card" type="button" value="Draw card">
-        <input id="end-turn" type="button" value="End turn">
-        <input id="update-state" type="button" value="Update game state">
-    </div>
-
 <div style="float: left;">
         <textarea id="chat-log" cols="100" rows="20" style="width: 100%"></textarea><br/>
         <input id="chat-message-input" type="text" size="100" maxlength="100"/><br/>
@@ -149,12 +142,15 @@
     // Inicializa el juego
     function create ()
     {
-        console.log(game)
-        console.log(this)
+        //console.log(game)
+        //console.log(this)
         // "This" es la escena de juego
         scene = this
         example_text = scene.add.text(0, 0, "", {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
-        drawBeginMatch()
+        //drawBeginMatch()
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
         drawChatbox()
 
     }
@@ -177,7 +173,6 @@
             var last_text = scene.add.text(1920 - 300, next_offset, chat_messages[chat_offset + i], {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
             var result = last_text.getWrappedText(chat_messages[chat_offset + i])
             chat_group.add(last_text)
-            console.log(last_text)
             next_offset += result.length * 25
             messages_left_to_display -= result.length
             i++
@@ -225,6 +220,7 @@
         }
         var winner = scene.add.text(1920 / 3, 150 + 1080 - 1080 / 3, player + " wins the match!", { fontFamily: 'Verdana', fontSize: 80 })
         wonMatch_group.add(winner)
+        winner.setDepth(9999)
     }
 
     // Pone el botón para empezar la partida
@@ -235,6 +231,7 @@
         var begin_match = scene.add.text(1920 / 3, 1080 - 1080 / 3, "Begin match", { fontFamily: 'Verdana', fontSize: 80 })
         beginMatch_group.add(begin_match)
         begin_match.setInteractive()
+        begin_match.setDepth(9999)
 
         function beginMatch() {
             gameSocket.send(JSON.stringify({
@@ -278,6 +275,7 @@
             ui_group.add(draw_card)
 
             function endTurn() {
+                deleteSwitchButtons()
                 gameSocket.send(JSON.stringify({
                     'type': "begin_turn"
                 }));
@@ -417,11 +415,6 @@
         } else {
             players_group = scene.add.group()
         }
-        console.log(players_group)
-        console.log(players_group.children)
-        console.log(players_group.children.size)
-        console.log(players_group.children.entries)
-        console.log(players_group.children.entries.length)
 
         var num_players = game_state["players"].length
         var players_left = Math.ceil((num_players - 1) / 2)
@@ -478,6 +471,7 @@
             var card = game_state["hand"][i]
             var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
             disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
+            disp.setDepth(i)
             //disp.setAngle((-angle) + (angle / card_count) * (i + 1))
             // TODO Probar esto: this.add.image(0, 0, 'sky').setOrigin(0, 0)
             // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
@@ -508,10 +502,6 @@
                         'type': "play_card",
                         'index': child.custom_var
                     }));
-                    // TODO Me parece que copiar un SWITCH no funciona
-                    if (number == "SWITCH" || (number == "COPY" && game_status["last_effect"] == "SWITCH")) {
-                        drawSwitchButtons()
-                    }
                 }
             }
             child.on('pointerover',changeScale2(child))
@@ -543,19 +533,22 @@ function appendToChatbox(message) {
 
         // Chatbox de phaser
         // Rompemos el mensaje en líneas
-        var strings = example_text.getWrappedText(message)
-        console.log(strings)
-        // Por cada línea, lo añadimos a la lista
-        for (i = 0; i < strings.length; i++){
-            chat_messages.push(strings[i])
-            // Si ya se ha llenado el chat, hacemos scroll
-            if (chat_messages.length > max_messages_displayed){
-                chat_offset += 1
+        try {
+            var strings = example_text.getWrappedText(message)
+            // Por cada línea, lo añadimos a la lista
+            for (i = 0; i < strings.length; i++){
+                chat_messages.push(strings[i])
+                // Si ya se ha llenado el chat, hacemos scroll
+                if (chat_messages.length > max_messages_displayed){
+                    chat_offset += 1
+                }
             }
-        }
-        // Es posible que esto se ejecute mientras Phaser no está preparado todavía
-        if (scene != undefined) {
-            drawChatbox()
+            // Es posible que esto se ejecute mientras Phaser no está preparado todavía
+            if (scene != undefined) {
+                drawChatbox()
+            }
+        } catch(err) {
+            console.log(err)
         }
     }
 
@@ -563,7 +556,6 @@ function appendToChatbox(message) {
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
         var data = JSON.parse(e.data);
-        console.log(data)
         // Recupera el tipo del mensaje
         var message_type = data['type']
         // Actualiza el estado de juego
@@ -581,7 +573,11 @@ function appendToChatbox(message) {
             game_state["hand"] = data["hand"]
             game_state["players"] = data["players"]
             // Actualiza el display
-            updateDisplay()
+            if (game_state["game_status"] == "WAITING") {
+                drawBeginMatch()
+            } else {
+                updateDisplay()
+            }
 
             // Recuperamos lo que ha pasado y lo ponemos en el chat
             if (data['action'] != undefined) {
@@ -604,6 +600,10 @@ function appendToChatbox(message) {
                         break;
                     case "play_card":
                         cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
+                        // Mostramos los botones de Switch si hace falta
+                        if (game_state["last_effect"] == "SWITCH" && game_state["current_player"] == playerIndex) {
+                            drawSwitchButtons()
+                        }
                         break;
                     case "game_won":
                         cbox_message = action['player'] + " wins the match!"
@@ -648,34 +648,6 @@ function appendToChatbox(message) {
             'type': "game_state"
         }));
     }
-
-    // Comando "Begin match"
-    document.querySelector('#begin-match').onclick = function(e) {
-        gameSocket.send(JSON.stringify({
-            'type': "begin_match"
-        }));
-    };
-
-    // Comando "End turn"
-    document.querySelector('#end-turn').onclick = function(e) {
-        gameSocket.send(JSON.stringify({
-            'type': "begin_turn"
-        }));
-    };
-
-    // Comando "Update game state"
-    document.querySelector('#update-state').onclick = function(e) {
-        gameSocket.send(JSON.stringify({
-            'type': "game_state"
-        }));
-    };
-
-    // Comando "Draw card"
-    document.querySelector('#draw-card').onclick = function(e) {
-        gameSocket.send(JSON.stringify({
-            'type': "draw_card"
-        }));
-    };
 
     // Envía un mensaje de chat al servidor
     document.querySelector('#chat-message-submit').onclick = function(e) {
