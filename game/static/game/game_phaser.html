@@ -2,7 +2,7 @@
 
 {% load static %}
 
-<script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
+<script src="{% static 'game/phaser.min.js' %}"></script>
 
 <div id="game-div"></div>
 
@@ -37,6 +37,9 @@
 
     var config = {
         type: Phaser.AUTO,
+        dom: {
+            createContainer: true
+        },
         physics: {
             default: 'arcade',
             arcade: {
@@ -137,6 +140,8 @@
         this.load.image('card-back', "{% static 'card-back.png' %}")
         this.load.image('draw-card', "{% static 'draw-card.png' %}")
         this.load.image('end-turn', "{% static 'end-turn.png' %}")
+
+        this.load.html('form', "{% static 'game/form.html' %}");
     }
 
     // Inicializa el juego
@@ -152,6 +157,10 @@
             'type': "game_state"
         }));
         drawChatbox()
+        
+        var element = this.add.dom(400, 0).createFromCache('form');
+
+        console.log(element)
 
     }
 
