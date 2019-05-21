@@ -297,6 +297,14 @@ class GameConsumer(WebsocketConsumer):
         except Exception as e:
             print("Error con la IA: " + str(e))
             traceback.print_tb(e.__traceback__)
+            try:
+                game.begin_turn()
+                cache.set("match_" + self.match_id, game, None)
+                self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+            except Exception as e:
+                print("Fallback de IA ha fallado: " + str(e))
+                traceback.print_tb(e.__traceback__)
+            
 
     def trigger_draw_card(self):
         try:
