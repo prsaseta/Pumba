@@ -1,3 +1,5 @@
+{% extends 'base.html' %}
+
 {% block content %}
 
 {% load static %}
@@ -5,12 +7,6 @@
 <script src="{% static 'game/phaser.min.js' %}"></script>
 
 <div id="game-div"></div>
-
-<div style="float: left;">
-        <textarea id="chat-log" cols="100" rows="20" style="width: 100%"></textarea><br/>
-        <input id="chat-message-input" type="text" size="100" maxlength="100"/><br/>
-        <input id="chat-message-submit" type="button" value="Send"/><br/><br/>
-        </div>
 
 <script>
 
@@ -151,16 +147,39 @@
         //console.log(this)
         // "This" es la escena de juego
         scene = this
+        // Esto sirve para copiar sus caracteristicas para el chat
         example_text = scene.add.text(0, 0, "", {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
         //drawBeginMatch()
+        // Pide el estado de juego cuando todo esta listo
         gameSocket.send(JSON.stringify({
             'type': "game_state"
         }));
+        // Dibuja la ventana de chat
         drawChatbox()
         
-        var element = this.add.dom(400, 0).createFromCache('form');
+        // Crea el form para enviar mensajes de chat
+        var element = this.add.dom(400, 100).createFromCache('form');
+        element.setScale(2, 2);
 
-        console.log(element)
+        // Callback cuando pones una letra en el input de chat
+        keyupChat = function (e) {
+            if (e.keyCode === 13) {  // enter, return
+                var messageInputDom = document.querySelector('#chat-input');
+                var message = messageInputDom.value;
+                message = message.trim()
+                if (message != ""){
+                    gameSocket.send(JSON.stringify({
+                        'type': "chat_message",
+                        'message': message
+                    }));
+                }
+                messageInputDom.value = '';
+            }
+        }
+
+        // Asignamos el callback
+        element.addListener('keyup');
+        element.on('keyup', keyupChat)
 
     }
 
@@ -535,11 +554,6 @@
 <script>
 
 function appendToChatbox(message) {
-        // Chatbox antigua
-        var chatbox = document.querySelector('#chat-log')
-        chatbox.value += (message + '\n');
-        chatbox.scrollTop = chatbox.scrollHeight
-
         // Chatbox de phaser
         // Rompemos el mensaje en líneas
         try {
@@ -657,18 +671,6 @@ function appendToChatbox(message) {
             'type': "game_state"
         }));
     }
-
-    // Envía un mensaje de chat al servidor
-    document.querySelector('#chat-message-submit').onclick = function(e) {
-        var messageInputDom = document.querySelector('#chat-message-input');
-        var message = messageInputDom.value;
-        gameSocket.send(JSON.stringify({
-            'type': "chat_message",
-            'message': message
-        }));
-
-        messageInputDom.value = '';
-    };
 </script>
 
 {% endblock %}
