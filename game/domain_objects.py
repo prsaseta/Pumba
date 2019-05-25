@@ -315,6 +315,8 @@ class Game():
 
         # Si hay que robar carta:
         if (self.drawCounter > 0):
+            if (self.turn.has(ActionType.PLAY)):
+                raise IllegalMoveException("You've already played a card this turn!")
             if (card.number != CardNumber.ONE and card.number != CardNumber.TWO and not(card.number == CardNumber.COPY and card.suit == self.lastSuit)):
                 raise IllegalMoveException("Must deflect card draw with One or Two!")
             
