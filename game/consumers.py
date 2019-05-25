@@ -134,10 +134,9 @@ class GameConsumer(WebsocketConsumer):
                             self.send_notification_global(player.name + " is the new host")
                             break
                 cache.set("match_" + self.match_id, game, None)
+                # Antes de irse, hace jugar a la IA si es necesario
+                self.do_ai(game)
 
-        # Antes de irse, hace jugar a la IA si es necesario
-        self.do_ai(game)
-        
         # Dejamos el canal
         async_to_sync(self.channel_layer.group_discard)(
             self.match_group_name,
@@ -281,24 +280,28 @@ class GameConsumer(WebsocketConsumer):
                     # Si no puede jugar ninguna, roba dos cartas y termina su turno
                     if cannot_play:
                         # Si la pila de cartas está vacía, termina el turno directamente
-                        if len(game.drawPile) == 0 and len(game.playPile) == 0:
+                        if len(game.drawPile) is 0 and len(game.playPile) is 0:
                             game.begin_turn()
                             cache.set("match_" + self.match_id, game, None)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                        game.player_action_draw()
-                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                        game.player_action_draw()
-                        self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                        game.begin_turn()
-                        cache.set("match_" + self.match_id, game, None)
-                        self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                        else:
+                            game.player_action_draw()
+                            self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                            if not (len(game.drawPile) is 0 and len(game.playPile) is 0):
+                                game.player_action_draw()
+                                self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
+                            game.begin_turn()
+                            cache.set("match_" + self.match_id, game, None)
+                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
                 cache.set("match_" + self.match_id, game, None)
                 self.send_game_state_global()
         except Exception as e:
             print("Error con la IA: " + str(e))
             traceback.print_tb(e.__traceback__)
             try:
-                game.begin_turn()
+                #game.begin_turn()
+                game.currentPlayer = game.nextPlayer
+                game.update_next_player(game.currentPlayer)
                 cache.set("match_" + self.match_id, game, None)
                 self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
             except Exception as e:
