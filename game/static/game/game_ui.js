@@ -12,6 +12,10 @@ function drawBeginMatch() {
         gameSocket.send(JSON.stringify({
             'type': "begin_match"
         }));
+        // Esto último no sirve para nada si todo va bien, pero a veces en local se pierde un mensaje y viene bien actualizar
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
     }
 
     begin_match.on("pointerup", beginMatch)
@@ -134,7 +138,7 @@ function drawYourHand() {
 }
 
 // Pone en pantalla los indicadores de otros jugadores
-function drawPlayers(){
+function drawPlayersold(){
     // Borramos lo que hubiera, si lo hay
     if (players_group != undefined) {
         players_group.clear(true, false)
@@ -143,8 +147,6 @@ function drawPlayers(){
     }
 
     var num_players = game_state["players"].length
-    var players_left = Math.ceil((num_players - 1) / 2)
-    var players_right = Math.floor((num_players - 1) / 2)
 
     for(i = 0; i < num_players; i++){
         var text = game_state["players"][i][0] + " " + game_state["players"][i][1]
@@ -157,6 +159,63 @@ function drawPlayers(){
         var ptext = scene.add.text(20, 20 + i * 70, text, { fontFamily: 'Verdana', fontSize: 36 });
         players_group.add(ptext)
         //scene.add.text(100, 100 + i * 100 + 50, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 40 });
+    }
+}
+
+function drawPlayers() {
+    // Borramos lo que hubiera, si lo hay
+    if (players_group != undefined) {
+        players_group.clear(true, false)
+    } else {
+        players_group = scene.add.group()
+    }
+
+    // Dividimos la parte de arriba en la pantalla entre el número de jugadores
+    var num_players = Math.max(game_state["players"].length, 1)
+    var width_assigned = (1920 - 100) / num_players
+
+    // Por cada jugador
+    for(i = 0; i < num_players; i++){
+        // Cogemos su username y le añadimos "(IA)" si es una IA
+        var text = game_state["players"][i][0]
+        if (game_state["players"][i][2] == "True") {
+            text = text + "(AI) "
+        }
+        // Calculamos dónde debería ir
+        var xpos = i * width_assigned + (1/2) * width_assigned
+        // Creamos el texto
+        var ptext = scene.add.text(xpos, 10, text, { fontFamily: 'Verdana', fontSize: 24, align: 'center', wordWrap: { width: width_assigned, useAdvancedWrap: true } });
+        // Al jugador actual lo pintamos con otro color
+        if (game_state["current_player"] == i) {
+            ptext.setColor("#00ff00")
+        }
+        // Añadimos el objeto texto al grupo
+        players_group.add(ptext)
+        var last_j = 0
+        // Pintamos las cartas que tiene en la mano
+        for (j = 0; j < game_state["players"][i][1]; j++){
+            // Posición y
+            var ypos = 80
+            // Si el jugador tiene un nombre largo y ocupa dos líneas, movemos las cartas un poco para abajo
+            if (ptext.getWrappedText(text).length > 1){
+                ypos = ypos + 20
+            }
+            // Añadimos el sprite de la carta
+            var unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+            // La hacemos más pequeña
+            unknown_card.setScale(0.15, 0.15)
+            // La añadimos al grupo
+            players_group.add(unknown_card)
+            // Actualizamos el último j (es para dibujar justo después del loop un número)
+            last_j = j
+            // Si ya hay muchas cartas, no dibujamos más
+            if (j > 10) {
+                break
+            }
+        }
+        // Pintamos aparte el número de cartas que tenga en mano
+        var cardn = scene.add.text(xpos + (last_j + 1) * 20, ypos, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 24, align: 'right'});
+        players_group.add(cardn)
     }
 }
 
@@ -276,8 +335,16 @@ function drawTurnDirection() {
     } else {
         turnDirection_group = scene.add.group()
     }
-
-    var turnDirText = scene.add.text(1920 / 2, 20, game_state["turn_direction"], { fontFamily: 'Verdana', fontSize: 30 });
+    var text = undefined
+    if (game_state["turn_direction"] == "CLOCKWISE"){
+        text = ">>>"
+    } else {
+        text = "<<<"
+    }
+    var turnDirText = scene.add.text(1920 / 2, 130, text, { fontFamily: 'Verdana', fontSize: 26, align: "center" });
+    turnDirText.setOrigin(0.5, 0)
+    turnDirText.setX(1920 / 2)
+    turnDirText.setY(120)
     turnDirection_group.add(turnDirText)
 }
 
@@ -291,7 +358,10 @@ function drawDrawCounter() {
     }
 
     if (game_state["draw_counter"] > 0) {
-        var drawCounterText = scene.add.text(1600, 20, "Counter: " + game_state["draw_counter"], { fontFamily: 'Verdana', fontSize: 30 });
+        var drawCounterText = scene.add.text(25 + 1920 / 2, 580, game_state["draw_counter"], { fontFamily: 'Verdana', fontSize: 66 });
+        var drawCounterImg = scene.add.sprite(-10 + 1920 / 2, 620, "forced-draw")
+        drawCounterImg.setScale(0.4, 0.4)
         drawCounter_group.add(drawCounterText)
+        drawCounter_group.add(drawCounterImg)
     }
 }
