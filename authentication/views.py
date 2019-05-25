@@ -60,6 +60,9 @@ def register_view(request):
         # Comprobamos que el nombre de usuario no está cogido
         if User.objects.filter(username = username).count() > 0 or PreRegister.objects.filter(username = username).count() > 0:
             return render(request, "register.html", {"form": form, "error": "That username is already taken"})
+        # Comprobamos que el nombre de usuario no es demasiado largo
+        if len(username) > 32:
+            return render(request, "register.html", {"form": form, "error": "The username may only be up to 32 characters long"})
         # Comprobamos que el email no está cogido
         if User.objects.filter(email = email).count() > 0 or PreRegister.objects.filter(email = email).count() > 0:
             return render(request, "register.html", {"form": form, "error": "That email is already taken"})
