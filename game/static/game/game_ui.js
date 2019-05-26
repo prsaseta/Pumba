@@ -47,8 +47,8 @@ function drawWinner(player) {
 function drawUI() {
     if (ui_group == undefined) {
         ui_group = scene.add.group()
-        var end_turn = scene.add.sprite(1920 - 200, 650, "end-turn")
-        var draw_card = scene.add.sprite(1920 - 200, 500, "draw-card")
+        var end_turn = scene.add.sprite(1920 - 150, 500, "end-turn")
+        var draw_card = scene.add.sprite(1920 - 350, 500, "draw-card")
 
         end_turn.setInteractive()
         draw_card.setInteractive()
@@ -267,10 +267,17 @@ function drawSwitchButtons() {
         switchButtons_group = scene.add.group()
     }
 
-    var espadas = scene.add.text(1920 - 200, 700, "ESPADAS", { fontFamily: 'Verdana', fontSize: 30 });
-    var bastos = scene.add.text(1920 - 200, 700 + 50, "BASTOS", { fontFamily: 'Verdana', fontSize: 30 });
-    var copas = scene.add.text(1920 - 200, 700 + 100, "COPAS", { fontFamily: 'Verdana', fontSize: 30 });
-    var oros = scene.add.text(1920 - 200, 700 + 150, "OROS", { fontFamily: 'Verdana', fontSize: 30 });
+    1920 - 150, 500
+
+    var espadas = scene.add.sprite(1920 - 500 +50, 350, "button-espadas");
+    var bastos = scene.add.sprite(1920 - 375 +50, 350, "button-bastos");
+    var copas = scene.add.sprite(1920 - 250 +50, 350, "button-copas");
+    var oros = scene.add.sprite(1920 - 125 +50, 350, "button-oros");
+
+    espadas.setScale(0.5, 0.5)
+    bastos.setScale(0.5, 0.5)
+    copas.setScale(0.5, 0.5)
+    oros.setScale(0.5, 0.5)
 
     espadas.setInteractive()
     bastos.setInteractive()

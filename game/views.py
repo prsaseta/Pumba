@@ -49,7 +49,7 @@ def join_match(request):
             return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
         return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
-    except PumbaException as e:
+    except Exception as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     
 

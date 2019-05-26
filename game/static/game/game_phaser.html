@@ -141,6 +141,11 @@
         this.load.image('end-turn', "{% static 'end-turn.png' %}")
         this.load.image('forced-draw', "{% static 'forced-draw.png' %}")
 
+        this.load.image('button-espadas', "{% static 'button-espadas.png' %}")
+        this.load.image('button-bastos', "{% static 'button-bastos.png' %}")
+        this.load.image('button-oros', "{% static 'button-oros.png' %}")
+        this.load.image('button-copas', "{% static 'button-copas.png' %}")
+
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
     }
@@ -156,9 +161,11 @@
         example_text = scene.add.text(0, 0, "", {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
         //drawBeginMatch()
         // Pide el estado de juego cuando todo esta listo
-        gameSocket.send(JSON.stringify({
-            'type': "game_state"
-        }));
+        if (gameSocket.readyState == gameSocket.OPEN) {
+            gameSocket.send(JSON.stringify({
+                'type': "game_state"
+            }));
+        }
         
         // Crea el form para enviar mensajes de chat
         var element = this.add.dom(180, 575).createFromCache('form');
