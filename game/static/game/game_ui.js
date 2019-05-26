@@ -99,8 +99,6 @@ function drawYourHand() {
         var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
         disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
         disp.setDepth(i)
-        //disp.setAngle((-angle) + (angle / card_count) * (i + 1))
-        // TODO Probar esto: this.add.image(0, 0, 'sky').setOrigin(0, 0)
         // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
         // Se usa para ordenar la mano gráficamente y enviar comandos al servidor
         disp.custom_var = i
