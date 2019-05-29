@@ -46,6 +46,7 @@ def join_match(request):
         g = cache.get("match_"+str(id), None)
         if g is None:
             key = GameKey.objects.get(key = id)
+            key.delete()
             return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
         return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})

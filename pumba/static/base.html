@@ -1,6 +1,7 @@
-<html>
+<html lang="en">
     <head>
         {% load static %}
+        <meta charset="utf-8">
         <title>Pumba!</title>
         <script src="{% static 'jquery-3.3.1.min.js' %}"></script>
         <link rel="stylesheet" type="text/css" href="{% static 'base.css' %}">
@@ -9,7 +10,14 @@
         <div class="header">
             <h1><a href="/"><img src="{% static 'logo.png' %}"/></a></h1>
             {% if user.is_authenticated %}
-            <div style="float: right;"><a href = "{% url 'feedback' %}">Bug report / Feedback</a></div>
+                Welcome, {{ user.username }}<br>
+                <a href="{% url 'logout' %}">Logout</a>
+                <a href="{% url 'matchmaking' %}">Matchmaking</a>
+                <a href = "{% url 'feedback' %}">Bug report / Feedback</a><br>
+            {% else %}
+                Welcome!
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'register' %}">Register</a>
             {% endif %}
         </div>
         {% if notification %}
