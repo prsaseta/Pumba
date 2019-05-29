@@ -123,6 +123,9 @@ function drawYourHand() {
         }
         function playCardFromHand(child, suit, number) {
             return function() {
+                if (number == "SWITCH" || (number == "COPY" && game_state["last_effect"] == "SWITCH")){
+                    drawSwitchButtons()
+                }
                 gameSocket.send(JSON.stringify({
                     'type': "play_card",
                     'index': child.custom_var

@@ -197,7 +197,9 @@
 
     // Se ejecuta cuando la partida termina
     function gameWon(player) {
-        drawBeginMatch()
+        if (game_state["host"] == playerIndex) {
+            drawBeginMatch()
+        }
         drawWinner(player)
     }
 
@@ -242,7 +244,6 @@ function appendToChatbox(message) {
         var data = JSON.parse(e.data);
         // Recupera el tipo del mensaje
         var message_type = data['type']
-        console.log(message_type)
         // Actualiza el estado de juego
         if (message_type == "game_state"){
             game_state["game_status"] = data["game_status"]
@@ -257,10 +258,11 @@ function appendToChatbox(message) {
             game_state["play_pile"] = data["play_pile"]
             game_state["hand"] = data["hand"]
             game_state["players"] = data["players"]
+            game_state["host"] = data["host"]
             // Actualiza el display
-            if (game_state["game_status"] == "WAITING") {
+            if (game_state["game_status"] == "WAITING" && data["host"] == playerIndex) {
                 drawBeginMatch()
-            } else {
+            } else if (game_state["game_status"] != "WAITING") {
                 updateDisplay()
             }
 
@@ -285,10 +287,6 @@ function appendToChatbox(message) {
                         break;
                     case "play_card":
                         cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
-                        // Mostramos los botones de Switch si hace falta
-                        if (game_state["last_effect"] == "SWITCH" && game_state["current_player"] == playerIndex) {
-                            drawSwitchButtons()
-                        }
                         break;
                     case "game_won":
                         cbox_message = action['player'] + " wins the match!"
