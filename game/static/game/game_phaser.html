@@ -260,9 +260,10 @@ function appendToChatbox(message) {
             game_state["players"] = data["players"]
             game_state["host"] = data["host"]
             // Actualiza el display
-            if (game_state["game_status"] == "WAITING" && data["host"] == playerIndex) {
+            if (game_state["game_status"] != "PLAYING" && data["host"] == playerIndex) {
                 drawBeginMatch()
-            } else if (game_state["game_status"] != "WAITING") {
+            }
+            if (game_state["game_status"] != "WAITING") {
                 updateDisplay()
             }
 
