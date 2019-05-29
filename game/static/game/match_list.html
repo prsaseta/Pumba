@@ -47,6 +47,8 @@
 </table>
 {% endif %}
 
+{% if games is not None %}
+
 <h2>Join match</h2>
 
 <table class="matchmaking_table">
@@ -91,6 +93,13 @@
     </tr>
     {% endfor %}
 </table>
+
+{% else %}
+
+<p style="text-align: center">No games found</p>
+
+{% endif %}
+
 <h2>Create match</h2>
 <div style="text-align: center">
 <form method="post" action="{% url 'create_match' %}" id="create-match-form">

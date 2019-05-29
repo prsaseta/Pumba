@@ -32,6 +32,8 @@ def match_list3(request):
     # Para hacer más fácil el template, si no estás en ninguna partida pasamos None
     if len(yours) == 0:
         yours = None
+    if len(keys) == 0:
+        keys = None
     error = request.GET.get("error", None)
     return render(request, "match_list.html", {"games" : keys, "yours": yours, "error": error, "form": MatchForm()})
 
