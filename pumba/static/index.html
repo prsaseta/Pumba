@@ -2,8 +2,8 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-    <p>Welcome back {{ user.username }}! <a href="{% url 'matchmaking' %}">Join a match?</a></p><br/>
+    <p style="text-align: center">Welcome back {{ user.username }}! <a href="{% url 'matchmaking' %}">Join a match?</a></p><br/>
 {% else %}
-    <p>Welcome to Pumba! Please <a href="{% url 'login' %}">login</a><br/> or <a href="{% url 'register' %}">register</a> to play!</p>
+    <p style="text-align: center">Welcome to Pumba! Please <a href="{% url 'login' %}">login</a> or <a href="{% url 'register' %}">register</a> to play!</p>
 {% endif %}
 {% endblock %}

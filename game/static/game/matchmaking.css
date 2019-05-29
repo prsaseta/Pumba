@@ -1,0 +1,61 @@
+.create-match-button {
+    background-color: deepskyblue;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+.create-match-button:hover {
+    background-color: darkblue;
+}
+
+.join-match-button {
+    background-color: deepskyblue;
+    border: none;
+    color: white;
+    padding: 7px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+.join-match-button:hover {
+    background-color: darkblue;
+}
+
+.full-match-button {
+    background-color: gray;
+    border: none;
+    color: white;
+    padding: 7px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+.full-match-button:hover {
+    background-color: red;
+}
+
+.matchmaking_table {
+    margin-left:auto; 
+    margin-right:auto;
+    border: 3px solid skyblue;
+    clear: both;
+}
+
+.matchmaking_table_row {
+    border: 3px solid skyblue;
+}
+
+.form-table {
+    margin-left:auto; 
+    margin-right:auto;
+    clear: both;
+}

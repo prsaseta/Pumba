@@ -11,13 +11,13 @@
             <h1><a href="/"><img src="{% static 'logo.png' %}"/></a></h1>
             {% if user.is_authenticated %}
                 Welcome, {{ user.username }}<br>
-                <a href="{% url 'logout' %}">Logout</a>
-                <a href="{% url 'matchmaking' %}">Matchmaking</a>
-                <a href = "{% url 'feedback' %}">Bug report / Feedback</a><br>
+                <a href="{% url 'logout' %}"><button class="menu-button">Logout</button></a>
+                <a href="{% url 'matchmaking' %}"><button class="menu-button">Matchmaking</button></a>
+                <a href = "{% url 'feedback' %}"><button class="menu-button">Bug report / Feedback</button></a><br>
             {% else %}
-                Welcome!
-                <a href="{% url 'login' %}">Login</a>
-                <a href="{% url 'register' %}">Register</a>
+                Welcome!<br>
+                <a href="{% url 'login' %}"><button class="menu-button">Login</button></a>
+                <a href="{% url 'register' %}"><button class="menu-button">Register</button></a>
             {% endif %}
         </div>
         {% if notification %}

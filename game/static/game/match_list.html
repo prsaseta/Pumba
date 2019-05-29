@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 
 {% load mathfilters %}
+{% load static %}
 
 {% block content %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'game/matchmaking.css' %}">
 
 {% if yours is not None %}
 
@@ -37,11 +40,7 @@
             {% endfor %}
         </th>
         <th class="matchmaking_table_row">
-            {% if game.current_users < game.max_users %}
-                <a href="/game/join?id={{ game.key }}">Join</a>
-            {% else %}
-                <p>Full</p>
-            {% endif %}
+            <a href="/game/join?id={{ game.key }}"><button class="join-match-button">Rejoin</button></a>
         </th>
     </tr>
     {% endfor %}
@@ -75,14 +74,18 @@
         <th class="matchmaking_table_row">{{ game.ai_count }}</th>
         <th class="matchmaking_table_row">
             {% for player in game.users.all %}
-                {{ player.username }}<br/>
+                {% if player.username == user.username %}
+                    <span style="color: coral">{{ player.username }}</span><br/>
+                {% else %}
+                    {{ player.username }}<br/>
+                {% endif %}
             {% endfor %}
         </th>
         <th class="matchmaking_table_row">
-            {% if game.current_users < game.max_users %}
-                <a href="/game/join?id={{ game.key }}">Join</a>
+            {% if game.current_users < game.capacity %}
+                <a href="/game/join?id={{ game.key }}"><button class="join-match-button">Join</button></a>
             {% else %}
-                <p>Full</p>
+                <button class="full-match-button">Full</button>
             {% endif %}
         </th>
     </tr>
@@ -92,8 +95,10 @@
 <div style="text-align: center">
 <form method="post" action="{% url 'create_match' %}" id="create-match-form">
     {% csrf_token %}
-    {{ form }}
-    <button type="submit">Create match</button>
+    <table class="form-table">
+    {{ form.as_table }}
+    </table>
+    <button type="submit" class="create-match-button" style="float: center; text-align: center">Create match</button>
 </form>
 </div>
 

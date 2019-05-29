@@ -83,7 +83,7 @@ class GameConsumer(WebsocketConsumer):
                 # Nos aseguramos de que el que la ha creado es el host
                 if game.host.id is not user.id:
                     raise ValueError("The host is not the same as the logged user!")
-                key = GameKey(key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount)
+                key = GameKey(key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount, capacity = game.maxPlayerCount - game.aiCount)
                 key.save()
                 key.users.add(user)
                 key.save()

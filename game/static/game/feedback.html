@@ -9,7 +9,7 @@
 <form method="post" action="{% url 'feedback' %}">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Send!</button>
+    <button type="submit" class="menu-button">Send!</button>
 </form>
 </div>
 

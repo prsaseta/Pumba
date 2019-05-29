@@ -12,6 +12,9 @@ class GameKey(models.Model):
     max_users = models.PositiveSmallIntegerField()
     current_users = models.PositiveSmallIntegerField()
     ai_count = models.PositiveSmallIntegerField()
+    # Esto se rellena a mano, y es max_users - ai_count
+    # Sirve básicamente para la lista de matchmaking
+    capacity = models.PositiveSmallIntegerField()
 
 class FeedbackMail(models.Model):
     email = models.CharField(max_length = 1000)
