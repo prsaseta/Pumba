@@ -68,6 +68,7 @@ def create(max_users, host, title, ai_players = 0):
     game.maxPlayerCount = max_users
     game.host = host
     game.title = str(title).strip()
+    game.aiCount = ai_players
 
     # Crea el jugador del host
     controller = PlayerController(True, host, None)
@@ -88,10 +89,10 @@ def create(max_users, host, title, ai_players = 0):
         id = get_random_string(length = 20)
         check = cache.get("match_" + id)
     cache.set("match_" + id, game, None)
-    key = GameKey(key = id, current_users = 1, max_users = max_users, name=title, ai_count = ai_players)
-    key.save()
-    key.users.add(host)
-    key.save()
+    #key = GameKey(key = id, current_users = 1, max_users = max_users, name=title, ai_count = ai_players)
+    #key.save()
+    #key.users.add(host)
+    #key.save()
 
     # Devuelve la ID de la partida creada
     return id

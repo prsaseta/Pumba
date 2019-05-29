@@ -1,7 +1,8 @@
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
-from django.core.cache import cache 
+from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist 
 from game.exceptions import PumbaException
 import traceback
 from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType
@@ -73,6 +74,17 @@ class GameConsumer(WebsocketConsumer):
                 self.match_group_name,
                 self.channel_name
             )
+            # Comprobamos si la key en la BD está creada; si no, la creamos
+            try:
+                GameKey.objects.get(key = self.match_id)
+            except ObjectDoesNotExist:
+                # Nos aseguramos de que el que la ha creado es el host
+                if game.host.id is not user.id:
+                    raise ValueError("The host is not the same as the logged user!")
+                key = GameKey(key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount)
+                key.save()
+                key.users.add(user)
+                key.save()
             # Enviamos notificación por chat de que un usuario se ha unido
             notificationmsg = "User " + game.players[self.player_index].name + " joined the game"
             self.send_notification_global(notificationmsg)

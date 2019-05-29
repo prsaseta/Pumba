@@ -115,6 +115,8 @@ class Game():
         self.playPile = []
         # Jugadores de la partida
         self.players = []
+        # Número de IAs
+        self.aiCount = 0
         # Marcador
         self.points = []
         # User
@@ -123,8 +125,6 @@ class Game():
         self.turn = None
         self.title = "Quick game"
         self.maxPlayerCount = 4
-        # Para evitar problemas de concurrencia, añadimos un cerrojo
-        self.lock = False
 
     # Inicia una partida
     def begin_match(self, cards = None):
