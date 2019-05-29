@@ -8,6 +8,8 @@
 
 <script src = "{% static 'game/game_ui.js' %}"></script>
 
+<div id="error-msg" class="error"></div>
+
 <div id="game-div"></div>
 
 <script>
@@ -22,13 +24,9 @@
     var gameSocket = undefined
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     try {
-        gameSocket = new WebSocket(
-        ws_scheme + "://" + window.location.host +
-        '/ws/game/' + roomName + '/');
+        gameSocket = new WebSocket(ws_scheme + "://" + window.location.host + '/ws/game/' + roomName + '/');
     } catch (error) {
-        gameSocket = new WebSocket(
-        ws_scheme + "://pumba-game.herokuapp.com" +
-        '/ws/game/' + roomName + '/');
+        gameSocket = new WebSocket(ws_scheme + "://pumba-game.herokuapp.com" + '/ws/game/' + roomName + '/');
     }
 
     
@@ -244,6 +242,7 @@ function appendToChatbox(message) {
         var data = JSON.parse(e.data);
         // Recupera el tipo del mensaje
         var message_type = data['type']
+        console.log(message_type)
         // Actualiza el estado de juego
         if (message_type == "game_state"){
             game_state["game_status"] = data["game_status"]
@@ -314,8 +313,12 @@ function appendToChatbox(message) {
         // ACK del servidor (ahora mismo no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
+        // Desconexión del socket
+        } else if (message_type == "disconnect") {
+            document.getElementById("error-msg").innerHTML += data['reason'] + "<br>"
         // Para cuando se usa DIVINE
         } else if (message_type == "divination") {
+            console.log("Entra en el divine")
             appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
             drawDivine(data['card']['suit'], data['card']['number'])
         }
@@ -323,8 +326,7 @@ function appendToChatbox(message) {
 
     // Qué hacer si se cierra el websocket de forma inesperada
     gameSocket.onclose = function(e) {
-        console.error('Chat socket closed unexpectedly');
-        //document.getElementById("error-msg").textContent += "The connection to the server was lost";
+        document.getElementById("error-msg").innerHTML += "The connection to the server was lost<br>"
     };
 
     // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida

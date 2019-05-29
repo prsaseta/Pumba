@@ -14,6 +14,8 @@ class GameConsumer(WebsocketConsumer):
         error = False
         # Este atributo sirve luego para saber si este websocket queda cerrado por abrir otro por el mismo usuario en la misma partida
         self.disconnected_by_substitute = False
+        # Este atributo sirve luego para saber si se ha desconectado porque la partida ha estado inactiva demasiado tiempo
+        self.game_timed_out = False
 
         # Cogemos el usuario autenticado
         user = None
@@ -32,7 +34,7 @@ class GameConsumer(WebsocketConsumer):
         self.match_group_name = 'match_%s' % self.match_id
         game = None
         try:
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             if game is None:
                 error = True
         except:
@@ -68,7 +70,7 @@ class GameConsumer(WebsocketConsumer):
             # Anotamos que el jugador está online
             game.players[self.player_index].controller.isAI = False
             # Actualizamos la caché
-            cache.set("match_" + self.match_id, game, None)
+            self.save_to_cache(game)
             # Se une al grupo de canales de la partida
             async_to_sync(self.channel_layer.group_add)(
                 self.match_group_name,
@@ -96,6 +98,10 @@ class GameConsumer(WebsocketConsumer):
         else:
             # Si ha pasado algo, rechazamos la conexión
             self.was_connected_successfully_to_game = False
+            self.send(text_data=json.dumps({
+                'type': 'disconnect',
+                'reason': 'Could not connect to the match'
+            }))
             #self.close()
 
     # Se ejecuta cuando otro websocket del mismo jugador se conecta y le envía un evento para decirle que este se desconecte (en connect(self))
@@ -106,8 +112,8 @@ class GameConsumer(WebsocketConsumer):
             # Cuando se conecta el usuario abriendo un websocket nuevo, cerramos el viejo
             # Se avisa al cliente
             self.send(text_data=json.dumps({
-                'type': 'notification',
-                'message': "You opened the game on another window; closing this one"
+                'type': 'disconnect',
+                'reason': "You opened the game on another window; closing this one"
             }))
             # Dejamos el canal
             self.disconnected_by_substitute = True
@@ -117,7 +123,7 @@ class GameConsumer(WebsocketConsumer):
     def disconnect(self, close_code):
         if self.was_connected_successfully_to_game and not self.disconnected_by_substitute:
             # Cogemos la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             # Anotamos que el jugador está desconectado
             game.players[self.player_index].controller.isAI = True
             # Avisamos al resto de jugadores
@@ -132,7 +138,7 @@ class GameConsumer(WebsocketConsumer):
                     anyone_connected = True
                     
             if not anyone_connected:
-                cache.set("match_" + self.match_id, None, 1)
+                self.save_to_cache(game, 1)
                 try:
                     GameKey.objects.get(key = self.match_id).delete()
                 except:
@@ -145,7 +151,7 @@ class GameConsumer(WebsocketConsumer):
                             game.host = player.controller.user
                             self.send_notification_global(player.name + " is the new host")
                             break
-                cache.set("match_" + self.match_id, game, None)
+                self.save_to_cache(game)
                 # Antes de irse, hace jugar a la IA si es necesario
                 self.do_ai(game)
 
@@ -160,7 +166,7 @@ class GameConsumer(WebsocketConsumer):
         text_data_json = json.loads(text_data)
         pkgtype = text_data_json['type']
 
-        game = cache.get(self.match_group_name)
+        game = self.retrieve_from_cache()
         username = game.players[self.player_index].name
 
         # Ejecuta el procesamiento necesario dependiendo del tipo de comando enviado
@@ -202,7 +208,7 @@ class GameConsumer(WebsocketConsumer):
         # Debe de haber al menos dos jugadores y la partida estar parada
         try:
             # Recupera la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             # Comprueba que es el host
             user = self.scope["user"]
             if game.host.id is not user.id:
@@ -210,7 +216,7 @@ class GameConsumer(WebsocketConsumer):
             else:
                 # Hace el procesamiento de empezar la partida
                 game.begin_match()
-                cache.set("match_" + self.match_id, game, None)
+                self.save_to_cache(game)
                 # Le da el OK
                 self.send_ok()
                 # Actualiza el estado de todos
@@ -225,14 +231,14 @@ class GameConsumer(WebsocketConsumer):
     def trigger_begin_turn(self):
         try:
             # Recupera la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
                 raise PumbaException("It's not your turn!")
             # Intenta terminar el turno
             game.begin_turn()
-            cache.set("match_" + self.match_id, game, None)
+            self.save_to_cache(game)
             # Le da el OK
             self.send_ok()
             # Actualiza el estado de todos
@@ -264,7 +270,7 @@ class GameConsumer(WebsocketConsumer):
                             game.player_action_play(i)
                             self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
                             game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
+                            self.save_to_cache(game)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name, "ai": True})
                             needs_draw = False
                             break
@@ -273,7 +279,7 @@ class GameConsumer(WebsocketConsumer):
                         game.player_action_draw_forced()
                         self.send_game_state_global({"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
                         game.begin_turn()
-                        cache.set("match_" + self.match_id, game, None)
+                        self.save_to_cache(game)
                         self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
                 # Si no hay contador de robo:
                 else:
@@ -286,7 +292,7 @@ class GameConsumer(WebsocketConsumer):
                             game.player_action_play(i)
                             self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
                             game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
+                            self.save_to_cache(game)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
                             break
                     # Si no puede jugar ninguna, roba dos cartas y termina su turno
@@ -294,7 +300,7 @@ class GameConsumer(WebsocketConsumer):
                         # Si la pila de cartas está vacía, termina el turno directamente
                         if len(game.drawPile) is 0 and len(game.playPile) is 0:
                             game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
+                            self.save_to_cache(game)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
                         else:
                             game.player_action_draw()
@@ -303,9 +309,9 @@ class GameConsumer(WebsocketConsumer):
                                 game.player_action_draw()
                                 self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
                             game.begin_turn()
-                            cache.set("match_" + self.match_id, game, None)
+                            self.save_to_cache(game)
                             self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                cache.set("match_" + self.match_id, game, None)
+                self.save_to_cache(game)
                 self.send_game_state_global()
         except Exception as e:
             print("Error con la IA: " + str(e))
@@ -314,7 +320,7 @@ class GameConsumer(WebsocketConsumer):
                 #game.begin_turn()
                 game.currentPlayer = game.nextPlayer
                 game.update_next_player(game.currentPlayer)
-                cache.set("match_" + self.match_id, game, None)
+                self.save_to_cache(game)
                 self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
             except Exception as e:
                 print("Fallback de IA ha fallado: " + str(e))
@@ -324,7 +330,7 @@ class GameConsumer(WebsocketConsumer):
     def trigger_draw_card(self):
         try:
             # Recupera la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
@@ -337,7 +343,7 @@ class GameConsumer(WebsocketConsumer):
                 game.player_action_draw_forced()
             else:
                 game.player_action_draw()
-            cache.set("match_" + self.match_id, game, None)
+            self.save_to_cache(game)
             # Le da el OK
             self.send_ok()
             # Actualiza a todos
@@ -353,7 +359,7 @@ class GameConsumer(WebsocketConsumer):
     def trigger_play_card(self, index):
         try:
             # Recupera la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
@@ -363,7 +369,7 @@ class GameConsumer(WebsocketConsumer):
             card = game.players[self.player_index].hand[index]
             # Intenta jugar la carta
             game.player_action_play(index)
-            cache.set("match_" + self.match_id, game, None)
+            self.save_to_cache(game)
             # Le da el OK
             self.send_ok()
             # Envía el efecto de DIVINE si se aplica
@@ -386,7 +392,7 @@ class GameConsumer(WebsocketConsumer):
                 self.send_game_state_global(self.send_game_state_global({"type": "game_won", "player": username}))
                 game.status = GameStatus.ENDING
                 game.points[self.player_index] = game.points[self.player_index] + 1
-                cache.set("match_" + self.match_id, game, None)
+                self.save_to_cache(game)
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
@@ -395,14 +401,14 @@ class GameConsumer(WebsocketConsumer):
     def trigger_switch_effect(self, suit):
         try:
             # Recupera la partida
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
                 raise PumbaException("It's not your turn!")
             # Intenta hacer el efecto
             game.player_action_switch(Suit[suit])
-            cache.set("match_" + self.match_id, game, None)
+            self.save_to_cache(game)
             # Le da el OK
             self.send_ok()
             # Actualiza el estado de todos
@@ -438,7 +444,7 @@ class GameConsumer(WebsocketConsumer):
     def send_game_state(self, event = None, curgame = None, action = None):
         # Recupera el estado de juego
         if curgame is None:
-            game = cache.get(self.match_group_name)
+            game = self.retrieve_from_cache()
         else:
             game = curgame
         #print("Current: " + str(game.currentPlayer))
@@ -608,3 +614,33 @@ class GameConsumer(WebsocketConsumer):
             'type': 'notification',
             'message': message
         }))
+
+    def save_to_cache(self, game, timeout = None):
+        # Guarda la partida en la caché con un timeout
+        if timeout is None:
+            cache.set("match_" + self.match_id, game, 600)
+        else:
+            cache.set("match_" + self.match_id, game, timeout)
+
+    def retrieve_from_cache(self):
+        # Recuperamos la instancia de juego
+        result = cache.get(self.match_group_name, None)
+        # Si es None, el juego ha hecho timeout, por lo que nos desconectamos y borramos la partida
+        if result is None:
+            self.game_timed_out = True
+            self.send(text_data=json.dumps({
+                'type': 'disconnect',
+                'reason': 'Match timed out due to inactivity'
+            }))
+            try:
+                GameKey.objects.get(key = self.match_id).delete()
+            except:
+                pass
+            # Dejamos el canal
+            async_to_sync(self.channel_layer.group_discard)(
+                self.match_group_name,
+                self.channel_name
+            )
+            self.close()
+        else:
+            return result

@@ -267,8 +267,6 @@ function drawSwitchButtons() {
         switchButtons_group = scene.add.group()
     }
 
-    1920 - 150, 500
-
     var espadas = scene.add.sprite(1920 - 500 +50, 350, "button-espadas");
     var bastos = scene.add.sprite(1920 - 375 +50, 350, "button-bastos");
     var copas = scene.add.sprite(1920 - 250 +50, 350, "button-copas");
