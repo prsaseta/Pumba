@@ -129,8 +129,13 @@ function drawYourHand() {
         }
         function playCardFromHand(child, suit, number) {
             return function() {
+                // Si tiene un efecto SWITCH, ponemos los botones
                 if (number == "SWITCH" || (number == "COPY" && game_state["last_effect"] == "SWITCH")){
-                    drawSwitchButtons()
+                    // Nos saltamos el efecto si la intenta jugar pero no puede
+                    // TODO Saltarse el efecto si se ha jugado un rey
+                    if (!(game_state["last_effect"] != number && game_state["last_suit"] != suit)) {
+                        drawSwitchButtons()
+                    }
                 }
                 gameSocket.send(JSON.stringify({
                     'type': "play_card",
