@@ -296,10 +296,18 @@ class GameConsumer(WebsocketConsumer):
                                 cannot_play = False
                                 game.player_action_play(i)
                                 self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                                game.begin_turn()
-                                self.save_to_cache(game)
-                                self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                                break
+                                # Si se queda sin cartas gana
+                                if len(game.players[game.currentPlayer].hand) == 0:
+                                    self.send_game_state_global(self.send_game_state_global({"type": "game_won", "player": ai_player.name}))
+                                    game.status = GameStatus.ENDING
+                                    #game.points[self.player_index] = game.points[self.player_index] + 1
+                                    self.save_to_cache(game)
+                                    break
+                                else:
+                                    game.begin_turn()
+                                    self.save_to_cache(game)
+                                    self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                                    break
                         # Si no puede jugar ninguna, roba dos cartas y termina su turno
                         if cannot_play:
                             # Si la pila de cartas está vacía, termina el turno directamente
