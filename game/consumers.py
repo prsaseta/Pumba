@@ -83,7 +83,7 @@ class GameConsumer(WebsocketConsumer):
                 # Nos aseguramos de que el que la ha creado es el host
                 if game.host.id is not user.id:
                     raise ValueError("The host is not the same as the logged user!")
-                key = GameKey(key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount, capacity = game.maxPlayerCount - game.aiCount)
+                key = GameKey(status = game.status.name, key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount, capacity = game.maxPlayerCount - game.aiCount)
                 key.save()
                 key.users.add(user)
                 key.save()
@@ -218,6 +218,10 @@ class GameConsumer(WebsocketConsumer):
             if game.host.id is not user.id:
                 raise PumbaException("You are not the host!")
             else:
+                # Actualiza el estado en la BD
+                key = GameKey.objects.get(key = self.match_id)
+                key.status = "PLAYING"
+                key.save()
                 # Hace el procesamiento de empezar la partida
                 game.begin_match()
                 self.save_to_cache(game)
@@ -302,6 +306,10 @@ class GameConsumer(WebsocketConsumer):
                                     game.status = GameStatus.ENDING
                                     #game.points[self.player_index] = game.points[self.player_index] + 1
                                     self.save_to_cache(game)
+                                    # Actualiza el estado en la BD
+                                    key = GameKey.objects.get(key = self.match_id)
+                                    key.status = "ENDING"
+                                    key.save()
                                     break
                                 else:
                                     game.begin_turn()
@@ -406,6 +414,10 @@ class GameConsumer(WebsocketConsumer):
                 game.status = GameStatus.ENDING
                 game.points[self.player_index] = game.points[self.player_index] + 1
                 self.save_to_cache(game)
+                # Actualiza el estado en la BD
+                key = GameKey.objects.get(key = self.match_id)
+                key.status = "ENDING"
+                key.save()
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:

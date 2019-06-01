@@ -6,12 +6,18 @@ from django.contrib.auth.models import User
 
 # Representa una partida en memoria
 class GameKey(models.Model):
+    STATUSES = (
+        ("WAITING", "WAITING"),
+        ("PLAYING", "PLAYING"),
+        ("ENDING", "ENDING")
+    )
     key = models.CharField(max_length = 100)
     name = models.CharField(max_length = 200)
     users = models.ManyToManyField(User)
     max_users = models.PositiveSmallIntegerField()
     current_users = models.PositiveSmallIntegerField()
     ai_count = models.PositiveSmallIntegerField()
+    status = models.CharField(max_length = 20, choices = STATUSES)
     # Esto se rellena a mano, y es max_users - ai_count
     # Sirve básicamente para la lista de matchmaking
     capacity = models.PositiveSmallIntegerField()
