@@ -20,6 +20,9 @@
     // Cuál es nuestro player index
     var playerIndex = {{ your_id }}
 
+    // Cómo nos llamamos nosotros
+    var playerName = undefined
+
     // Websocket al servidor
     var gameSocket = undefined
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
@@ -44,7 +47,8 @@
         },
         scene: {
             preload: preload,
-            create: create
+            create: create,
+            update: update
         },
         scale: {
             parent: 'game-div',
@@ -66,6 +70,17 @@
     var game_state = {
 
     }
+
+    // Cola de estados de juego
+    var game_state_queue = [
+        undefined
+    ]
+
+    // Apunta al último estado de juego procesado
+    var game_state_index = 0
+
+    // Si ya se está procesando la cola de estados o no
+    var game_state_processing = false
 
     // Grupos de sprites y texto
     var piles_group = undefined
@@ -144,6 +159,8 @@
         this.load.image('button-oros', "{% static 'button-oros.png' %}")
         this.load.image('button-copas', "{% static 'button-copas.png' %}")
 
+        this.load.audio('your-turn-sound', "{% static 'your-turn.mp3' %}")
+
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
     }
@@ -195,12 +212,24 @@
 
     }
 
+    // Se ejecuta cada frame
+    function update() {
+        // Comprueba si hay estados pendientes de mostrar en pantalla, e inicia el proceso si es necesario
+        //console.log("Estados: " + game_state_queue.length + ", índice: " + game_state_index + ", procesando: " + game_state_processing)
+        if (game_state_processing == false && game_state_index < game_state_queue.length - 1){
+            startPlayingStates()
+        }
+    }
+
     // Se ejecuta cuando la partida termina
     function gameWon(player) {
         if (game_state["host"] == playerIndex) {
             drawBeginMatch()
         }
         drawWinner(player)
+        // Reseteamos también la cola de estados para liberar memoria
+        game_state_queue = [undefined]
+        game_state_index = 0
     }
 
     function updateDisplay() {
@@ -238,6 +267,83 @@ function appendToChatbox(message) {
     }
 }
 
+// Actualiza el estado de juego, pintando en pantalla lo que haga falta
+// data: Paquete de datos recibido del servidor. Tiene un estado y una acción que ha llevado a dicho estado.
+function updateGameFromState(data) {
+    // El primer estado es "undefined"
+    if (data == undefined){
+        return undefined;
+    }
+    //console.log("Mostrando en pantalla estado: ")
+    //console.log(data['action'])
+    game_state["game_status"] = data["game_status"]
+    game_state["last_suit"] = data["last_suit"]
+    game_state["last_number"] = data["last_number"]
+    game_state["last_effect"] = data["last_effect"]
+    game_state["current_player"] = data["current_player"]
+    game_state["next_player"] = data["next_player"]
+    game_state["turn_direction"] = data["turn_direction"]
+    game_state["draw_counter"] = data["draw_counter"]
+    game_state["draw_pile"] = data["draw_pile"]
+    game_state["play_pile"] = data["play_pile"]
+    game_state["hand"] = data["hand"]
+    game_state["players"] = data["players"]
+    game_state["host"] = data["host"]
+
+    // Recuperamos nuestro nombre
+    if (playerName == undefined) {
+        playerName = data["players"][playerIndex][0]
+    }
+
+    // Si se está esperando a empezar, muestra el botón para empezar la partida
+    if (game_state["game_status"] != "PLAYING" && data["host"] == playerIndex) {
+        drawBeginMatch()
+    }
+    // Si no se está esperando, actualiza el HUD
+    if (game_state["game_status"] != "WAITING") {
+        updateDisplay()
+    }
+}
+
+// Añade un estado a la cola de estados, a actualizar a la más pronta conveniencia
+// data: Paquete de datos recibido del servidor. Tiene un estado y una acción que ha llevado a dicho estado.
+function addToStateQueue(data) {
+    game_state_queue.push(data)
+    //console.log("Añadido a la cola: " + String(data['action']))
+    //console.log("Cola actual: " + String(game_state_queue))
+}
+
+// Se llama a esta función cuando haya un estado pendiente de mostrar en la pantalla
+// Inicia la animación correspondiente al siguiente estado y actualiza el pointer
+function startPlayingStates(){
+    // Marcamos que ya estamos procesando los estados, para no pisarnos
+    game_state_processing = true
+    // Nos aseguramos de que haya algo que hacer
+    if (game_state_index < game_state_queue.length -1) {  
+        // Recogemos el estado siguiente
+        game_state_index += 1
+        var gstate = game_state_queue[game_state_index]
+
+        // TODO Hacemos animaciones y eso
+        if (gstate != undefined) {
+            if(gstate['action'] != undefined){
+                // TODO Ponemos la animación correspondiente
+                if (gstate['current_player'] == playerIndex && gstate['action']['type'] == "end_turn" && gstate['action']['player'] != playerName){
+                    scene.sound.play("your-turn-sound")
+                }
+            }
+        }
+        
+        // Repintamos la UI
+        updateGameFromState(gstate)
+        // Guardamos que hemos terminado
+        game_state_processing = false
+    } else {
+        // Si no había nada que hacer...
+        game_state_processing = false
+    }
+}
+
     // Hace lo que haga falta cuando llega un mensaje
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
@@ -246,27 +352,8 @@ function appendToChatbox(message) {
         var message_type = data['type']
         // Actualiza el estado de juego
         if (message_type == "game_state"){
-            game_state["game_status"] = data["game_status"]
-            game_state["last_suit"] = data["last_suit"]
-            game_state["last_number"] = data["last_number"]
-            game_state["last_effect"] = data["last_effect"]
-            game_state["current_player"] = data["current_player"]
-            game_state["next_player"] = data["next_player"]
-            game_state["turn_direction"] = data["turn_direction"]
-            game_state["draw_counter"] = data["draw_counter"]
-            game_state["draw_pile"] = data["draw_pile"]
-            game_state["play_pile"] = data["play_pile"]
-            game_state["hand"] = data["hand"]
-            game_state["players"] = data["players"]
-            game_state["host"] = data["host"]
-            // Actualiza el display
-            if (game_state["game_status"] != "PLAYING" && data["host"] == playerIndex) {
-                drawBeginMatch()
-            }
-            if (game_state["game_status"] != "WAITING") {
-                updateDisplay()
-            }
-
+            //console.log(data)
+            addToStateQueue(data)
             // Recuperamos lo que ha pasado y lo ponemos en el chat
             if (data['action'] != undefined) {
                 var action = data['action']
@@ -299,37 +386,38 @@ function appendToChatbox(message) {
                 }
                 appendToChatbox(cbox_message)
             }
+        // Paquete es un mensaje de chat
         } else if (message_type == "chat_message"){
             var message = data['message'];
             var username = data['username'];
             var composed = username + ": " + message
             appendToChatbox(composed);
-        // Notificación de sistema
+        // Paquete es una notificación de sistema
         } else if (message_type == "notification"){
             appendToChatbox(data['message'])
+        // Paquete es un error
         } else if (message_type == "error") {
             appendToChatbox("Error: " + data['message'])
-        // ACK del servidor (ahora mismo no hace nada)
+        // Paquete es un ACK del servidor (no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
-        // Desconexión del socket
+        // Paquete es una notificación de que el socket se está cerrando desde el servidor
         } else if (message_type == "disconnect") {
             document.getElementById("error-msg").innerHTML += data['reason'] + "<br>"
-        // Para cuando se usa DIVINE
+        // Paquete es una notificación por usaar la carta DIVINE
         } else if (message_type == "divination") {
-            console.log("Entra en el divine")
             appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
             drawDivine(data['card']['suit'], data['card']['number'])
         }
     }
 
     // Qué hacer si se cierra el websocket de forma inesperada
+    // Muestra un mensaje en la parte de arriba de la pantalla
     gameSocket.onclose = function(e) {
         document.getElementById("error-msg").innerHTML += "The connection to the server was lost<br>"
     };
 
-    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida
-    // al servidor
+    // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida al servidor
     gameSocket.onopen = function(event) {
         gameSocket.send(JSON.stringify({
             'type': "game_state"
