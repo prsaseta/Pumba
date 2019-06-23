@@ -1,4 +1,4 @@
-from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
 from django.core.cache import cache
@@ -7,6 +7,7 @@ from game.exceptions import PumbaException
 import traceback
 from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType
 from game.models import GameKey
+import time
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -157,7 +158,7 @@ class GameConsumer(WebsocketConsumer):
                 # Actualizamos a todos los jugadores
                 self.send_game_state_global()
                 # Antes de irse, hace jugar a la IA si es necesario
-                self.do_ai(game)
+                self.do_ai()
 
         # Dejamos el canal
         async_to_sync(self.channel_layer.group_discard)(
@@ -230,7 +231,7 @@ class GameConsumer(WebsocketConsumer):
                 # Actualiza el estado de todos
                 self.send_game_state_global({"type": "begin_match"})
                 # Si el primer jugador es una IA:
-                self.do_ai(game)
+                self.do_ai()
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
@@ -256,96 +257,102 @@ class GameConsumer(WebsocketConsumer):
             # O bien que el send_game_state_global envíe opcionalmente el game actual o bien
             # decirle al frontend que ignore los estados de la IA (apaño mierder)
             # TODO Si la IA no puede robar cartas porque no hay cartas en la pila se queda pillada
-            self.do_ai(game)
+            self.do_ai()
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
             self.send_error_msg_generic(e)
 
+    def ai_send_game_state_global(self, game, action):
+        self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
+
     # Inicia un loop que hace jugar a la IA hasta el siguiente jugador humano
     # Llamar cada vez que sea posible que el jugador actual sea una IA
-    def do_ai(self, game):
+    def do_ai(self):
+        # Cuando se "envía" un mensaje aquí (send_game_state_global) se pone en cola y se envía cuando se ha terminado de procesar la IA
+        # Por eso, hay que pasarle por parámetro el estado concreto que se quiere, o si no todos los mensajes cogen el último estado.
+        game = self.retrieve_from_cache()
         if game.status is GameStatus.PLAYING:
-            try:
                 while game.players[game.currentPlayer].controller.isAI:
-                    ai_player = game.players[game.currentPlayer]
-                    ai_hand = game.players[game.currentPlayer].hand
-                    # Si hay contador de robo, o refleja o roba.
-                    if game.drawCounter > 0:
-                        needs_draw = True
-                        for i in range(len(ai_hand)):
-                            card = ai_hand[i]
-                            if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
-                                game.player_action_play(i)
-                                self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                                game.begin_turn()
-                                self.save_to_cache(game)
-                                self.send_game_state_global({"type": "end_turn", "player": ai_player.name, "ai": True})
-                                needs_draw = False
-                                break
-                        if (needs_draw):
-                            forced_draw = game.drawCounter
-                            game.player_action_draw_forced()
-                            self.send_game_state_global({"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
-                            game.begin_turn()
-                            self.save_to_cache(game)
-                            self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                    # Si no hay contador de robo:
-                    else:
-                        # Busca una carta cualquiera que jugar
-                        cannot_play = True
-                        for i in range(len(ai_hand)):
-                            card = ai_hand[i]
-                            if card.suit is game.lastSuit or card.number is game.lastNumber:
-                                cannot_play = False
-                                game.player_action_play(i)
-                                self.send_game_state_global({"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                                # Si se queda sin cartas gana
-                                if len(game.players[game.currentPlayer].hand) == 0:
-                                    self.send_game_state_global(self.send_game_state_global({"type": "game_won", "player": ai_player.name}))
-                                    game.status = GameStatus.ENDING
-                                    #game.points[self.player_index] = game.points[self.player_index] + 1
-                                    self.save_to_cache(game)
-                                    # Actualiza el estado en la BD
-                                    key = GameKey.objects.get(key = self.match_id)
-                                    key.status = "ENDING"
-                                    key.save()
-                                    break
-                                else:
+                    try:
+                        ai_player = game.players[game.currentPlayer]
+                        ai_hand = game.players[game.currentPlayer].hand
+                        # Si hay contador de robo, o refleja o roba.
+                        if game.drawCounter > 0:
+                            needs_draw = True
+                            for i in range(len(ai_hand)):
+                                card = ai_hand[i]
+                                if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
+                                    game.player_action_play(i)
+                                    self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
                                     game.begin_turn()
                                     self.save_to_cache(game)
-                                    self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
+                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name, "ai": True})
+                                    needs_draw = False
                                     break
-                        # Si no puede jugar ninguna, roba dos cartas y termina su turno
-                        if cannot_play:
-                            # Si la pila de cartas está vacía, termina el turno directamente
-                            if len(game.drawPile) is 0 and len(game.playPile) is 0:
+                            if (needs_draw):
+                                forced_draw = game.drawCounter
+                                game.player_action_draw_forced()
+                                self.ai_send_game_state_global(game, {"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
                                 game.begin_turn()
                                 self.save_to_cache(game)
-                                self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                            else:
-                                game.player_action_draw()
-                                self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                                if not (len(game.drawPile) is 0 and len(game.playPile) is 0):
+                                self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+                        # Si no hay contador de robo:
+                        else:
+                            # Busca una carta cualquiera que jugar
+                            cannot_play = True
+                            for i in range(len(ai_hand)):
+                                card = ai_hand[i]
+                                if card.suit is game.lastSuit or card.number is game.lastNumber:
+                                    cannot_play = False
+                                    game.player_action_play(i)
+                                    self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                                    # Si se queda sin cartas gana
+                                    if len(game.players[game.currentPlayer].hand) == 0:
+                                        self.ai_send_game_state_global(game, {"type": "game_won", "player": ai_player.name})
+                                        game.status = GameStatus.ENDING
+                                        #game.points[self.player_index] = game.points[self.player_index] + 1
+                                        self.save_to_cache(game)
+                                        # Actualiza el estado en la BD
+                                        key = GameKey.objects.get(key = self.match_id)
+                                        key.status = "ENDING"
+                                        key.save()
+                                        break
+                                    else:
+                                        game.begin_turn()
+                                        self.save_to_cache(game)
+                                        self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+                                        break
+                            # Si no puede jugar ninguna, roba dos cartas y termina su turno
+                            if cannot_play:
+                                # Si la pila de cartas está vacía, termina el turno directamente
+                                if len(game.drawPile) is 0 and len(game.playPile) is 0:
+                                    game.begin_turn()
+                                    self.save_to_cache(game)
+                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+                                else:
                                     game.player_action_draw()
-                                    self.send_game_state_global({"type": "draw_card", "player": ai_player.name})
-                                game.begin_turn()
-                                self.save_to_cache(game)
-                                self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                    self.save_to_cache(game)
-                    self.send_game_state_global()
-            except Exception as e:
-                print("Error con la IA: " + str(e))
-                traceback.print_tb(e.__traceback__)
-                try:
-                    #game.begin_turn()
-                    game.currentPlayer = game.nextPlayer
-                    game.update_next_player(game.currentPlayer)
-                    self.save_to_cache(game)
-                    self.send_game_state_global({"type": "end_turn", "player": ai_player.name})
-                except Exception as e:
-                    print("Fallback de IA ha fallado: " + str(e))
-                    traceback.print_tb(e.__traceback__)
+                                    self.ai_send_game_state_global(game, {"type": "draw_card", "player": ai_player.name})
+                                    if not (len(game.drawPile) is 0 and len(game.playPile) is 0):
+                                        game.player_action_draw()
+                                        self.ai_send_game_state_global(game, {"type": "draw_card", "player": ai_player.name})
+                                    game.begin_turn()
+                                    self.save_to_cache(game)
+                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+                        self.save_to_cache(game)
+                        self.ai_send_game_state_global(game, None)
+                    except Exception as e:
+                        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>Error con la IA: " + str(e))
+                        traceback.print_tb(e.__traceback__)
+                        try:
+                            #game.begin_turn()
+                            game.currentPlayer = game.nextPlayer
+                            game.update_next_player(game.currentPlayer)
+                            self.save_to_cache(game)
+                            self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+                        except Exception as e:
+                            print("Fallback de IA ha fallado: " + str(e))
+                            traceback.print_tb(e.__traceback__)
             
 
     def trigger_draw_card(self):
@@ -466,16 +473,29 @@ class GameConsumer(WebsocketConsumer):
         }))
 
     # Envía el estado de juego al cliente actual
-    def send_game_state(self, event = None, curgame = None, action = None):
-        # Recupera el estado de juego
-        if curgame is None:
-            game = self.retrieve_from_cache()
+    def send_game_state(self, event = None, action = None):
+        if event is not None:
+            curgame = event.get('curgame', None)
         else:
-            game = curgame
-        #print("Current: " + str(game.currentPlayer))
-        #print("Next: " + str(game.nextPlayer))
-        #print("Draw: " + str(len(game.drawPile)))
-        #print("Play: " + str(len(game.playPile)))
+            curgame = None
+
+        # Si no se le ha enviado un estado concreto que enviar:
+        if curgame is None:
+            # Recupera el estado de juego
+            game = self.retrieve_from_cache()
+            # Se intenta obtener del evento que ha ejecutado esta función o como parámetro la acción que ha llevado a este nuevo estado de juego
+            if event is not None and event.get('action', None) is not None and action is None:
+                action = event.get('action')
+            # Se codifica, se pasa a JSON y se envía
+            self.send(text_data=json.dumps(self.encode_game_state(game, action)))
+        # Si se le ha enviado un estado concreto por parámetro:
+        else:
+            self.send(text_data=json.dumps(curgame))
+ 
+    # Dado un estado de juego (y opcionalmente una acción), devuelve un diccionario con los datos bien codificados listos para enviar por parámetro o convertir a JSON
+    def encode_game_state(self, game = None, action = None):
+        if game is None:
+            game = self.retrieve_from_cache
         # Recupera las cartas de la mano
         cards = game.players[self.player_index].hand
         hand = []
@@ -489,7 +509,6 @@ class GameConsumer(WebsocketConsumer):
         # 2: Estado de conexión (Conectado, IA)
         players = []
         for player in game.players:
-            #players.append([player.name, len(player.hand), player.controller.isAI, 0])
             players.append([player.name, len(player.hand), player.controller.isAI, game.points[game.players.index(player)]])
 
         # Quién es el host actual de la partida
@@ -522,118 +541,39 @@ class GameConsumer(WebsocketConsumer):
         else:
             turndir = TurnDirection(game.turnDirection).name,
 
-        # Se intenta obtener del evento que ha ejecutado esta función o como parámetro la
-        # acción que ha llevado a este nuevo estado de juego
-        # Si no hay evento ni acción por parámetro:
-        if action and event is None:
-            self.send(text_data=json.dumps({
-                'type': 'game_state',
-                'game_status': GameStatus(game.status).name,
-                'last_suit': lastsuit,
-                'last_number': lastnumber,
-                'last_effect': lasteffect,
-                'current_player': game.currentPlayer,
-                'next_player': game.nextPlayer,
-                'turn_direction': turndir,
-                'draw_counter': game.drawCounter,
-                'draw_pile': len(game.drawPile),
-                'play_pile': len(game.playPile),
-                'hand': hand,
-                'players': players,
-                'host': host
-            }))
-        elif action is not None:
-            self.send(text_data=json.dumps({
-                'type': 'game_state',
-                'game_status': GameStatus(game.status).name,
-                'last_suit': lastsuit,
-                'last_number': lastnumber,
-                'last_effect': lasteffect,
-                'current_player': game.currentPlayer,
-                'next_player': game.nextPlayer,
-                'turn_direction': turndir,
-                'draw_counter': game.drawCounter,
-                'draw_pile': len(game.drawPile),
-                'play_pile': len(game.playPile),
-                'hand': hand,
-                'players': players,
-                'host': host,
-                'action': action
-            }))
-        elif event is not None:
-            if event.get('action', None) is not None:
-                self.send(text_data=json.dumps({
-                    'type': 'game_state',
-                    'game_status': GameStatus(game.status).name,
-                    'last_suit': lastsuit,
-                    'last_number': lastnumber,
-                    'last_effect': lasteffect,
-                    'current_player': game.currentPlayer,
-                    'next_player': game.nextPlayer,
-                    'turn_direction': turndir,
-                    'draw_counter': game.drawCounter,
-                    'draw_pile': len(game.drawPile),
-                    'play_pile': len(game.playPile),
-                    'hand': hand,
-                    'players': players,
-                    'host': host,
-                    'action': event.get('action')
-                }))
-            else:
-                self.send(text_data=json.dumps({
-                    'type': 'game_state',
-                    'game_status': GameStatus(game.status).name,
-                    'last_suit': lastsuit,
-                    'last_number': lastnumber,
-                    'last_effect': lasteffect,
-                    'current_player': game.currentPlayer,
-                    'next_player': game.nextPlayer,
-                    'turn_direction': turndir,
-                    'draw_counter': game.drawCounter,
-                    'draw_pile': len(game.drawPile),
-                    'play_pile': len(game.playPile),
-                    'hand': hand,
-                    'players': players,
-                    'host': host
-                }))
-        else:
-            self.send(text_data=json.dumps({
-                'type': 'game_state',
-                'game_status': GameStatus(game.status).name,
-                'last_suit': lastsuit,
-                'last_number': lastnumber,
-                'last_effect': lasteffect,
-                'current_player': game.currentPlayer,
-                'next_player': game.nextPlayer,
-                'turn_direction': turndir,
-                'draw_counter': game.drawCounter,
-                'draw_pile': len(game.drawPile),
-                'play_pile': len(game.playPile),
-                'hand': hand,
-                'players': players,
-                'host': host
-            }))
+        
+            
+        return {
+            'type': 'game_state',
+            'game_status': GameStatus(game.status).name,
+            'last_suit': lastsuit,
+            'last_number': lastnumber,
+            'last_effect': lasteffect,
+            'current_player': game.currentPlayer,
+            'next_player': game.nextPlayer,
+            'turn_direction': turndir,
+            'draw_counter': game.drawCounter,
+            'draw_pile': len(game.drawPile),
+            'play_pile': len(game.playPile),
+            'hand': hand,
+            'players': players,
+            'host': host,
+            'action': action
+        }
 
-    
+
     # Envía el nuevo estado de juego a todos los jugadores conectados
-    def send_game_state_global(self, action = None):
-        # Action es la acción que ha llevado a este nuevo estado de juego (robar carta,
-        # terminar turno, etc) codificada en JSON
-        if action is None:
-            async_to_sync(self.channel_layer.group_send)(
-                self.match_group_name,
-                {
-                    'type': 'send_game_state'
-                }
-            )
-        else:
-            async_to_sync(self.channel_layer.group_send)(
-                self.match_group_name,
-                {
-                    'type': 'send_game_state',
-                    'action': action
-                }
-            )
+    def send_game_state_global(self, action = None, game = None):
+        # Action es la acción que ha llevado a este nuevo estado de juego (robar carta, terminar turno, etc) codificada en JSON
+        #print("Mandando curgame global: " + str(game))
+        async_to_sync(self.channel_layer.group_send)(
+            self.match_group_name,
+            {
+                'type': 'send_game_state',
+                'action': action,
+                'curgame': game
+            }
+        )
     
     # Envía un mensaje de notificación a todos los clientes
     def send_notification_global(self, text):
