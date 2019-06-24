@@ -229,7 +229,7 @@ class GameConsumer(WebsocketConsumer):
                 # Le da el OK
                 self.send_ok()
                 # Actualiza el estado de todos
-                self.send_game_state_global({"type": "begin_match"})
+                self.queue_send_game_state_global(game, {"type": "begin_match"})
                 # Si el primer jugador es una IA:
                 self.do_ai()
         except PumbaException as e:
@@ -251,12 +251,8 @@ class GameConsumer(WebsocketConsumer):
             # Le da el OK
             self.send_ok()
             # Actualiza el estado de todos
-            self.send_game_state_global({"type": "end_turn", "player": username})
+            self.queue_send_game_state_global(game, {"type": "end_turn", "player": username})
             # Si el siguiente jugador es una IA, que haga cosas de IA
-            # TODO No se envían los game states bien cuando los envía la IA
-            # O bien que el send_game_state_global envíe opcionalmente el game actual o bien
-            # decirle al frontend que ignore los estados de la IA (apaño mierder)
-            # TODO Si la IA no puede robar cartas porque no hay cartas en la pila se queda pillada
             self.do_ai()
         except PumbaException as e:
             self.send_error_msg(e)
@@ -264,6 +260,9 @@ class GameConsumer(WebsocketConsumer):
             self.send_error_msg_generic(e)
 
     def ai_send_game_state_global(self, game, action):
+        self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
+
+    def queue_send_game_state_global(self, game, action):
         self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
 
     # Inicia un loop que hace jugar a la IA hasta el siguiente jugador humano
@@ -340,7 +339,7 @@ class GameConsumer(WebsocketConsumer):
                                     self.save_to_cache(game)
                                     self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
                         self.save_to_cache(game)
-                        self.ai_send_game_state_global(game, None)
+                        #self.ai_send_game_state_global(game, None)
                     except Exception as e:
                         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>Error con la IA: " + str(e))
                         traceback.print_tb(e.__traceback__)
@@ -376,9 +375,9 @@ class GameConsumer(WebsocketConsumer):
             self.send_ok()
             # Actualiza a todos
             if forced_draw is not None:
-                self.send_game_state_global({"type": "draw_card_forced", "player": username, "number": forced_draw})
+                self.queue_send_game_state_global(game, {"type": "draw_card_forced", "player": username, "number": forced_draw})
             else:
-                self.send_game_state_global({"type": "draw_card", "player": username})
+                self.queue_send_game_state_global(game, {"type": "draw_card", "player": username})
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
@@ -414,10 +413,10 @@ class GameConsumer(WebsocketConsumer):
                     'card': None
                 }))
             # Actualiza el estado de todos
-            self.send_game_state_global(self.send_game_state_global({"type": "play_card", "player": username, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}}))
+            self.queue_send_game_state_global(game, {"type": "play_card", "player": username, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
             # Comprueba si se ha ganado la partida
             if len(game.players[self.player_index].hand) == 0:
-                self.send_game_state_global(self.send_game_state_global({"type": "game_won", "player": username}))
+                self.queue_send_game_state_global(game, {"type": "game_won", "player": username})
                 game.status = GameStatus.ENDING
                 game.points[self.player_index] = game.points[self.player_index] + 1
                 self.save_to_cache(game)
@@ -444,7 +443,7 @@ class GameConsumer(WebsocketConsumer):
             # Le da el OK
             self.send_ok()
             # Actualiza el estado de todos
-            self.send_game_state_global({"type": "switch", "player": username, "suit": Suit[suit].name})
+            self.queue_send_game_state_global(game, {"type": "switch", "player": username, "suit": Suit[suit].name})
         except PumbaException as e:
             self.send_error_msg(e)
         except Exception as e:
