@@ -8,6 +8,8 @@ import traceback
 from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType
 from game.models import GameKey
 import time
+import random
+import copy
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -260,7 +262,8 @@ class GameConsumer(WebsocketConsumer):
             self.send_error_msg_generic(e)
 
     def ai_send_game_state_global(self, game, action):
-        self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
+        #self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
+        self.queue_send_game_state_global(game, action)
 
     def queue_send_game_state_global(self, game, action):
         self.send_game_state_global(action = None, game = self.encode_game_state(game, action))
@@ -472,12 +475,14 @@ class GameConsumer(WebsocketConsumer):
         }))
 
     # Envía el estado de juego al cliente actual
-    def send_game_state(self, event = None, action = None):
+    def send_game_state(self, event = None):
         if event is not None:
-            curgame = event.get('curgame', None)
+            curgame = copy.deepcopy(event.get('curgame', None))
         else:
             curgame = None
 
+        
+        
         # Si no se le ha enviado un estado concreto que enviar:
         if curgame is None:
             # Recupera el estado de juego
@@ -485,22 +490,40 @@ class GameConsumer(WebsocketConsumer):
             # Se intenta obtener del evento que ha ejecutado esta función o como parámetro la acción que ha llevado a este nuevo estado de juego
             if event is not None and event.get('action', None) is not None and action is None:
                 action = event.get('action')
+            else:
+                action = None
             # Se codifica, se pasa a JSON y se envía
-            self.send(text_data=json.dumps(self.encode_game_state(game, action)))
+            curgame = self.encode_game_state(game, action)
+            curgame['hand'] = curgame.get('hands', None)[self.player_index]
+            curgame.pop("hands", None)
+            self.send(text_data=json.dumps(curgame))
         # Si se le ha enviado un estado concreto por parámetro:
         else:
+            curgame['hand'] = curgame.get('hands', None)[self.player_index]
+            curgame.pop("hands", None)
             self.send(text_data=json.dumps(curgame))
  
-    # Dado un estado de juego (y opcionalmente una acción), devuelve un diccionario con los datos bien codificados listos para enviar por parámetro o convertir a JSON
-    def encode_game_state(self, game = None, action = None):
-        if game is None:
-            game = self.retrieve_from_cache
+
+    def get_player_hand(self, game, index):
         # Recupera las cartas de la mano
-        cards = game.players[self.player_index].hand
+        cards = game.players[index].hand
         hand = []
         # Las transforma a un formato más cómodo
         for card in cards:
             hand.append([Suit(card.suit).name, CardNumber(card.number).name])
+        return hand
+
+    # Dado un estado de juego (y opcionalmente una acción), devuelve un diccionario con los datos bien codificados listos para enviar por parámetro o convertir a JSON
+    # NOTA: No incluye la mano actual, si no las manos de todos los jugadores. Antes de enviarlo, en el consumidor concreto, hay que eliminar esos datos y poner la mano concreta
+    # Esta no es la mejor arquitectura para hacerlo, pero básicamente estos arreglos han llegado muy tarde
+    def encode_game_state(self, game = None, action = None):
+        if game is None:
+            game = self.retrieve_from_cache
+        # Recupera las cartas de las manos
+        hands = []
+        for i in range(len(game.players)):
+            hand = self.get_player_hand(game, i)
+            hands.append(hand)
 
         # Lista de jugadores
         # 0: Nickname
@@ -540,9 +563,7 @@ class GameConsumer(WebsocketConsumer):
         else:
             turndir = TurnDirection(game.turnDirection).name,
 
-        
-            
-        return {
+        res = {
             'type': 'game_state',
             'game_status': GameStatus(game.status).name,
             'last_suit': lastsuit,
@@ -554,17 +575,19 @@ class GameConsumer(WebsocketConsumer):
             'draw_counter': game.drawCounter,
             'draw_pile': len(game.drawPile),
             'play_pile': len(game.playPile),
-            'hand': hand,
+            'hands': hands,
             'players': players,
             'host': host,
-            'action': action
+            'action': action,
+            'random': random.random()
         }
+
+        return res
 
 
     # Envía el nuevo estado de juego a todos los jugadores conectados
     def send_game_state_global(self, action = None, game = None):
         # Action es la acción que ha llevado a este nuevo estado de juego (robar carta, terminar turno, etc) codificada en JSON
-        #print("Mandando curgame global: " + str(game))
         async_to_sync(self.channel_layer.group_send)(
             self.match_group_name,
             {
