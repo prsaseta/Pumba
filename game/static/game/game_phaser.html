@@ -162,6 +162,8 @@
         this.load.image('button-copas', "{% static 'button-copas.png' %}")
 
         this.load.audio('your-turn-sound', "{% static 'your-turn.mp3' %}")
+        this.load.audio('enemy-turn-sound', "{% static 'enemy-turn.wav' %}")
+        this.load.audio('play-card-sound', "{% static 'play-card.wav' %}")
 
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
@@ -220,6 +222,10 @@
         //console.log("Estados: " + game_state_queue.length + ", índice: " + game_state_index + ", procesando: " + game_state_processing)
         if (game_state_processing == false && game_state_index < game_state_queue.length - 1){
             startPlayingStates()
+        } else {
+            if(game_state_queue.length - game_state_index - 1 > 0) {
+                console.log("ERROR")
+            }
         }
     }
 
@@ -339,6 +345,15 @@ function startPlayingStates(){
             } else {
                 if (gstate['action']['type'] == "end_turn"){
                     animateBeginTurn(gstate)
+                } else if (gstate['action']['type'] == "game_won"){
+                    // Repintamos la UI
+                    updateGameFromState(gstate)
+                    // Ponemos al ganador
+                    gameWon(gstate['action']['player'])
+                    // Guardamos que hemos terminado
+                    game_state_processing = false
+                } else if (gstate['action']['type'] == "play_card") {
+                    animatePlayCard(gstate)
                 } else {
                     // Repintamos la UI
                     updateGameFromState(gstate)
@@ -347,6 +362,8 @@ function startPlayingStates(){
                 }
             }
         }
+        console.log("Procesado índice: " + game_state_index)
+        console.log("Nº de estados: " + game_state_queue.length)
     } else {
         // Si no había nada que hacer...
         game_state_processing = false
@@ -387,7 +404,9 @@ function startPlayingStates(){
                         break;
                     case "game_won":
                         cbox_message = action['player'] + " wins the match!"
-                        gameWon(action['player'])
+                        console.log(game_state_queue)
+                        console.log(game_state_index)
+                        //gameWon(action['player'])
                         break;
                     case "switch":
                         cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."

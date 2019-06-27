@@ -81,7 +81,8 @@ function drawUI() {
 }
 
 // Pone en pantalla tu mano actual, borrando lo que hubiere
-function drawYourHand() {
+// Permite pasarle un game state custom; si no, coge el estado actual
+function drawYourHand(gamestate = undefined) {
     // Buscamos el grupo, y si no está, lo borramos
     if (hand_group != undefined) {
         hand_group.clear(true, true)
@@ -89,11 +90,15 @@ function drawYourHand() {
         hand_group = scene.add.group()
     }
 
+    if (gamestate == undefined) {
+        gamestate = game_state
+    }
+
     // Creamos los sprites
     // Centro alrededor del cual se ponen las cartas
     var center = (1920 / 2) + 254 / 2
     // Número de cartas que hay que distribuir
-    var card_count = game_state["hand"].length
+    var card_count = gamestate["hand"].length
     // Ángulo alrededor del cual distribuir las cartas
     var angle = 45
     // Radio horizontal alrededor del cual distribuir las cartas (pixeles)
@@ -101,7 +106,7 @@ function drawYourHand() {
     radius = Math.min(radius, 1920)
     for (i = 0; i < card_count; i++){
         // Carta actual
-        var card = game_state["hand"][i]
+        var card = gamestate["hand"][i]
         var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
         disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
         disp.setDepth(i)
@@ -130,10 +135,10 @@ function drawYourHand() {
         function playCardFromHand(child, suit, number) {
             return function() {
                 // Si tiene un efecto SWITCH, ponemos los botones
-                if (number == "SWITCH" || (number == "COPY" && game_state["last_effect"] == "SWITCH")){
+                if (number == "SWITCH" || (number == "COPY" && gamestate["last_effect"] == "SWITCH")){
                     // Nos saltamos el efecto si la intenta jugar pero no puede
                     // TODO Saltarse el efecto si se ha jugado un rey
-                    if (!(game_state["last_effect"] != number && game_state["last_suit"] != suit)) {
+                    if (!(gamestate["last_effect"] != number && gamestate["last_suit"] != suit)) {
                         drawSwitchButtons()
                     }
                 }
