@@ -53,30 +53,59 @@ function drawWinner(player) {
 function drawUI() {
     if (ui_group == undefined) {
         ui_group = scene.add.group()
-        var end_turn = scene.add.sprite(1920 - 150, 500, "end-turn")
-        var draw_card = scene.add.sprite(1920 - 350, 500, "draw-card")
+    } else {
+        ui_group.clear(true, true)
+    }
 
-        end_turn.setInteractive()
-        draw_card.setInteractive()
+    var end_turn = scene.add.sprite(1920 - 150, 500, "end-turn")
+    var draw_card = scene.add.sprite(1920 - 350, 500, "draw-card")
 
-        ui_group.add(end_turn)
-        ui_group.add(draw_card)
+    end_turn.setInteractive()
+    draw_card.setInteractive()
 
-        function endTurn() {
-            deleteSwitchButtons()
-            gameSocket.send(JSON.stringify({
-                'type': "begin_turn"
-            }));
-        }
+    ui_group.add(end_turn)
+    ui_group.add(draw_card)
 
-        function drawCard() {
-            gameSocket.send(JSON.stringify({
-                'type': "draw_card"
-            }));
-        }
+    function endTurn() {
+        deleteSwitchButtons()
+        gameSocket.send(JSON.stringify({
+            'type': "begin_turn"
+        }));
+    }
 
-        end_turn.on("pointerup", endTurn)
-        draw_card.on("pointerup", drawCard)
+    function drawCard() {
+        gameSocket.send(JSON.stringify({
+            'type': "draw_card"
+        }));
+    }
+
+    end_turn.on("pointerup", endTurn)
+    draw_card.on("pointerup", drawCard)
+
+    // Tintamos los botones si no se pueden usar
+    // Le ponemos que en hover se vean más grandes también
+    if (!can_end_turn) {
+        end_turn.setTint(0xaaaaaa)
+    } else {
+        end_turn.setTint(0xffffff)
+        end_turn.on("pointerover", function() {
+            end_turn.setScale(1.5)
+        })
+        end_turn.on("pointerout", function() {
+            end_turn.setScale(1)
+        })
+    }
+
+    if (drawn_this_turn > 1){
+        draw_card.setTint(0xaaaaaa)
+    } else {
+        draw_card.setTint(0xffffff)
+        draw_card.on("pointerover", function() {
+            draw_card.setScale(1.5)
+        })
+        draw_card.on("pointerout", function() {
+            draw_card.setScale(1)
+        })
     }
 }
 

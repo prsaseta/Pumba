@@ -98,6 +98,16 @@
     var divine_group = undefined
     var chat_group = undefined
 
+    // Variables varias de la UI
+    // Si ha robado este turno
+    // 0: No (puede robar otra)
+    // 1: Una vez (puede robar otra)
+    // 2: Dos o más (No puede robar más)
+    var drawn_this_turn = 0
+    // Si puede terminar el turno o no
+    // Verdadero o falso
+    var can_end_turn = false
+
     // Mensajes de chat
     var chat_messages = []
     // Cuánto scroll se ha hecho
@@ -164,6 +174,8 @@
         this.load.audio('your-turn-sound', "{% static 'your-turn.mp3' %}")
         this.load.audio('enemy-turn-sound', "{% static 'enemy-turn.wav' %}")
         this.load.audio('play-card-sound', "{% static 'play-card.wav' %}")
+        this.load.audio('draw-card-sound', "{% static 'draw-card.wav' %}")
+        this.load.audio('game-won-sound', "{% static 'game-won.wav' %}")
 
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
@@ -235,6 +247,7 @@
             drawBeginMatch()
         }
         drawWinner(player)
+        scene.sound.play("game-won-sound")
         // Reseteamos también la cola de estados para liberar memoria
         game_state_queue = [undefined]
         game_state_index = 0
@@ -331,9 +344,8 @@ function startPlayingStates(){
         // Recogemos el estado siguiente
         game_state_index += 1
         var gstate = game_state_queue[game_state_index]
-        console.log(gstate)
 
-        // TODO Hacemos animaciones y eso
+        // Hacemos animaciones y eso
         if (gstate != undefined) {
             // Si no ha pasado nada, repintamos directamente
             if (gstate['action'] == undefined) {
@@ -341,11 +353,34 @@ function startPlayingStates(){
                 updateGameFromState(gstate)
                 // Guardamos que hemos terminado
                 game_state_processing = false
-            // TODO Ponemos la animación correspondiente a lo que ha pasado
+            // Ponemos la animación correspondiente a lo que ha pasado
             } else {
                 if (gstate['action']['type'] == "end_turn"){
+                    // Actualizamos el estado de los botones de la UI
+                    // Si el jugador actual ha empezado su turno:
+                    if (gstate['current_player'] == playerIndex) {
+                        drawn_this_turn = 0
+                        can_end_turn = false
+                    // Si acaba de terminarlo:
+                    } else {
+                        drawn_this_turn = 2
+                        can_end_turn = false
+                    }
+                    // Animación de fin de turno
                     animateBeginTurn(gstate)
-                } else if (gstate['action']['type'] == "game_won"){
+                } else if (gstate['action']['type'] == "begin_match") {
+                    if (gstate['current_player'] == playerIndex) {
+                        drawn_this_turn = 0
+                        can_end_turn = false
+                    } else {
+                        drawn_this_turn = 2
+                        can_end_turn = false
+                    }
+                    // Repintamos la UI
+                    updateGameFromState(gstate)
+                    // Guardamos que hemos terminado
+                    game_state_processing = false
+                } else if (gstate['action']['type'] == "game_won") {
                     // Repintamos la UI
                     updateGameFromState(gstate)
                     // Ponemos al ganador
@@ -353,13 +388,38 @@ function startPlayingStates(){
                     // Guardamos que hemos terminado
                     game_state_processing = false
                 } else if (gstate['action']['type'] == "play_card") {
+                    // Actualizamos el estado de los botones de la UI
+                    // Si el jugador actual ha jugado carta:
+                    if (gstate['current_player'] == playerIndex) {
+                        can_end_turn = true
+                        drawn_this_turn = 2
+                    }
                     animatePlayCard(gstate)
+                } else if (gstate['action']['type'] == "draw_card"){
+                    // Actualizamos el estado de los botones de la UI
+                    // Si el jugador actual ha robado carta:
+                    if (gstate['current_player'] == playerIndex) {
+                        drawn_this_turn += 1
+                        if (drawn_this_turn > 1) {
+                            can_end_turn = true
+                        }
+                    }
+                    animateDrawCard(gstate)
+                } else if (gstate['action']['type'] == "draw_card_forced"){
+                    // Actualizamos el estado de los botones de la UI
+                    // Si el jugador actual ha robado carta forzadamente:
+                    if (gstate['current_player'] == playerIndex) {
+                        drawn_this_turn = 2
+                        can_end_turn = true
+                    }
+                    animateDrawCardForced(gstate)
                 } else {
                     // Repintamos la UI
                     updateGameFromState(gstate)
                     // Guardamos que hemos terminado
                     game_state_processing = false
                 }
+                console.log(drawn_this_turn)
             }
         }
         console.log("Procesado índice: " + game_state_index)
@@ -378,7 +438,6 @@ function startPlayingStates(){
         var message_type = data['type']
         // Actualiza el estado de juego
         if (message_type == "game_state"){
-            //console.log(data)
             addToStateQueue(data)
             // Recuperamos lo que ha pasado y lo ponemos en el chat
             if (data['action'] != undefined) {

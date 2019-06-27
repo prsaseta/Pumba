@@ -58,8 +58,10 @@ function animatePlayCard(gstate) {
     // Creamos un sprite fuera de la pantalla en la misma X que la pila de juego
     var cardsp = scene.add.sprite(-254 / 2 + 1920 / 2, -500, gstate['action']['card']['suit'] + "-" + gstate['action']['card']['number'])
     // Si la hemos jugado nosotros, repintamos nuestra mano del tirón para que no se vea feo
+    // También repintamos los botones de la UI
     if (gstate['current_player'] == playerIndex) {
         drawYourHand(gstate)
+        drawUI()
     }
     // Ponemos un sonido
     scene.sound.play("play-card-sound")
@@ -82,4 +84,22 @@ function animatePlayCard(gstate) {
             game_state_processing = false
         }
     })
+}
+
+function animateDrawCard(gstate) {
+    // Ponemos un sonido y listo
+    scene.sound.play("draw-card-sound")
+    // Repintamos la UI
+    updateGameFromState(gstate)
+    // Guardamos que hemos terminado
+    game_state_processing = false
+}
+
+function animateDrawCardForced(gstate) {
+    // Ponemos un sonido y listo
+    scene.sound.play("draw-card-sound")
+    // Repintamos la UI
+    updateGameFromState(gstate)
+    // Guardamos que hemos terminado
+    game_state_processing = false
 }
