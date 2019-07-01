@@ -236,7 +236,7 @@
             startPlayingStates()
         } else {
             if(game_state_queue.length - game_state_index - 1 > 0) {
-                console.log("ERROR")
+                //console.log("ERROR")
             }
         }
     }
@@ -393,6 +393,10 @@ function startPlayingStates(){
                     if (gstate['current_player'] == playerIndex) {
                         can_end_turn = true
                         drawn_this_turn = 2
+                        // Si la carta es un SWITCH, además dibujamos los botones de SWITCH
+                        if (gstate['last_effect'] == 'SWITCH') {
+                            drawSwitchButtons()
+                        }
                     }
                     animatePlayCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card"){
@@ -422,8 +426,8 @@ function startPlayingStates(){
                 console.log(drawn_this_turn)
             }
         }
-        console.log("Procesado índice: " + game_state_index)
-        console.log("Nº de estados: " + game_state_queue.length)
+        //console.log("Procesado índice: " + game_state_index)
+        //console.log("Nº de estados: " + game_state_queue.length)
     } else {
         // Si no había nada que hacer...
         game_state_processing = false
@@ -463,9 +467,6 @@ function startPlayingStates(){
                         break;
                     case "game_won":
                         cbox_message = action['player'] + " wins the match!"
-                        console.log(game_state_queue)
-                        console.log(game_state_index)
-                        //gameWon(action['player'])
                         break;
                     case "switch":
                         cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."

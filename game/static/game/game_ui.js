@@ -163,14 +163,6 @@ function drawYourHand(gamestate = undefined) {
         }
         function playCardFromHand(child, suit, number) {
             return function() {
-                // Si tiene un efecto SWITCH, ponemos los botones
-                if (number == "SWITCH" || (number == "COPY" && gamestate["last_effect"] == "SWITCH")){
-                    // Nos saltamos el efecto si la intenta jugar pero no puede
-                    // TODO Saltarse el efecto si se ha jugado un rey
-                    if (!(gamestate["last_effect"] != number && gamestate["last_suit"] != suit)) {
-                        drawSwitchButtons()
-                    }
-                }
                 gameSocket.send(JSON.stringify({
                     'type': "play_card",
                     'index': child.custom_var
@@ -180,31 +172,6 @@ function drawYourHand(gamestate = undefined) {
         child.on('pointerover',changeScale2(child))
         child.on('pointerout',changeScale1(child))
         child.on('pointerup',playCardFromHand(child, card[0], card[1]))
-    }
-}
-
-// Pone en pantalla los indicadores de otros jugadores
-function drawPlayersold(){
-    // Borramos lo que hubiera, si lo hay
-    if (players_group != undefined) {
-        players_group.clear(true, false)
-    } else {
-        players_group = scene.add.group()
-    }
-
-    var num_players = game_state["players"].length
-
-    for(i = 0; i < num_players; i++){
-        var text = game_state["players"][i][0] + " " + game_state["players"][i][1]
-        if (game_state["players"][i][2] == "True") {
-            text = "(AI) " + text
-        }
-        if (game_state["current_player"] == i) {
-            text = text + " | CURRENT"
-        }
-        var ptext = scene.add.text(20, 20 + i * 70, text, { fontFamily: 'Verdana', fontSize: 36 });
-        players_group.add(ptext)
-        //scene.add.text(100, 100 + i * 100 + 50, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 40 });
     }
 }
 
