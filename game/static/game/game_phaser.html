@@ -107,6 +107,12 @@
     // Si puede terminar el turno o no
     // Verdadero o falso
     var can_end_turn = false
+    // Si ha jugado un rey este turno
+    // Verdadero o falso
+    var has_played_king = false
+    // Si ha jugado una carta este turno
+    // Verdadero o falso
+    var has_played_card = false
 
     // Mensajes de chat
     var chat_messages = []
@@ -251,6 +257,11 @@
         // Reseteamos también la cola de estados para liberar memoria
         game_state_queue = [undefined]
         game_state_index = 0
+
+        has_played_card = false
+        has_played_king = false
+        can_end_turn = false
+        drawn_this_turn = 0
     }
 
     function updateDisplay() {
@@ -356,7 +367,7 @@ function startPlayingStates(){
             // Ponemos la animación correspondiente a lo que ha pasado
             } else {
                 if (gstate['action']['type'] == "end_turn"){
-                    // Actualizamos el estado de los botones de la UI
+                    // Actualizamos el estado de los botones de la UI y variables varias
                     // Si el jugador actual ha empezado su turno:
                     if (gstate['current_player'] == playerIndex) {
                         drawn_this_turn = 0
@@ -366,6 +377,8 @@ function startPlayingStates(){
                         drawn_this_turn = 2
                         can_end_turn = false
                     }
+                    has_played_king = false
+                    has_played_card = false
                     // Animación de fin de turno
                     animateBeginTurn(gstate)
                 } else if (gstate['action']['type'] == "begin_match") {
@@ -396,7 +409,11 @@ function startPlayingStates(){
                         // Si la carta es un SWITCH, además dibujamos los botones de SWITCH
                         if (gstate['last_effect'] == 'SWITCH') {
                             drawSwitchButtons()
+                        // Si ha jugado un rey, actualizamos la variable (para dibujar mejor cartas y cosas de la UI)
+                        } else if (gstate['last_effect'] == "KING") {
+                            has_played_king = true
                         }
+                        has_played_card = true
                     }
                     animatePlayCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card"){

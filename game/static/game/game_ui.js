@@ -136,6 +136,37 @@ function drawYourHand(gamestate = undefined) {
     for (i = 0; i < card_count; i++){
         // Carta actual
         var card = gamestate["hand"][i]
+        // Marcamos si la carta es jugable o no para destacarla visualmente
+        var can_be_played = undefined
+        
+        console.log(gamestate)
+        console.log(card)
+        // Comprobamos si hay contador de robo (y que no lo has reflejado): si lo hay, solamente marcamos ONE, TWO y COPY
+        if (gamestate['draw_counter'] != 0 && !has_played_card){
+            if (card[1] == "ONE" || card[1] == "TWO" || (card[1] == "COPY" && card[0] == gamestate["last_suit"])) {
+                can_be_played = true
+            } else {
+                can_be_played = false
+            }
+        // Si ha jugado un rey este turno, solamente marcamos las cartas que se puedan jugar
+        } else if (has_played_king) {
+            if (card[0] == gamestate["last_suit"]) {
+                can_be_played = true
+            } else {
+                can_be_played = false
+            }
+        // Si ha jugado una carta que no es rey, no puede jugar más
+        } else if (has_played_card) {
+            can_be_played = false
+        // Si no hay contador de robo y no está jugando un rey y no ha jugado carta, la marcamos si comparte número o palo con la última
+        } else {
+            if (card[1] == gamestate['last_number'] || card[0] == gamestate['last_suit']) {
+                can_be_played = true
+            } else {
+                can_be_played = false
+            }
+        }
+
         var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
         disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
         disp.setDepth(i)
@@ -143,6 +174,14 @@ function drawYourHand(gamestate = undefined) {
         // Se usa para ordenar la mano gráficamente y enviar comandos al servidor
         disp.custom_var = i
         hand_group.add(disp)
+
+        // Marcamos la carta dependiendo de su jugabilidad
+        if (can_be_played) {
+            // No hace nada
+        } else {
+            // La pone un poco gris
+            disp.setTint(0xaaaaaa)
+        }
 
         // Los muertos de JavaScript y su retraso con las funciones me cago en dios
         // Hace que al hacer mouseover en la carta la ponga más grande
