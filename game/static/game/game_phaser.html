@@ -114,6 +114,11 @@
     // Verdadero o falso
     var has_played_card = false
 
+    // Si se sabe la carta que hay encima de la biblioteca por DIVINE, se guarda aquí
+    var last_divined = undefined
+    // Si un jugador roba una carta divinada, la guardamos aquí (se inicia a array de arrays luego)
+    var players_divined = undefined
+
     // Mensajes de chat
     var chat_messages = []
     // Cuánto scroll se ha hecho
@@ -356,6 +361,14 @@ function startPlayingStates(){
         game_state_index += 1
         var gstate = game_state_queue[game_state_index]
 
+        // Hay que popular players_divined con el número de jugadores; en este sitio se ejecuta cuando empieza la partida y no cambia el número de jugadores
+        if (players_divined == undefined) {
+            players_divined = []
+            for(i = 0; i < gstate['players'].length; i++) {
+                players_divined.push([])
+            }
+        }
+
         // Hacemos animaciones y eso
         if (gstate != undefined) {
             // Si no ha pasado nada, repintamos directamente
@@ -398,6 +411,8 @@ function startPlayingStates(){
                     updateGameFromState(gstate)
                     // Ponemos al ganador
                     gameWon(gstate['action']['player'])
+                    // Vaciamos esto para la siguiente partida
+                    players_divined = undefined
                     // Guardamos que hemos terminado
                     game_state_processing = false
                 } else if (gstate['action']['type'] == "play_card") {
@@ -415,6 +430,15 @@ function startPlayingStates(){
                         }
                         has_played_card = true
                     }
+                    // Eliminamos la carta que sabíamos que tenía si la juega
+                    for (i = 0; i < players_divined[gstate['current_player']].length; i++){
+                        var ccard = players_divined[gstate['current_player']][i]
+                        if (gstate['action']['card']['suit'] == ccard['suit'] && gstate['action']['card']['number'] == ccard['number']) {
+                            players_divined[gstate['current_player']].splice(i, 1)
+                            break
+                        }
+                    }
+                    
                     animatePlayCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card"){
                     // Actualizamos el estado de los botones de la UI
@@ -425,6 +449,12 @@ function startPlayingStates(){
                             can_end_turn = true
                         }
                     }
+                    // Si sabíamos qué carta era, nos la apuntamos
+                    if (last_divined != undefined){
+                        players_divined[gstate['current_player']].push(last_divined)
+                        last_divined = undefined
+                        divine_group.clear(true, true)
+                    }
                     animateDrawCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card_forced"){
                     // Actualizamos el estado de los botones de la UI
@@ -433,6 +463,12 @@ function startPlayingStates(){
                         drawn_this_turn = 2
                         can_end_turn = true
                     }
+                    // Si sabíamos qué carta era, nos la apuntamos
+                    if (last_divined != undefined){
+                        players_divined[gstate['current_player']].push(last_divined)
+                        last_divined = undefined
+                        divine_group.clear(true, true)
+                    }
                     animateDrawCardForced(gstate)
                 } else {
                     // Repintamos la UI
@@ -440,9 +476,9 @@ function startPlayingStates(){
                     // Guardamos que hemos terminado
                     game_state_processing = false
                 }
-                console.log(drawn_this_turn)
             }
         }
+        console.log(players_divined)
         //console.log("Procesado índice: " + game_state_index)
         //console.log("Nº de estados: " + game_state_queue.length)
     } else {
@@ -509,9 +545,11 @@ function startPlayingStates(){
         // Paquete es una notificación de que el socket se está cerrando desde el servidor
         } else if (message_type == "disconnect") {
             document.getElementById("error-msg").innerHTML += data['reason'] + "<br>"
-        // Paquete es una notificación por usaar la carta DIVINE
+        // Paquete es una notificación por usar la carta DIVINE
         } else if (message_type == "divination") {
             appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+            // Nos guardamos cuál carta es aparte para mostrarla si alguien la roba
+            last_divined = data['card']
             drawDivine(data['card']['suit'], data['card']['number'])
         }
     }

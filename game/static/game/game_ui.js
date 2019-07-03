@@ -138,9 +138,7 @@ function drawYourHand(gamestate = undefined) {
         var card = gamestate["hand"][i]
         // Marcamos si la carta es jugable o no para destacarla visualmente
         var can_be_played = undefined
-        
-        console.log(gamestate)
-        console.log(card)
+
         // Comprobamos si hay contador de robo (y que no lo has reflejado): si lo hay, solamente marcamos ONE, TWO y COPY
         if (gamestate['draw_counter'] != 0 && !has_played_card){
             if (card[1] == "ONE" || card[1] == "TWO" || (card[1] == "COPY" && card[0] == gamestate["last_suit"])) {
@@ -253,7 +251,18 @@ function drawPlayers() {
                 ypos = ypos + 20
             }
             // Añadimos el sprite de la carta
-            var unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+            var unknown_card = undefined
+            // Si sabemos qué carta es por DIVINE (y no es de las nuestras), la pintamos
+            if (i == playerIndex) {
+                unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+            } else if (players_divined[i] != undefined && j < players_divined[i].length) {
+                var dcard = players_divined[i][j]
+                unknown_card = scene.add.sprite(xpos + j * 20, ypos, dcard['suit'] + "-" + dcard['number'])
+            // Si no, pintamos un cardback genérico
+            } else {
+                unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+            }
+            
             // La hacemos más pequeña
             unknown_card.setScale(0.15, 0.15)
             // La añadimos al grupo
