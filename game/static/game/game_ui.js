@@ -243,7 +243,9 @@ function drawPlayers() {
         players_group.add(ptext)
         var last_j = 0
         // Pintamos las cartas que tiene en la mano
-        for (j = 0; j < game_state["players"][i][1]; j++){
+        var z = 0
+        var maxi = game_state["players"][i][1]
+        for (j = 0; j < maxi; j++){
             // Posición y
             var ypos = 80
             // Si el jugador tiene un nombre largo y ocupa dos líneas, movemos las cartas un poco para abajo
@@ -253,10 +255,12 @@ function drawPlayers() {
             // Añadimos el sprite de la carta
             var unknown_card = undefined
             // Si sabemos qué carta es por DIVINE (y no es de las nuestras), la pintamos
+            var pvined = getPlayersDivined()
             if (i == playerIndex) {
                 unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
-            } else if (players_divined[i] != undefined && j < players_divined[i].length) {
-                var dcard = players_divined[i][j]
+            } else if (pvined[i] != undefined && j >  maxi - pvined[i].length - 1) {
+                var dcard = pvined[i][z]
+                z += 1
                 unknown_card = scene.add.sprite(xpos + j * 20, ypos, dcard['suit'] + "-" + dcard['number'])
             // Si no, pintamos un cardback genérico
             } else {
@@ -275,7 +279,7 @@ function drawPlayers() {
             }
         }
         // Pintamos aparte el número de cartas que tenga en mano
-        var cardn = scene.add.text(xpos + (last_j + 1) * 20, ypos, game_state["players"][i][1], { fontFamily: 'Verdana', fontSize: 24, align: 'right'});
+        var cardn = scene.add.text(xpos + (last_j + 1) * 20, ypos, maxi, { fontFamily: 'Verdana', fontSize: 24, align: 'right'});
         players_group.add(cardn)
     }
 }
