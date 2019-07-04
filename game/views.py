@@ -8,7 +8,7 @@ from game.exceptions import PumbaException
 from game.forms import MatchForm, FeedbackForm
 from game.models import GameKey, FeedbackMail
 import traceback
-from pumba.settings import FEEDBACK_MAIL_ADDRESS
+from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 
@@ -51,7 +51,7 @@ def join_match(request):
             key.delete()
             return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
-        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id})
+        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED})
     except Exception as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     
@@ -74,7 +74,7 @@ def create_match(request):
             except ValueError as e:
                 return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0})
+            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0, 'cheats': CHEATS_ENABLED})
         else:
             return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     else:

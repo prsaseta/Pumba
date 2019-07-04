@@ -482,7 +482,7 @@ function startPlayingStates(){
                 }
             }
         }
-        console.log(players_divined)
+        //console.log(players_divined)
         //console.log("Procesado índice: " + game_state_index)
         //console.log("Nº de estados: " + game_state_queue.length)
     } else {
@@ -556,6 +556,52 @@ function startPlayingStates(){
             last_divined = data['card']
             drawDivine(data['card']['suit'], data['card']['number'])
         }
+
+        {% if cheats %}
+        // Este script solamente existe si haces trampa.
+        // Captura el mensaje de información privilegiada (contiene las manos de todo el mundo)
+        if (message_type == "cheat_info") {
+            var hands = data['hands']
+            // Actualizamos el select de jugadores
+            try {
+                document.getElementById("select-player").innerHTML = ""
+                for (i = 0; i < hands.length; i++) {
+                    var option = document.createElement("option")
+                    option.value = i
+                    option.innerText = game_state["players"][i][0]
+                    document.getElementById("select-player").appendChild(option)
+                }
+            } catch (error) {
+                console.log(error)
+            }
+            // Reseteamos el div
+            document.getElementById("cheat-div").innerHTML = ""
+            // Por cada mano, dibujamos las cartas
+            for (i = 0; i < hands.length; i++){
+                var div = document.createElement("ul")
+                var hand = hands[i]
+                for (j = 0; j < hand.length; j++) {
+                    // Carta particular
+                    var line = document.createElement("li")
+                    line.innerText = hand[j][0] + " " + hand[j][1]
+                    // Input para eliminarla
+                    var input = document.createElement("button")
+                    input.innerText = "Remove"
+                    // Llama a una función con i, j para determinar el onclick, que es una función que depende de los parámetros de la primera función
+                    // #JustJavascriptThings
+                    input.onclick = function (pindex, cindex) {
+                        return function() {
+                            removeThisCard(pindex, cindex)
+                        }
+                    }(i, j)
+                    line.appendChild(input)
+                    // Añadimos la línea al padre
+                    div.appendChild(line)
+                }
+                document.getElementById("cheat-div").appendChild(div)
+            }
+        }
+        {% endif %}
     }
 
     // Qué hacer si se cierra el websocket de forma inesperada
@@ -569,7 +615,100 @@ function startPlayingStates(){
         gameSocket.send(JSON.stringify({
             'type': "game_state"
         }));
+
+        {% if cheats %}
+
+        gameSocket.send(JSON.stringify({
+            'type': "debug"
+        }));
+
+        {% endif %}
     }
 </script>
+
+{% if cheats %}
+
+<script>
+function requestPrivilegedInfo(){
+    gameSocket.send(JSON.stringify({
+            'type': "debug"
+    }));
+}
+function removeThisCard(pindex, cindex) {
+    gameSocket.send(JSON.stringify({
+            'type': "debug",
+            'cheat': "remove_card",
+            'player_index': pindex,
+            'card_index': cindex
+    }));
+}
+
+function addCard() {
+    var select_suit = document.getElementById("select-suit")
+    var suit = select_suit.options[select_suit.selectedIndex].value;
+
+    var select_number = document.getElementById("select-number")
+    var number = select_number.options[select_number.selectedIndex].value;
+
+    var select_player = document.getElementById("select-player")
+    var player = select_player.options[select_player.selectedIndex].value;
+
+    gameSocket.send(JSON.stringify({
+            'type': "debug",
+            'cheat': "add_card",
+            'suit': suit,
+            'number': number,
+            'player': player
+    }));
+}
+
+function changeSuit() {
+    var se = document.getElementById("select-suit");
+    var str = se.options[se.selectedIndex].value;
+    gameSocket.send(JSON.stringify({
+            'type': "debug",
+            'cheat': "change_suit",
+            'suit': str,
+    }));
+}
+
+function changeNumber() {
+    var se = document.getElementById("select-number");
+    var str = se.options[se.selectedIndex].value;
+    gameSocket.send(JSON.stringify({
+            'type': "debug",
+            'cheat': "change_number",
+            'number': str,
+    }));
+}
+</script>
+
+<input type = "button" value="Refresh" onclick="requestPrivilegedInfo()"><br>
+<input type="button" value="Change suit" onclick="changeSuit()"><input type="button" value="Change number" onclick="changeNumber()"><input type="button" value="Add card" onclick="addCard()"><br>
+
+<select id="select-suit">
+    <option value="BASTOS">Bastos</option>
+    <option value="ESPADAS">Espadas</option>
+    <option value="COPAS">Copas</option>
+    <option value="OROS">Oros</option>
+</select>
+
+<select id="select-number">
+        <option value="ONE">One</option>
+        <option value="TWO">Two</option>
+        <option value="COPY">Copy</option>
+        <option value="DIVINE">Divine</option>
+        <option value="FLIP">Flip</option>
+        <option value="SWITCH">Switch</option>
+        <option value="JUMP">Jump</option>
+        <option value="KING">King</option>
+</select>
+
+<select id = "select-player">
+
+</select>
+
+<div id = "cheat-div"></div>
+{% endif %}
 
 {% endblock %}

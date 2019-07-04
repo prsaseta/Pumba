@@ -5,11 +5,12 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist 
 from game.exceptions import PumbaException
 import traceback
-from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType
+from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType, Card
 from game.models import GameKey
 import time
 import random
 import copy
+from pumba.settings import CHEATS_ENABLED
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -191,6 +192,65 @@ class GameConsumer(WebsocketConsumer):
             self.trigger_play_card(text_data_json['index'])
         elif pkgtype == "switch_effect":
             self.trigger_switch_effect(text_data_json['switch'])
+        elif pkgtype == "debug":
+            self.cheat(text_data_json)
+
+    # Te permite hacer trampas para debugear
+    def cheat(self, message):
+        try:
+            # Comprobamos que las trampas están activadas
+            if not CHEATS_ENABLED:
+                return None
+            cheat = message.get('cheat', None)
+            game = self.retrieve_from_cache()
+            # Añade una carta arbitraria a la mano dado un Suit y un Number
+            if cheat == "add_card":
+                card = Card(Suit[message['suit']], CardNumber[message['number']])
+                game.players[int(message['player'])].hand.append(card)
+                self.save_to_cache(game)
+            # Elimina la carta i del jugador j
+            elif cheat == "remove_card":
+                player_index = message["player_index"]
+                card_index = message["card_index"]
+                game.players[player_index].hand.pop(card_index)
+                self.save_to_cache(game)
+            # Cambia el palo actual
+            elif cheat == "change_suit":
+                suit = message['suit']
+                suit = Suit[suit]
+                game.lastSuit = suit
+                self.save_to_cache(game)
+            # Cambia el número actual y el último efecto
+            elif cheat == "change_number":
+                number = message['number']
+                number = CardNumber[number]
+                game.lastNumber = number
+                if number == CardNumber.COPY:
+                    game.lastEffect = CardNumber.NONE
+                else:
+                    game.lastEffect = number
+                self.save_to_cache(game)
+
+            # Actualizamos información privilegiada y enviamos el estado a todos
+            self.send_privileged_info()
+            self.queue_send_game_state_global(game, None)
+        except Exception as e:
+            print(e)
+            traceback.print_tb(e.__traceback__)
+
+    # Envía las manos de TODOS los jugadores. Para hacer trampas.
+    def send_privileged_info(self):
+        game = self.retrieve_from_cache()
+
+        hands = []
+        for i in range(len(game.players)):
+            hand = self.get_player_hand(game, i)
+            hands.append(hand)
+
+        self.send(text_data=json.dumps({
+            'type': 'cheat_info',
+            'hands': hands
+        }))
 
     def trigger_chat_message(self, text, username):
         # Reenvía mensaje de chat a todos los canales, incluyéndose a sí mismo
@@ -480,9 +540,6 @@ class GameConsumer(WebsocketConsumer):
             curgame = copy.deepcopy(event.get('curgame', None))
         else:
             curgame = None
-
-        
-        
         # Si no se le ha enviado un estado concreto que enviar:
         if curgame is None:
             # Recupera el estado de juego
@@ -518,7 +575,7 @@ class GameConsumer(WebsocketConsumer):
     # Esta no es la mejor arquitectura para hacerlo, pero básicamente estos arreglos han llegado muy tarde
     def encode_game_state(self, game = None, action = None):
         if game is None:
-            game = self.retrieve_from_cache
+            game = self.retrieve_from_cache()
         # Recupera las cartas de las manos
         hands = []
         for i in range(len(game.players)):
