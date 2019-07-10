@@ -10,6 +10,8 @@
 
 <script src = "{% static 'game/game_anims.js' %}"></script>
 
+<script src = "{% static 'game/game_states.js' %}"></script>
+
 <div id="error-msg" class="error"></div>
 
 <div id="game-div"></div>
@@ -20,7 +22,7 @@
     var roomName = "{{ id }}";
 
     // Cuál es nuestro player index
-    var playerIndex = {{ your_id }}
+    var playerIndex = {{ your_id }};
 
     // Cómo nos llamamos nosotros
     var playerName = undefined
@@ -303,6 +305,7 @@
 
 <script>
 
+// Pone un mensaje de chat en el div de chat
 function appendToChatbox(message) {
     // Chatbox de phaser
     try {
@@ -312,6 +315,12 @@ function appendToChatbox(message) {
     } catch(err) {
         console.log(err)
     }
+}
+
+// Pone un registro de algo que ha pasado en el historial
+function appendToRecord(message) {
+    // De momento solamente lo pone en la chatbox y listo
+    appendToChatbox(message)
 }
 
 // Actualiza el estado de juego, pintando en pantalla lo que haga falta
@@ -382,98 +391,21 @@ function startPlayingStates(){
             // Ponemos la animación correspondiente a lo que ha pasado
             } else {
                 if (gstate['action']['type'] == "end_turn"){
-                    // Actualizamos el estado de los botones de la UI y variables varias
-                    // Si el jugador actual ha empezado su turno:
-                    if (gstate['current_player'] == playerIndex) {
-                        drawn_this_turn = 0
-                        can_end_turn = false
-                    // Si acaba de terminarlo:
-                    } else {
-                        drawn_this_turn = 2
-                        can_end_turn = false
-                    }
-                    has_played_king = false
-                    has_played_card = false
-                    // Animación de fin de turno
-                    animateBeginTurn(gstate)
+                    processEndTurn(gstate)
                 } else if (gstate['action']['type'] == "begin_match") {
-                    if (gstate['current_player'] == playerIndex) {
-                        drawn_this_turn = 0
-                        can_end_turn = false
-                    } else {
-                        drawn_this_turn = 2
-                        can_end_turn = false
-                    }
-                    // Repintamos la UI
-                    updateGameFromState(gstate)
-                    // Guardamos que hemos terminado
-                    game_state_processing = false
+                    processBeginMatch(gstate)
                 } else if (gstate['action']['type'] == "game_won") {
-                    // Repintamos la UI
-                    updateGameFromState(gstate)
-                    // Ponemos al ganador
-                    gameWon(gstate['action']['player'])
-                    // Vaciamos esto para la siguiente partida
-                    players_divined = undefined
-                    // Guardamos que hemos terminado
-                    game_state_processing = false
+                    processGameWon(gstate)
                 } else if (gstate['action']['type'] == "play_card") {
-                    // Actualizamos el estado de los botones de la UI
-                    // Si el jugador actual ha jugado carta:
-                    if (gstate['current_player'] == playerIndex) {
-                        can_end_turn = true
-                        drawn_this_turn = 2
-                        // Si la carta es un SWITCH, además dibujamos los botones de SWITCH
-                        if (gstate['last_effect'] == 'SWITCH') {
-                            drawSwitchButtons()
-                        // Si ha jugado un rey, actualizamos la variable (para dibujar mejor cartas y cosas de la UI)
-                        } else if (gstate['last_effect'] == "KING") {
-                            has_played_king = true
-                        }
-                        has_played_card = true
-                    }
-                    // Eliminamos la carta que sabíamos que tenía si la juega
-                    var pvined = getPlayersDivined()
-                    for (i = 0; i < pvined[gstate['current_player']].length; i++){
-                        var ccard = pvined[gstate['current_player']][i]
-                        if (gstate['action']['card']['suit'] == ccard['suit'] && gstate['action']['card']['number'] == ccard['number']) {
-                            pvined[gstate['current_player']].splice(i, 1)
-                            break
-                        }
-                    }
-                    animatePlayCard(gstate)
+                    processPlayCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card"){
-                    // Actualizamos el estado de los botones de la UI
-                    // Si el jugador actual ha robado carta:
-                    if (gstate['current_player'] == playerIndex) {
-                        drawn_this_turn += 1
-                        if (drawn_this_turn > 1) {
-                            can_end_turn = true
-                        }
-                    }
-                    // Si sabíamos qué carta era, nos la apuntamos
-                    if (last_divined != undefined){
-                        var pvined = getPlayersDivined()
-                        pvined[gstate['current_player']].push(last_divined)
-                        last_divined = undefined
-                        divine_group.clear(true, true)
-                    }
-                    animateDrawCard(gstate)
+                    processDrawCard(gstate)
                 } else if (gstate['action']['type'] == "draw_card_forced"){
-                    // Actualizamos el estado de los botones de la UI
-                    // Si el jugador actual ha robado carta forzadamente:
-                    if (gstate['current_player'] == playerIndex) {
-                        drawn_this_turn = 2
-                        can_end_turn = true
-                    }
-                    // Si sabíamos qué carta era, nos la apuntamos
-                    if (last_divined != undefined){
-                        var pvined = getPlayersDivined()
-                        pvined[gstate['current_player']].push(last_divined)
-                        last_divined = undefined
-                        divine_group.clear(true, true)
-                    }
-                    animateDrawCardForced(gstate)
+                    processDrawCardForced(gstate)
+                } else if (gstate['action']['type'] == "switch") {
+                    processSwitch(gstate)
+                // Si ha llegado una acción desconocida, repintamos y listo
+                // Esto no debería pasar nunca, es un failsafe
                 } else {
                     // Repintamos la UI
                     updateGameFromState(gstate)
@@ -482,11 +414,9 @@ function startPlayingStates(){
                 }
             }
         }
-        //console.log(players_divined)
-        //console.log("Procesado índice: " + game_state_index)
-        //console.log("Nº de estados: " + game_state_queue.length)
     } else {
         // Si no había nada que hacer...
+        // Esto no debería ejecutarse, pero no hace daño dejarlo
         game_state_processing = false
     }
 }
@@ -506,30 +436,20 @@ function startPlayingStates(){
                 var cbox_message = undefined
                 switch(String(action['type'])) {
                     case "begin_match":
-                        cbox_message = "The match has begun!"
-                        // Borramos el botón para empezar la partida
-                        deleteBeginMatch()
                         break;
                     case "end_turn":
-                        cbox_message = "Player " + action['player'] + " ends their turn."
                         break;
                     case "draw_card":
-                        cbox_message = "Player " + action['player'] + " draws a card."
                         break;
                     case "draw_card_forced":
-                        cbox_message = "Player " + action['player'] + " draws " + action['number'] + " cards and resets the counter."
                         break;
                     case "play_card":
-                        cbox_message = "Player " + action['player'] + " plays a " + action['card']['number'] + " of " + action['card']['suit'] + "."
                         break;
                     case "game_won":
-                        cbox_message = action['player'] + " wins the match!"
                         break;
                     case "switch":
-                        cbox_message = "Player " + action['player'] + " changes the current suit to " + action['suit'] + "."
                         break;
                 }
-                appendToChatbox(cbox_message)
             }
         // Paquete es un mensaje de chat
         } else if (message_type == "chat_message"){
@@ -551,7 +471,7 @@ function startPlayingStates(){
             document.getElementById("error-msg").innerHTML += data['reason'] + "<br>"
         // Paquete es una notificación por usar la carta DIVINE
         } else if (message_type == "divination") {
-            appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
+            //appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
             // Nos guardamos cuál carta es aparte para mostrarla si alguien la roba
             last_divined = data['card']
             drawDivine(data['card']['suit'], data['card']['number'])

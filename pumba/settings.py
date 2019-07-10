@@ -26,7 +26,7 @@ SECRET_KEY = 'imc8remwl2vmevm**i34+($!u5=dt7sn_=&p_-$3rq$k5c#opk'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CHEATS_ENABLED = False
+CHEATS_ENABLED = True
 
 ALLOWED_HOSTS = []
 
