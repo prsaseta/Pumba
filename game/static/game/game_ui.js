@@ -1,3 +1,11 @@
+// Recibido un porcentaje, devuelve los píxeles
+function calculateCoordsX(x) {
+    return x * game.scale.baseSize._width
+}
+function calculateCoordsY(y) {
+    return y * game.scale.baseSize._height
+}
+
 // Pone el botón para empezar la partida
 function drawBeginMatch() {
     if (beginMatch_group == undefined) {

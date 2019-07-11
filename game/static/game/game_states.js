@@ -90,6 +90,24 @@ function processDrawCardForced(gstate) {
     animateDrawCardForced(gstate)
 }
 
+// Se ejecuta cuando la partida termina
+// Dibuja el ganador en pantalla y el botón para reiniciar la partida (si eres el host)
+function gameWon(player) {
+    if (game_state["host"] == playerIndex) {
+        drawBeginMatch()
+    }
+    drawWinner(player)
+    scene.sound.play("game-won-sound")
+    // Reseteamos también la cola de estados para liberar memoria
+    game_state_queue = [undefined]
+    game_state_index = 0
+
+    has_played_card = false
+    has_played_king = false
+    can_end_turn = false
+    drawn_this_turn = 0
+}
+
 function processGameWon(gstate) {
     // Repintamos la UI
     updateGameFromState(gstate)
@@ -147,4 +165,102 @@ function processSwitch(gstate) {
 
     // Guardamos que hemos terminado
     game_state_processing = false
+}
+
+// Pinta TODO de nuevo
+function updateDisplay() {
+    drawUI()
+    drawYourHand()
+    drawPlayers()
+    drawPiles()
+    drawDrawCounter()
+    drawTurnDirection()
+}
+
+// Actualiza el estado de juego, pintando en pantalla lo que haga falta
+// data: Paquete de datos recibido del servidor. Tiene un estado y una acción que ha llevado a dicho estado.
+function updateGameFromState(data) {
+    // El primer estado es "undefined"
+    if (data == undefined){
+        return undefined;
+    }
+    game_state["game_status"] = data["game_status"]
+    game_state["last_suit"] = data["last_suit"]
+    game_state["last_number"] = data["last_number"]
+    game_state["last_effect"] = data["last_effect"]
+    game_state["current_player"] = data["current_player"]
+    game_state["next_player"] = data["next_player"]
+    game_state["turn_direction"] = data["turn_direction"]
+    game_state["draw_counter"] = data["draw_counter"]
+    game_state["draw_pile"] = data["draw_pile"]
+    game_state["play_pile"] = data["play_pile"]
+    game_state["hand"] = data["hand"]
+    game_state["players"] = data["players"]
+    game_state["host"] = data["host"]
+
+    // Recuperamos nuestro nombre
+    if (playerName == undefined) {
+        playerName = data["players"][playerIndex][0]
+    }
+
+    // Si se está esperando a empezar, muestra el botón para empezar la partida
+    if (game_state["game_status"] != "PLAYING" && data["host"] == playerIndex) {
+        drawBeginMatch()
+    }
+    // Si no se está esperando, actualiza el HUD
+    if (game_state["game_status"] != "WAITING") {
+        updateDisplay()
+    }
+}
+
+// Se llama a esta función cuando haya un estado pendiente de mostrar en la pantalla
+// Inicia la animación correspondiente al siguiente estado y actualiza el pointer
+function startPlayingStates(){
+    // Marcamos que ya estamos procesando los estados, para no pisarnos
+    game_state_processing = true
+    // Nos aseguramos de que haya algo que hacer
+    if (game_state_index < game_state_queue.length -1) {  
+        // Recogemos el estado siguiente
+        game_state_index += 1
+        var gstate = game_state_queue[game_state_index]
+
+        // Hacemos animaciones y eso
+        if (gstate != undefined) {
+            // Si no ha pasado nada, repintamos directamente
+            if (gstate['action'] == undefined) {
+                // Repintamos la UI
+                updateGameFromState(gstate)
+                // Guardamos que hemos terminado
+                game_state_processing = false
+            // Ponemos la animación correspondiente a lo que ha pasado
+            } else {
+                if (gstate['action']['type'] == "end_turn"){
+                    processEndTurn(gstate)
+                } else if (gstate['action']['type'] == "begin_match") {
+                    processBeginMatch(gstate)
+                } else if (gstate['action']['type'] == "game_won") {
+                    processGameWon(gstate)
+                } else if (gstate['action']['type'] == "play_card") {
+                    processPlayCard(gstate)
+                } else if (gstate['action']['type'] == "draw_card"){
+                    processDrawCard(gstate)
+                } else if (gstate['action']['type'] == "draw_card_forced"){
+                    processDrawCardForced(gstate)
+                } else if (gstate['action']['type'] == "switch") {
+                    processSwitch(gstate)
+                // Si ha llegado una acción desconocida, repintamos y listo
+                // Esto no debería pasar nunca, es un failsafe
+                } else {
+                    // Repintamos la UI
+                    updateGameFromState(gstate)
+                    // Guardamos que hemos terminado
+                    game_state_processing = false
+                }
+            }
+        }
+    } else {
+        // Si no había nada que hacer...
+        // Esto no debería ejecutarse, pero no hace daño dejarlo
+        game_state_processing = false
+    }
 }
