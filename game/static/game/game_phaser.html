@@ -12,6 +12,12 @@
 
 <script src = "{% static 'game/game_states.js' %}"></script>
 
+<style>
+.playername {
+    color: aqua
+}
+</style>
+
 <div id="error-msg" class="error"></div>
 
 <div id="game-div"></div>
@@ -85,6 +91,15 @@
 
     // Si ya se está procesando la cola de estados o no
     var game_state_processing = false
+
+    // Divs HTML para el registro de chat y de acciones
+    var chatboxdiv = undefined
+    var historicaldiv = undefined
+    var alldiv = undefined
+
+    // Si mostramos determinados tipos de mensaje o no
+    var show_chat = true
+    var show_system = true
 
     // Grupos de sprites y texto
     var piles_group = undefined
@@ -189,6 +204,9 @@
         this.load.image('end-turn', "{% static 'end-turn.png' %}")
         this.load.image('forced-draw', "{% static 'forced-draw.png' %}")
 
+        this.load.image('mute-chat', "{% static 'mute-chat.png' %}")
+        this.load.image('mute-historical', "{% static 'mute-historical.png' %}")
+
         this.load.image('button-espadas', "{% static 'button-espadas.png' %}")
         this.load.image('button-bastos', "{% static 'button-bastos.png' %}")
         this.load.image('button-oros', "{% static 'button-oros.png' %}")
@@ -202,6 +220,8 @@
 
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
+        this.load.html('historicaldiv', "{% static 'game/historicaldiv.html' %}");
+        this.load.html('alldiv', "{% static 'game/alldiv.html' %}");
     }
 
     // Inicializa el juego
@@ -221,13 +241,13 @@
             }));
         }
         
-        // Crea el form para enviar mensajes de chat
-        var element = this.add.dom(180, 575).createFromCache('form');
-        element.setScale(2, 2);
+        createChatBoxes()
+    }
 
-        // Crea un div para los mensajes de chat
-        var chatboxdiv = this.add.dom(20, 250).createFromCache('chatdiv');
-        chatboxdiv.setScale(1, 1);
+    function createChatBoxes() {
+        // Crea el form para enviar mensajes de chat
+        var element = scene.add.dom(180, 575).createFromCache('form');
+        element.setScale(2, 2);
 
         // Callback cuando pones una letra en el input de chat
         keyupChat = function (e) {
@@ -249,6 +269,96 @@
         element.addListener('keyup');
         element.on('keyup', keyupChat)
 
+        // Crea un div para los mensajes de chat y lo oculta
+        chatboxdiv = scene.add.dom(20, 250).createFromCache('chatdiv');
+        chatboxdiv.setScale(1, 1);
+        chatboxdiv.setVisible(false)
+
+        // Crea un div para el registro de acciones y lo oculta
+        historicaldiv = scene.add.dom(20, 250).createFromCache('historicaldiv');
+        historicaldiv.setScale(1, 1);
+        historicaldiv.setVisible(false)
+
+        // Crea un div para todos los registros
+        alldiv = scene.add.dom(20, 250).createFromCache('alldiv');
+        alldiv.setScale(1, 1);
+        alldiv.setVisible(true)
+
+
+        // Función para mostrar u ocultar divs en función de lo que se quiere ver
+        function updateChatDivs() {
+            if (show_chat == true && show_system == true) {
+                alldiv.setVisible(true)
+                chatboxdiv.setVisible(false)
+                historicaldiv.setVisible(false)
+            } else if (show_chat == true) {
+                alldiv.setVisible(false)
+                chatboxdiv.setVisible(true)
+                historicaldiv.setVisible(false)
+            } else if (show_system == true) {
+                alldiv.setVisible(false)
+                chatboxdiv.setVisible(false)
+                historicaldiv.setVisible(true)
+            } else {
+                alldiv.setVisible(false)
+                chatboxdiv.setVisible(false)
+                historicaldiv.setVisible(false)
+            }
+        }
+
+        // Crea un botón para ocultar y mostrar mensajes de chat
+        var chatbtn = scene.add.sprite(75, 675, 'mute-chat')
+        chatbtn.setScale(0.1, 0.1)
+        chatbtn.setInteractive()
+
+        function swapChatVisibility() {
+            return function() {
+                if (show_chat == true) {
+                    show_chat = false
+                    chatbtn.setTint(0xaaaaaa)
+                } else {
+                    show_chat = true
+                    chatbtn.setTint(0xffffff)
+                }
+                updateChatDivs()
+            }
+        }
+
+        chatbtn.on('pointerup', swapChatVisibility())
+        chatbtn.on('pointerover', function() {
+            chatbtn.setScale(0.15, 0.15)
+        })
+        chatbtn.on('pointerout', function() {
+            chatbtn.setScale(0.1, 0.1)
+        })
+
+        // Crea un botón para ocultar y mostrar mensajes del sistema
+        var sysbtn = scene.add.sprite(225, 675, 'mute-historical')
+        sysbtn.setScale(0.2, 0.2)
+        sysbtn.setInteractive()
+
+        function swapSysVisibility() {
+            return function() {
+                if (show_system == true) {
+                    show_system = false
+                    sysbtn.setTint(0xaaaaaa)
+                } else {
+                    show_system = true
+                    sysbtn.setTint(0xffffff)
+                }
+                updateChatDivs()
+            }
+        }
+
+        sysbtn.on('pointerup', swapSysVisibility())
+        sysbtn.on('pointerover', function() {
+            sysbtn.setScale(0.3, 0.3)
+        })
+        sysbtn.on('pointerout', function() {
+            sysbtn.setScale(0.2, 0.2)
+        })
+
+        
     }
 
     // Se ejecuta cada frame
@@ -272,11 +382,9 @@
 
 <script>
 
-// Pone un mensaje de chat en el div de chat
-function appendToChatbox(message) {
-    // Chatbox de phaser
+function appendToDiv(div, message) {
     try {
-        var cbdiv = document.getElementById("chatdiv")
+        var cbdiv = document.getElementById(div)
         cbdiv.innerHTML += message + "<br>"
         cbdiv.scrollTop = cbdiv.scrollHeight
     } catch(err) {
@@ -284,10 +392,16 @@ function appendToChatbox(message) {
     }
 }
 
+// Pone un mensaje de chat en el div de chat
+function appendToChatbox(message) {
+    appendToDiv("chatdiv", message)
+    appendToDiv("alldiv", message)
+}
+
 // Pone un registro de algo que ha pasado en el historial
 function appendToRecord(message) {
-    // De momento solamente lo pone en la chatbox y listo
-    appendToChatbox(message)
+    appendToDiv("historicaldiv", message)
+    appendToDiv("alldiv", message)
 }
 
 // Añade un estado a la cola de estados, a actualizar a la más pronta conveniencia
@@ -309,14 +423,14 @@ function addToStateQueue(data) {
         } else if (message_type == "chat_message"){
             var message = data['message'];
             var username = data['username'];
-            var composed = "<b>" + username + "</b>" + ": " + message
+            var composed = "<span class='playername'>" + username + "</span>" + ": " + message
             appendToChatbox(composed);
         // Paquete es una notificación de sistema
         } else if (message_type == "notification"){
             appendToChatbox(data['message'])
         // Paquete es un error
         } else if (message_type == "error") {
-            appendToChatbox("Error: " + data['message'])
+            appendToRecord("Error: " + data['message'])
         // Paquete es un ACK del servidor (no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
