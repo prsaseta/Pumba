@@ -39,6 +39,11 @@ class TurnDirection(enum.Enum):
     CLOCKWISE = 1
     COUNTERCLOCKWISE = 2
 
+class AIDifficulty(enum.Enum):
+    EASY = 1
+    MEDIUM = 2
+    HARD = 3
+
 # Entidades
 # Estas entidades no se persisten en la BD, y por eso no están en models.py
 class PlayerController():
@@ -117,6 +122,8 @@ class Game():
         self.players = []
         # Número de IAs
         self.aiCount = 0
+        # Dificultad de la IA
+        self.aiDifficulty = AIDifficulty.EASY
         # Marcador
         self.points = []
         # User

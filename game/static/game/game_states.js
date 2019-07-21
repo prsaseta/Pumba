@@ -163,6 +163,9 @@ function processSwitch(gstate) {
     var cbox_message = "Player " + gstate['action']['player'] + " changes the current suit to " + gstate['action']['suit'] + "."
     appendToRecord(cbox_message)
 
+    // Actualizamos la UI
+    updateGameFromState(gstate)
+
     // Guardamos que hemos terminado
     game_state_processing = false
 }

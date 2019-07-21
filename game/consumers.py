@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist 
 from game.exceptions import PumbaException
 import traceback
-from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType, Card
+from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType, Card, AIDifficulty
 from game.models import GameKey
 import time
 import random
@@ -337,77 +337,18 @@ class GameConsumer(WebsocketConsumer):
         if game.status is GameStatus.PLAYING:
                 while game.players[game.currentPlayer].controller.isAI:
                     try:
-                        ai_player = game.players[game.currentPlayer]
-                        ai_hand = game.players[game.currentPlayer].hand
-                        # Si hay contador de robo, o refleja o roba.
-                        if game.drawCounter > 0:
-                            needs_draw = True
-                            for i in range(len(ai_hand)):
-                                card = ai_hand[i]
-                                if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
-                                    game.player_action_play(i)
-                                    self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                                    game.begin_turn()
-                                    self.save_to_cache(game)
-                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name, "ai": True})
-                                    needs_draw = False
-                                    break
-                            if (needs_draw):
-                                forced_draw = game.drawCounter
-                                game.player_action_draw_forced()
-                                self.ai_send_game_state_global(game, {"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
-                                game.begin_turn()
-                                self.save_to_cache(game)
-                                self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
-                        # Si no hay contador de robo:
+                        if game.aiDifficulty is AIDifficulty.EASY:
+                            self.do_easy_ai(game)
+                        elif game.aiDifficulty is AIDifficulty.MEDIUM:
+                            self.do_medium_ai(game)
                         else:
-                            # Busca una carta cualquiera que jugar
-                            cannot_play = True
-                            for i in range(len(ai_hand)):
-                                card = ai_hand[i]
-                                if card.suit is game.lastSuit or card.number is game.lastNumber:
-                                    cannot_play = False
-                                    game.player_action_play(i)
-                                    self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
-                                    # Si se queda sin cartas gana
-                                    if len(game.players[game.currentPlayer].hand) == 0:
-                                        self.ai_send_game_state_global(game, {"type": "game_won", "player": ai_player.name})
-                                        game.status = GameStatus.ENDING
-                                        #game.points[self.player_index] = game.points[self.player_index] + 1
-                                        self.save_to_cache(game)
-                                        # Actualiza el estado en la BD
-                                        key = GameKey.objects.get(key = self.match_id)
-                                        key.status = "ENDING"
-                                        key.save()
-                                        break
-                                    else:
-                                        game.begin_turn()
-                                        self.save_to_cache(game)
-                                        self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
-                                        break
-                            # Si no puede jugar ninguna, roba dos cartas y termina su turno
-                            if cannot_play:
-                                # Si la pila de cartas está vacía, termina el turno directamente
-                                if len(game.drawPile) is 0 and len(game.playPile) is 0:
-                                    game.begin_turn()
-                                    self.save_to_cache(game)
-                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
-                                else:
-                                    game.player_action_draw()
-                                    self.ai_send_game_state_global(game, {"type": "draw_card", "player": ai_player.name})
-                                    if not (len(game.drawPile) is 0 and len(game.playPile) is 0):
-                                        game.player_action_draw()
-                                        self.ai_send_game_state_global(game, {"type": "draw_card", "player": ai_player.name})
-                                    game.begin_turn()
-                                    self.save_to_cache(game)
-                                    self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
-                        self.save_to_cache(game)
-                        #self.ai_send_game_state_global(game, None)
+                            self.do_hard_ai(game)
                     except Exception as e:
                         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>Error con la IA: " + str(e))
                         traceback.print_tb(e.__traceback__)
                         try:
                             #game.begin_turn()
+                            ai_player = game.players[game.currentPlayer]
                             game.currentPlayer = game.nextPlayer
                             game.update_next_player(game.currentPlayer)
                             self.save_to_cache(game)
@@ -415,7 +356,277 @@ class GameConsumer(WebsocketConsumer):
                         except Exception as e:
                             print("Fallback de IA ha fallado: " + str(e))
                             traceback.print_tb(e.__traceback__)
-            
+
+    def do_easy_ai(self, game):
+        # Si hay contador de robo, o refleja o roba.
+        if game.drawCounter > 0:
+            self.ai_action_try_deflect(game)
+        # Si no hay contador de robo, intenta jugar una carta aleatoria
+        else:
+            result = self.ai_action_play_random_card(game)
+            if result is None:
+                self.ai_action_draw_card(game)
+                self.ai_action_draw_card(game)
+            else:
+                # Si se queda sin cartas gana
+                self.ai_action_check_if_won(game)
+        # Pase lo que pase, se termina el turno
+        self.ai_action_end_turn(game)
+        self.save_to_cache(game)
+        #self.ai_send_game_state_global(game, None)
+
+    def do_medium_ai(self, game):
+        # Si hay contador de robo, o refleja o roba.
+        if game.drawCounter > 0:
+            res = self.ai_action_try_deflect(game)
+            # Si no ha podido reflejar, intenta jugar una carta aleatoria
+            if res is None:
+                self.ai_action_play_random_card(game)
+        # Si no hay contador de robo, intenta jugar una carta aleatoria
+        else:
+            result = self.ai_action_play_random_card(game)
+            # Si no ha podido jugar carta
+            if result is None:
+                # Roba una carta
+                self.ai_action_draw_card(game)
+                # Intenta jugar carta de nuevo
+                result2 = self.ai_action_play_random_card(game)
+                # Si tampoco ha podido jugar la carta nueva, roba una última vez y juega esta nueva carta si es posible
+                if result2 is None:
+                    self.ai_action_draw_card(game)
+                    self.ai_action_play_random_card(game)
+        # Si se queda sin cartas gana
+        self.ai_action_check_if_won(game)
+        # Pase lo que pase, se termina el turno
+        self.ai_action_end_turn(game)
+        self.save_to_cache(game)
+        #self.ai_send_game_state_global(game, None)
+
+    def do_hard_ai(self, game):
+        # Si hay contador de robo, o refleja o roba.
+        if game.drawCounter > 0:
+            res = self.ai_action_try_deflect(game)
+            # Si no ha podido reflejar, intenta jugar una carta
+            if res is None:
+                self.ai_action_play_best_card(game)
+        # Si no hay contador de robo, intenta jugar una carta
+        else:
+            result = self.ai_action_play_best_card(game)
+            # Si no ha podido jugar carta
+            if result is None:
+                # Roba una carta
+                self.ai_action_draw_card(game)
+                # Intenta jugar carta de nuevo
+                result2 = self.ai_action_play_best_card(game)
+                # Si tampoco ha podido jugar la carta nueva, roba una última vez y juega esta nueva carta si es posible
+                if result2 is None:
+                    self.ai_action_draw_card(game)
+                    self.ai_action_play_best_card(game)
+        # Si se queda sin cartas gana
+        self.ai_action_check_if_won(game)
+        # Pase lo que pase, se termina el turno
+        self.ai_action_end_turn(game)
+        self.save_to_cache(game)
+
+    def ai_action_play_best_card(self, game):
+        # Busca la mejor carta que jugar
+        ai_player = game.players[game.currentPlayer]
+        ai_hand = game.players[game.currentPlayer].hand
+        result = None
+        best = None
+        score = None
+        print("Evaluating choices of " + str(ai_player.name))
+        print("\tHand:")
+        for i in range(len(ai_hand)):
+            print("\t\t" + self.card_to_string(ai_hand[i]) + " (" + str(i) + ")")
+        # Por cada carta jugable en la mano, calculamos su puntuación y escogemos la mayor
+        for i in range(len(ai_hand)):
+            card = ai_hand[i]
+            if card.suit is game.lastSuit or card.number is game.lastNumber:
+                print("\tChoice " + str(i))
+                current_score = self.ai_calculate_card_score(card, game)
+                if score is None or current_score > score:
+                    if best is not None:
+                        print("\t\tUpdating choices: " + self.card_to_string(ai_hand[best]) + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
+                    else:
+                        print("\t\tUpdating choices: " + "None" + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
+                    best = i
+                    score = current_score
+        if best is not None:
+            card = ai_hand[best]
+            result = card
+            game.player_action_play(best)
+            self.save_to_cache(game)
+            self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+            # Si se ha jugado un rey, jugamos todas las del mismo palo
+            if card.number is CardNumber.KING:
+                ai_hand = game.players[game.currentPlayer].hand
+                pending = []
+                for i in range(len(ai_hand)):
+                    if ai_hand[i].suit is card.suit:
+                        pending.insert(0, i)
+                for i in range(len(pending)):
+                    pcard = ai_hand[pending[i]]
+                    game.player_action_play(pending[i])
+                    self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(pcard.suit).name, "number": CardNumber(pcard.number).name}})
+                self.save_to_cache(game)
+            # Si se ha jugado un switch, cambiamos al palo que sea
+            elif card.number is CardNumber.SWITCH:
+                ai_hand = game.players[game.currentPlayer].hand
+                scoreboard = self.count_hand_suits(ai_hand)
+                maxi = max(scoreboard)
+                if maxi is scoreboard[0]:
+                    game.player_action_switch(Suit.ESPADAS)
+                    self.ai_send_game_state_global(game, {"type": "switch", "player": ai_player.name, "suit": game.lastSuit.name})
+                elif maxi is scoreboard[1]:
+                    game.player_action_switch(Suit.BASTOS)
+                    self.ai_send_game_state_global(game, {"type": "switch", "player": ai_player.name, "suit": game.lastSuit.name})
+                elif maxi is scoreboard[2]:
+                    game.player_action_switch(Suit.COPAS)
+                    self.ai_send_game_state_global(game, {"type": "switch", "player": ai_player.name, "suit": game.lastSuit.name})
+                else:
+                    game.player_action_switch(Suit.OROS)
+                    self.ai_send_game_state_global(game, {"type": "switch", "player": ai_player.name, "suit": game.lastSuit.name})
+                self.save_to_cache(game)
+
+        return result
+
+    def ai_calculate_card_score(self, card, game):
+        print("\t\tCalculating score of " + str(card.number) + " of " + str(card.suit))
+        score = None
+        if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
+            score = self.ai_calculate_ONE_score(card, game)
+        elif card.number is CardNumber.KING:
+            score = self.ai_calculate_KING_score(card, game)
+        elif card.number is CardNumber.SWITCH:
+            score = self.ai_calculate_SWITCH_score(card, game)
+        elif card.number is CardNumber.COPY:
+            score = self.ai_calculate_card_score(Card(card.suit, game.lastNumber), game)
+        else:
+            score = 1
+        print("\t\t\tResult: " + str(score))
+        return score
+
+    def ai_calculate_ONE_score(self, card, game):
+        # Vale más cuantas más ONE, TWO y COPY se tenga en la mano
+        ai_hand = game.players[game.currentPlayer].hand
+        score = 0.5
+        for i in range(len(ai_hand)):
+            if ai_hand[i] is not card:
+                if ai_hand[i].number is CardNumber.ONE or ai_hand[i].number is CardNumber.TWO:
+                    score += 1
+                elif ai_hand[i].number is CardNumber.COPY:
+                    score += 0.5
+        return score
+
+    def ai_calculate_KING_score(self, card, game):
+        # Vale más cuantas más cartas del mismo palo haya
+        # Empieza a 0.75 para que priorize KING sobre ONE y cartas cualquiera sobre KING si no tiene más que jugar
+        ai_hand = game.players[game.currentPlayer].hand
+        score = 0.75
+        for i in range(len(ai_hand)):
+            if ai_hand[i] is not card:
+                if ai_hand[i].suit is card.suit:
+                    score += 1
+        return score
+
+    def ai_calculate_SWITCH_score(self, card, game):
+        # Vale más cuantas más cartas del mismo palo hay
+        ai_hand = game.players[game.currentPlayer].hand
+        std_score = 0.6
+        scoreboard = self.count_hand_suits(ai_hand)
+        return max(scoreboard) * std_score
+
+    def count_hand_suits(self, hand):
+        espadas = 0
+        bastos = 0
+        copas = 0
+        oros = 0
+        for i in range(len(hand)):
+            if hand[i].suit is Suit.BASTOS:
+                bastos += 1
+            elif hand[i].suit is Suit.ESPADAS:
+                espadas += 1
+            elif hand[i].suit is Suit.OROS:
+                oros += 1
+            elif hand[i].suit is Suit.COPAS:
+                copas += 1
+        scoreboard = [espadas, bastos, copas, oros]
+        return scoreboard
+
+
+    def ai_action_play_random_card(self, game):
+        result = None
+        ai_player = game.players[game.currentPlayer]
+        ai_hand = game.players[game.currentPlayer].hand
+        # Busca una carta cualquiera que jugar
+        for i in range(len(ai_hand)):
+            card = ai_hand[i]
+            if card.suit is game.lastSuit or card.number is game.lastNumber:
+                result = card
+                game.player_action_play(i)
+                self.save_to_cache(game)
+                self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                break
+        return result
+
+    # Intenta reflejar un contador de robo
+    # Devuelve None si no ha podido reflejarlo o una carta si ha podido
+    def ai_action_try_deflect(self, game):
+        ai_player = game.players[game.currentPlayer]
+        ai_hand = game.players[game.currentPlayer].hand
+        needs_draw = True
+        fcard = None
+        for i in range(len(ai_hand)):
+            card = ai_hand[i]
+            if card.number is CardNumber.ONE or card.number is CardNumber.TWO or (card.number is CardNumber.COPY and card.suit is game.lastSuit):
+                game.player_action_play(i)
+                self.ai_send_game_state_global(game, {"type": "play_card", "player": ai_player.name, "card": {"suit": Suit(card.suit).name, "number": CardNumber(card.number).name}})
+                needs_draw = False
+                fcard = card
+                break
+        if (needs_draw):
+            forced_draw = game.drawCounter
+            game.player_action_draw_forced()
+            self.ai_send_game_state_global(game, {"type": "draw_card_forced", "player": ai_player.name, "number": forced_draw})
+
+        return fcard
+
+    def ai_action_check_if_won(self, game):
+        ai_player = game.players[game.currentPlayer]
+        if len(game.players[game.currentPlayer].hand) == 0:
+            self.ai_send_game_state_global(game, {"type": "game_won", "player": ai_player.name})
+            game.status = GameStatus.ENDING
+            #game.points[self.player_index] = game.points[self.player_index] + 1
+            self.save_to_cache(game)
+            # Actualiza el estado en la BD
+            key = GameKey.objects.get(key = self.match_id)
+            key.status = "ENDING"
+            key.save()
+            return True
+        else:
+            return False
+
+    def ai_action_draw_card(self, game):
+        ai_player = game.players[game.currentPlayer]
+        if len(game.drawPile) is 0 and len(game.playPile) is 0:
+            return None
+        else:
+            card = game.player_action_draw()
+            self.save_to_cache(game)
+            self.ai_send_game_state_global(game, {"type": "draw_card", "player": ai_player.name})
+            return card
+
+    def ai_action_end_turn(self, game):
+        if game.status is GameStatus.PLAYING:
+            ai_player = game.players[game.currentPlayer]
+            game.begin_turn()
+            self.save_to_cache(game)
+            self.ai_send_game_state_global(game, {"type": "end_turn", "player": ai_player.name})
+
+    def card_to_string(self, card):
+        return str(card.number.name) + " of " + str(card.suit.name)
+
 
     def trigger_draw_card(self):
         try:

@@ -4,6 +4,12 @@ class MatchForm(forms.Form):
     max_players = forms.IntegerField(max_value=6, min_value=2, label = "Maximum players", initial = 4)
     title = forms.CharField(max_length= 100, min_length=1, label= "Game title", initial = "Quick match")
     ai_players = forms.IntegerField(max_value=5, min_value=0, label = "AI players", initial = 0)
+    DIFFICULTIES = (
+        ("EASY", "Easy"),
+        ("MEDIUM", "Medium"),
+        ("HARD", "Hard")
+    )
+    ai_difficulty =  forms.ChoiceField(choices=DIFFICULTIES, label = "AI difficulty")
 
 class FeedbackForm(forms.Form):
     email = forms.EmailField(required = False, label = "Your email (optional)", max_length = 10000)

@@ -1,5 +1,5 @@
 from django.core.cache import cache 
-from game.domain_objects import Player, PlayerController, GameStatus, Game
+from game.domain_objects import Player, PlayerController, GameStatus, Game, AIDifficulty
 from game.exceptions import PumbaException
 from django.utils.crypto import get_random_string
 from game.models import GameKey
@@ -54,7 +54,7 @@ def join(user, match_id):
         # Devuelve tu ID de jugador
         return player_id
 
-def create(max_users, host, title, ai_players = 0):
+def create(max_users, host, title, ai_players = 0, ai_difficulty = "EASY"):
     # Crea la partida y le pone los parámetros
     game = Game()
     if(max_users < 2):
@@ -69,6 +69,7 @@ def create(max_users, host, title, ai_players = 0):
     game.host = host
     game.title = str(title).strip()
     game.aiCount = ai_players
+    game.aiDifficulty = AIDifficulty[ai_difficulty]
 
     # Crea el jugador del host
     controller = PlayerController(True, host, None)

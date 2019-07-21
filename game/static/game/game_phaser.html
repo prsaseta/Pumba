@@ -430,7 +430,7 @@ function addToStateQueue(data) {
             appendToChatbox(data['message'])
         // Paquete es un error
         } else if (message_type == "error") {
-            appendToRecord("Error: " + data['message'])
+            appendToChatbox("Error: " + data['message'])
         // Paquete es un ACK del servidor (no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');

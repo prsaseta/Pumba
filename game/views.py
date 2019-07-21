@@ -66,11 +66,12 @@ def create_match(request):
         if form.is_valid():
             max_players = form.cleaned_data['max_players']
             ai_players = form.cleaned_data['ai_players']
+            ai_difficulty = form.cleaned_data['ai_difficulty']
             title = form.cleaned_data['title']
             user = request.user
             id = None
             try:
-                id = game.matchmaking.create(max_players, user, title, ai_players)
+                id = game.matchmaking.create(max_players, user, title, ai_players, ai_difficulty)
             except ValueError as e:
                 return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
