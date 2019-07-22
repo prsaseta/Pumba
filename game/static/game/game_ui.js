@@ -131,6 +131,12 @@ function drawUI() {
         })
     }
 
+    // Override: Si no se puede robar carta porque la mesa se ha quedado sin cartas, se ilumina el de terminar turno
+    if (game_state["play_pile"] < 1 && game_state["draw_pile"] < 1) {
+        draw_card.setTint(0xaaaaaa)
+        end_turn.setTint(0xffffff)
+    }
+
     // Tintamos el toggle dependiendo de si está activo o no
     if (getAutoEndTurn()) {
         toggle_end_turn.setTint(0xffffff)
@@ -342,6 +348,12 @@ function drawPiles() {
     piles_group.add(playPileText)
 }
 
+function clearDivination() {
+    if (divine_group != undefined) {
+        divine_group.clear(true, true)
+    }
+}
+
 // Se ejecuta cuando recibes un divine
 function drawDivine(suit, number) {
     if (divine_group == undefined) {
@@ -354,10 +366,6 @@ function drawDivine(suit, number) {
     var divText = scene.add.text(-30 - 60 -254 - 254 / 2 + 1920 / 2, 20 + 352 / 2 + 1080 / 3, "Divination", { fontFamily: 'Verdana', fontSize: 36 })
     divine_group.add(divination)
     divine_group.add(divText)
-
-    function clearDivination() {
-        divine_group.clear(true, true)
-    }
 
     divination.setInteractive()
     divination.on("pointerup", clearDivination)

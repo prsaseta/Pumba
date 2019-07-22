@@ -115,8 +115,13 @@ function processGameWon(gstate) {
     // Ponemos al ganador
     gameWon(gstate['action']['player'])
 
-    // Vaciamos esto para la siguiente partida
+    // Vaciamos el tema de DIVINE para la siguiente partida
     players_divined = undefined
+    last_divined = undefined
+    clearDivination()
+
+    // Eliminamos los botones de SWITCH, por si hemos terminado jugando uno
+    deleteSwitchButtons()
 
     // Añadimos lo que ha pasado al registro
     var cbox_message = gstate['action']['player'] + " wins the match!"
