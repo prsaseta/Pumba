@@ -101,6 +101,15 @@
     var show_chat = true
     var show_system = true
 
+    // Toggle para terminar automáticamente tu turno o no
+    var auto_end_turn = false
+    function getAutoEndTurn() {
+        return auto_end_turn
+    }
+    function setAutoEndTurn(bool) {
+        auto_end_turn = bool
+    }
+
     // Grupos de sprites y texto
     var piles_group = undefined
     var players_group = undefined
@@ -202,6 +211,7 @@
         this.load.image('card-back', "{% static 'card-back.png' %}")
         this.load.image('draw-card', "{% static 'draw-card.png' %}")
         this.load.image('end-turn', "{% static 'end-turn.png' %}")
+        this.load.image('toggle-end-turn', "{% static 'toggle-autoend-turn.png' %}")
         this.load.image('forced-draw', "{% static 'forced-draw.png' %}")
 
         this.load.image('mute-chat', "{% static 'mute-chat.png' %}")

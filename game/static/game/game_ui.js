@@ -57,6 +57,13 @@ function drawWinner(player) {
     winner.setY(1080 / 2)
 }
 
+function endTurn() {
+    deleteSwitchButtons()
+    gameSocket.send(JSON.stringify({
+        'type': "begin_turn"
+    }));
+}
+
 // Dibuja la UI básica
 function drawUI() {
     if (ui_group == undefined) {
@@ -67,19 +74,15 @@ function drawUI() {
 
     var end_turn = scene.add.sprite(1920 - 150, 500, "end-turn")
     var draw_card = scene.add.sprite(1920 - 350, 500, "draw-card")
+    var toggle_end_turn = scene.add.sprite(1920 - 250, 650, "toggle-end-turn")
 
     end_turn.setInteractive()
     draw_card.setInteractive()
+    toggle_end_turn.setInteractive()
 
     ui_group.add(end_turn)
     ui_group.add(draw_card)
-
-    function endTurn() {
-        deleteSwitchButtons()
-        gameSocket.send(JSON.stringify({
-            'type': "begin_turn"
-        }));
-    }
+    ui_group.add(toggle_end_turn)
 
     function drawCard() {
         gameSocket.send(JSON.stringify({
@@ -87,8 +90,20 @@ function drawUI() {
         }));
     }
 
+    function toggleEndTurnVar() {
+        if (getAutoEndTurn()) {
+            setAutoEndTurn(false)
+            toggle_end_turn.setTint(0xaaaaaa)
+        } else {
+            setAutoEndTurn(true)
+            toggle_end_turn.setTint(0xffffff)
+        }
+        console.log(getAutoEndTurn())
+    }
+
     end_turn.on("pointerup", endTurn)
     draw_card.on("pointerup", drawCard)
+    toggle_end_turn.on("pointerup", toggleEndTurnVar)
 
     // Tintamos los botones si no se pueden usar
     // Le ponemos que en hover se vean más grandes también
@@ -114,6 +129,13 @@ function drawUI() {
         draw_card.on("pointerout", function() {
             draw_card.setScale(1)
         })
+    }
+
+    // Tintamos el toggle dependiendo de si está activo o no
+    if (getAutoEndTurn()) {
+        toggle_end_turn.setTint(0xffffff)
+    } else {
+        toggle_end_turn.setTint(0xaaaaaa)
     }
 }
 
@@ -212,6 +234,14 @@ function drawYourHand(gamestate = undefined) {
                     'type': "play_card",
                     'index': child.custom_var
                 }));
+                // Si el autoterminar turno está activado, terminamos turno si la carta lo permite y no se ha jugado un rey
+                if (getAutoEndTurn()) {
+                    if (!has_played_king) {
+                        if (number == "FLIP" || number == "JUMP" || number == "ONE" || number == "TWO" || number == "DIVINE") {
+                            endTurn()
+                        }
+                    }
+                }
             }
         }
         child.on('pointerover',changeScale2(child))
@@ -363,6 +393,9 @@ function drawSwitchButtons() {
             'switch': "ESPADAS"
         }));
         deleteSwitchButtons()
+        if (getAutoEndTurn()) {
+            endTurn()
+        }
     }
     
     function switchBastos() {
@@ -371,6 +404,9 @@ function drawSwitchButtons() {
             'switch': "BASTOS"
         }));
         deleteSwitchButtons()
+        if (getAutoEndTurn()) {
+            endTurn()
+        }
     }
 
     function switchCopas() {
@@ -379,6 +415,9 @@ function drawSwitchButtons() {
             'switch': "COPAS"
         }));
         deleteSwitchButtons()
+        if (getAutoEndTurn()) {
+            endTurn()
+        }
     }
 
     function switchOros() {
@@ -387,6 +426,9 @@ function drawSwitchButtons() {
             'switch': "OROS"
         }));
         deleteSwitchButtons()
+        if (getAutoEndTurn()) {
+            endTurn()
+        }
     }
 
     espadas.on('pointerup',switchEspadas)
