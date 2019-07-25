@@ -92,16 +92,26 @@
     // Si ya se está procesando la cola de estados o no
     var game_state_processing = false
 
+    // Coordenadas base de la pila de juego
+    // Las coordenadas de la pila de descarte, número de cartas y otras cosas dependen de esta coordenada
+    var play_pile_coordinates = [-254 / 2 + 1920 / 2 + 100, 1080 / 3]
+    function getDrawPileCoordinates() {
+        return [play_pile_coordinates[0] + 300, play_pile_coordinates[1]]
+    }
+    // Escala de la pila de juego
+    // La escala de otros elementos también depende de ella
+    var play_pile_scale = [0.8, 0.8]
+
     // Divs HTML para el registro de chat y de acciones
     var chatboxdiv = undefined
     var historicaldiv = undefined
     var alldiv = undefined
 
-    // Si mostramos determinados tipos de mensaje o no
+    // Si mostramos determinados tipos de mensaje o no (el usuario lo cambia con botones en la UI)
     var show_chat = true
     var show_system = true
 
-    // Toggle para terminar automáticamente tu turno o no
+    // Toggle para terminar automáticamente tu turno o no (el usuario lo cambia con botones en la UI)
     var auto_end_turn = false
     function getAutoEndTurn() {
         return auto_end_turn
@@ -124,7 +134,7 @@
     var divine_group = undefined
     var chat_group = undefined
 
-    // Variables varias de la UI
+    // Variables varias de la UI para iluminar o no botones de esta
     // Si ha robado este turno
     // 0: No (puede robar otra)
     // 1: Una vez (puede robar otra)
@@ -153,6 +163,16 @@
             }
         }
         return players_divined
+    }
+
+    // Últimas cartas jugadas, para mostrarlas visualmente en hover
+    var last_cards_played = []
+    var last_cards_played_visible = 4
+    function addCardPlayedToVisualDisplay(card) {
+        last_cards_played.unshift(card)
+        if (last_cards_played.length > last_cards_played_visible) {
+            last_cards_played = last_cards_played.slice(0, last_cards_played_visible)
+        }
     }
 
     // Mensajes de chat

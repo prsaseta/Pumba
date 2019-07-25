@@ -56,7 +56,8 @@ function animateBeginTurn(gstate){
 
 function animatePlayCard(gstate) {
     // Creamos un sprite fuera de la pantalla en la misma X que la pila de juego
-    var cardsp = scene.add.sprite(-254 / 2 + 1920 / 2, -500, gstate['action']['card']['suit'] + "-" + gstate['action']['card']['number'])
+    var cardsp = scene.add.sprite(play_pile_coordinates[0], -500, gstate['action']['card']['suit'] + "-" + gstate['action']['card']['number'])
+    cardsp.setScale(play_pile_scale[0], play_pile_scale[1])
     // Si la hemos jugado nosotros, repintamos nuestra mano del tirón para que no se vea feo
     // También repintamos los botones de la UI
     if (gstate['current_player'] == playerIndex) {
@@ -68,8 +69,8 @@ function animatePlayCard(gstate) {
     // Le ponemos un tween para moverla a encima de la pila
     var cardtween = scene.tweens.add({
         targets: cardsp,
-        x: -254 / 2 + 1920 / 2,
-        y: 1080 / 3,
+        x: play_pile_coordinates[0],
+        y: play_pile_coordinates[1],
         ease: "Linear",
         duration: 300,
         repeat: 0,

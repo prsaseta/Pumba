@@ -37,6 +37,9 @@ function processBeginMatch(gstate) {
     var cbox_message = "The match has begun!"
     appendToRecord(cbox_message)
 
+    // Ponemos la carta del principio en el historial de cartas
+    addCardPlayedToVisualDisplay(gstate['last_suit'] + "-" + gstate["last_number"])
+
     // Repintamos la UI
     updateGameFromState(gstate)
     
@@ -123,6 +126,9 @@ function processGameWon(gstate) {
     // Eliminamos los botones de SWITCH, por si hemos terminado jugando uno
     deleteSwitchButtons()
 
+    // Eliminamos el historial visual de cartas
+    last_cards_played = []
+
     // Añadimos lo que ha pasado al registro
     var cbox_message = gstate['action']['player'] + " wins the match!"
     appendToRecord(cbox_message)
@@ -159,6 +165,9 @@ function processPlayCard(gstate) {
     // Añadimos lo que ha pasado al historial
     var cbox_message = "Player " + gstate['action']['player'] + " plays a " + gstate['action']['card']['number'] + " of " + gstate['action']['card']['suit'] + "."
     appendToRecord(cbox_message)
+
+    // Añadimos además la carta jugada al historial
+    addCardPlayedToVisualDisplay(gstate['action']['card']['suit'] + "-" + gstate['action']['card']['number'])
 
     animatePlayCard(gstate)
 }

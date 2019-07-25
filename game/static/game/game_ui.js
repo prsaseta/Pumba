@@ -337,15 +337,72 @@ function drawPiles() {
     } else {
         piles_group = scene.add.group()
     }
+    // -254 / 2 + 1920 / 2 + 100
+    var playPileDisp = scene.add.sprite(play_pile_coordinates[0], play_pile_coordinates[1], game_state["last_suit"] + "-" + game_state["last_number"])
+    var playPileText = scene.add.text(play_pile_coordinates[0], play_pile_coordinates[1] + 50 + 254 / 2, game_state["play_pile"], { fontFamily: 'Verdana', fontSize: 36 });
+    var drawPileDisp = scene.add.sprite(getDrawPileCoordinates()[0], getDrawPileCoordinates()[1], "card-back")
+    var drawPileText = scene.add.text(getDrawPileCoordinates()[0], 50 + 254 / 2 + getDrawPileCoordinates()[1], game_state["draw_pile"], { fontFamily: 'Verdana', fontSize: 36 });
+    
+    playPileDisp.setScale(play_pile_scale[0], play_pile_scale[1])
+    drawPileDisp.setScale(play_pile_scale[0], play_pile_scale[1])
 
-    var playPileDisp = scene.add.sprite(-254 / 2 + 1920 / 2, 1080 / 3, game_state["last_suit"] + "-" + game_state["last_number"])
-    var playPileText = scene.add.text(-254 / 2 + 1920 / 2, 50 + 254 / 2 + 1080 / 3, game_state["play_pile"], { fontFamily: 'Verdana', fontSize: 36 });
-    var drawPileDisp = scene.add.sprite(-254 / 2 + 300 + 1920 / 2, 1080 / 3, "card-back")
-    var drawPileText = scene.add.text(-254 / 2 + 300 + 1920 / 2, 50 + 254 / 2 + 1080 / 3, game_state["draw_pile"], { fontFamily: 'Verdana', fontSize: 36 });
+    // Si hay un DIVINE activo, ocultamos esto para que se pueda ver
+    if (last_divined != undefined) {
+        drawPileDisp.setVisible(false)
+    }
+    
     piles_group.add(playPileDisp)
     piles_group.add(drawPileDisp)
     piles_group.add(drawPileText)
     piles_group.add(playPileText)
+
+    function highlightThisCard (ccard, index) {
+        return function() {
+            ccard.setDepth(10)
+            var ttween = scene.tweens.add({
+                targets: ccard,
+                y: -100 + play_pile_coordinates[1],
+                scaleX: 1.25 * play_pile_scale[0],
+                scaleY: 1.25 * play_pile_scale[1],
+                ease: "Linear",
+                duration: 200,
+                repeat: 0,
+                yoyo: false,
+            })
+        }
+    }
+    function stopHighlightThisCard (ccard, index) {
+        return function () {
+            ccard.setDepth(-index)
+            var ttween = scene.tweens.add({
+                targets: ccard,
+                y: play_pile_coordinates[1],
+                scaleX: 1 * play_pile_scale[0],
+                scaleY: 1 * play_pile_scale[1],
+                ease: "Linear",
+                duration: 200,
+                repeat: 0,
+                yoyo: false,
+            })
+        }
+    }
+
+    playPileDisp.setInteractive()
+    playPileDisp.on("pointerover", highlightThisCard(playPileDisp, 0))
+    playPileDisp.on("pointerout", stopHighlightThisCard(playPileDisp, 0))
+
+    // Mostramos además las últimas cartas jugadas
+    var len = last_cards_played.length
+    for (i = 1; i < len; i++) {
+        var card = scene.add.sprite(-125*(i) + play_pile_coordinates[0], play_pile_coordinates[1], last_cards_played[i])
+        card.setDepth(-i)
+        card.setScale(play_pile_scale[0], play_pile_scale[1])
+        card.setInteractive()
+        
+        card.on("pointerover", highlightThisCard(card, i))
+        card.on("pointerout", stopHighlightThisCard(card, i))
+        piles_group.add(card)
+    }
 }
 
 function clearDivination() {
@@ -362,13 +419,14 @@ function drawDivine(suit, number) {
         divine_group.clear(true, true)
     }
 
-    var divination = scene.add.sprite(-30 -254 - 254 / 2 + 1920 / 2, 1080 / 3, suit + "-" + number)
-    var divText = scene.add.text(-30 - 60 -254 - 254 / 2 + 1920 / 2, 20 + 352 / 2 + 1080 / 3, "Divination", { fontFamily: 'Verdana', fontSize: 36 })
+    var divination = scene.add.sprite(getDrawPileCoordinates()[0], getDrawPileCoordinates()[1], suit + "-" + number)
+    divination.setScale(play_pile_scale[0], play_pile_scale[1])
+    //var divText = scene.add.text(-30 - 60 -254 - 254 / 2 + 1920 / 2, 20 + 352 / 2 + 1080 / 3, "Divination", { fontFamily: 'Verdana', fontSize: 36 })
     divine_group.add(divination)
-    divine_group.add(divText)
+    //divine_group.add(divText)
 
     divination.setInteractive()
-    divination.on("pointerup", clearDivination)
+    //divination.on("pointerup", clearDivination)
 }
 
  // Crea los botones de SWITCH
