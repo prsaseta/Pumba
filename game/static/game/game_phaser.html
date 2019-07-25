@@ -129,6 +129,7 @@
     var turnDirection_group = undefined
     var switchButtons_group = undefined
     var ui_group = undefined
+    var ui_group_autoend_circle = undefined
     var beginMatch_group = undefined
     var wonMatch_group = undefined
     var divine_group = undefined
@@ -232,6 +233,7 @@
         this.load.image('draw-card', "{% static 'draw-card.png' %}")
         this.load.image('end-turn', "{% static 'end-turn.png' %}")
         this.load.image('toggle-end-turn', "{% static 'toggle-autoend-turn.png' %}")
+        this.load.image('toggle-end-turn-circle', "{% static 'toggle-autoend-turn-circle.png' %}")
         this.load.image('forced-draw', "{% static 'forced-draw.png' %}")
 
         this.load.image('mute-chat', "{% static 'mute-chat.png' %}")
@@ -356,10 +358,26 @@
 
         chatbtn.on('pointerup', swapChatVisibility())
         chatbtn.on('pointerover', function() {
-            chatbtn.setScale(0.15, 0.15)
+            var ttween = scene.tweens.add({
+                targets: chatbtn,
+                scaleX: 0.15,
+                scaleY: 0.15,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
         chatbtn.on('pointerout', function() {
-            chatbtn.setScale(0.1, 0.1)
+            var ttween = scene.tweens.add({
+                targets: chatbtn,
+                scaleX: 0.1,
+                scaleY: 0.1,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
 
         // Crea un botón para ocultar y mostrar mensajes del sistema
@@ -382,10 +400,26 @@
 
         sysbtn.on('pointerup', swapSysVisibility())
         sysbtn.on('pointerover', function() {
-            sysbtn.setScale(0.3, 0.3)
+            var ttween = scene.tweens.add({
+                targets: sysbtn,
+                scaleX: 0.3,
+                scaleY: 0.3,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
         sysbtn.on('pointerout', function() {
-            sysbtn.setScale(0.2, 0.2)
+            var ttween = scene.tweens.add({
+                targets: sysbtn,
+                scaleX: 0.2,
+                scaleY: 0.2,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
 
         

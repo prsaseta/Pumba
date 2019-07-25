@@ -80,6 +80,8 @@ function drawUI() {
     draw_card.setInteractive()
     toggle_end_turn.setInteractive()
 
+    toggle_end_turn.setScale(0.75)
+
     ui_group.add(end_turn)
     ui_group.add(draw_card)
     ui_group.add(toggle_end_turn)
@@ -94,11 +96,23 @@ function drawUI() {
         if (getAutoEndTurn()) {
             setAutoEndTurn(false)
             toggle_end_turn.setTint(0xaaaaaa)
+            if (ui_group_autoend_circle != undefined) {
+                ui_group_autoend_circle.destroy()
+            }
         } else {
             setAutoEndTurn(true)
             toggle_end_turn.setTint(0xffffff)
+            ui_group_autoend_circle = scene.add.sprite(1920 - 250, 650, "toggle-end-turn-circle")
+            ui_group_autoend_circle.setScale(0.75)
+            var ttween = scene.tweens.add({
+                targets: ui_group_autoend_circle,
+                angle: 360,
+                ease: "Linear",
+                duration: 2000,
+                repeat: -1,
+                yoyo: false,
+            })
         }
-        console.log(getAutoEndTurn())
     }
 
     end_turn.on("pointerup", endTurn)
@@ -112,10 +126,28 @@ function drawUI() {
     } else {
         end_turn.setTint(0xffffff)
         end_turn.on("pointerover", function() {
-            end_turn.setScale(1.5)
+            end_turn.setDepth(1)
+            var ttween = scene.tweens.add({
+                targets: end_turn,
+                scaleX: 1.5,
+                scaleY: 1.5,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
         end_turn.on("pointerout", function() {
-            end_turn.setScale(1)
+            end_turn.setDepth(0)
+            var ttween = scene.tweens.add({
+                targets: end_turn,
+                scaleX: 1,
+                scaleY: 1,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
     }
 
@@ -124,10 +156,28 @@ function drawUI() {
     } else {
         draw_card.setTint(0xffffff)
         draw_card.on("pointerover", function() {
-            draw_card.setScale(1.5)
+            draw_card.setDepth(1)
+            var ttween = scene.tweens.add({
+                targets: draw_card,
+                scaleX: 1.5,
+                scaleY: 1.5,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
         draw_card.on("pointerout", function() {
-            draw_card.setScale(1)
+            draw_card.setDepth(0)
+            var ttween = scene.tweens.add({
+                targets: draw_card,
+                scaleX: 1,
+                scaleY: 1,
+                ease: "Linear",
+                duration: 150,
+                repeat: 0,
+                yoyo: false,
+            })
         })
     }
 
@@ -201,8 +251,10 @@ function drawYourHand(gamestate = undefined) {
             }
         }
 
-        var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), 1080 - 352/2 - 30, card[0] + "-" + card[1]).setInteractive();
-        disp.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
+        var alt = 1080 - 352/2 - 30
+        var disp = scene.add.sprite(((1920 - radius) / 2) + ((radius * i) / card_count), alt, card[0] + "-" + card[1]).setInteractive();
+        var bscale = Math.min(1.5 / Math.log(card_count), 1.25)
+        disp.setScale(bscale)
         disp.setDepth(i)
         // Le añadimos una propiedad no nativa al objeto, que es básicamente el índice de la carta en la mano
         // Se usa para ordenar la mano gráficamente y enviar comandos al servidor
@@ -222,16 +274,37 @@ function drawYourHand(gamestate = undefined) {
         var child = disp
         function changeScale2(child) {
             return function() {
-                child.setScale(1.5)
                 child.setDepth(10000)
-                child.setY(child.y - 100)
+                //child.setY(child.y - 100)
+                var ttween = scene.tweens.add({
+                    targets: child,
+                    //y: play_pile_coordinates[1],
+                    scaleX: Math.min(1.5, bscale * 1.75),
+                    scaleY: Math.min(1.5, bscale * 1.75),
+                    y: alt - 100,
+                    ease: "Linear",
+                    duration: 200,
+                    repeat: 0,
+                    yoyo: false,
+                })
             }
         }
         function changeScale1(child) {
             return function() {
-                child.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
+                //child.setScale(Math.min(1.5 / Math.log(card_count), 1.25))
                 child.setDepth(child.custom_var)
-                child.setY(child.y + 100)
+                //child.setY(child.y + 100)
+                var ttween = scene.tweens.add({
+                    targets: child,
+                    //y: play_pile_coordinates[1],
+                    scaleX: bscale,
+                    scaleY: bscale,
+                    y: alt,
+                    ease: "Linear",
+                    duration: 200,
+                    repeat: 0,
+                    yoyo: false,
+                })
             }
         }
         function playCardFromHand(child, suit, number) {
@@ -243,7 +316,7 @@ function drawYourHand(gamestate = undefined) {
                 // Si el autoterminar turno está activado, terminamos turno si la carta lo permite y no se ha jugado un rey
                 if (getAutoEndTurn()) {
                     if (!has_played_king) {
-                        if (number == "FLIP" || number == "JUMP" || number == "ONE" || number == "TWO" || number == "DIVINE") {
+                        if (number == "FLIP" || number == "JUMP" || number == "ONE" || number == "TWO" || number == "DIVINE" || (number == "COPY" && gamestate["last_effect"] != "KING" && gamestate["last_effect"] != "SWITCH")) {
                             endTurn()
                         }
                     }
@@ -306,6 +379,40 @@ function drawPlayers() {
                 var dcard = pvined[i][z]
                 z += 1
                 unknown_card = scene.add.sprite(xpos + j * 20, ypos, dcard['suit'] + "-" + dcard['number'])
+                // Ponemos que en hover se amplíe
+                unknown_card.setInteractive()
+                function highlightThisCard (ccard) {
+                    return function() {
+                        ccard.setDepth(1000)
+                        var ttween = scene.tweens.add({
+                            targets: ccard,
+                            y: ypos + 150,
+                            scaleX: 1.25,
+                            scaleY: 1.25,
+                            ease: "Linear",
+                            duration: 200,
+                            repeat: 0,
+                            yoyo: false,
+                        })
+                    }
+                }
+                function stopHighlightThisCard (ccard) {
+                    return function () {
+                        ccard.setDepth(j)
+                        var ttween = scene.tweens.add({
+                            targets: ccard,
+                            y: ypos,
+                            scaleX: 0.15,
+                            scaleY: 0.15,
+                            ease: "Linear",
+                            duration: 200,
+                            repeat: 0,
+                            yoyo: false,
+                        })
+                    }
+                }
+                unknown_card.on("pointerover", highlightThisCard(unknown_card))
+                unknown_card.on("pointerout", stopHighlightThisCard(unknown_card))
             // Si no, pintamos un cardback genérico
             } else {
                 unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
@@ -313,6 +420,8 @@ function drawPlayers() {
             
             // La hacemos más pequeña
             unknown_card.setScale(0.15, 0.15)
+            // Le ponemos profundidad concreta
+            unknown_card.setDepth(j)
             // La añadimos al grupo
             players_group.add(unknown_card)
             // Actualizamos el último j (es para dibujar justo después del loop un número)
@@ -358,7 +467,7 @@ function drawPiles() {
 
     function highlightThisCard (ccard, index) {
         return function() {
-            ccard.setDepth(10)
+            ccard.setDepth(50)
             var ttween = scene.tweens.add({
                 targets: ccard,
                 y: -100 + play_pile_coordinates[1],
