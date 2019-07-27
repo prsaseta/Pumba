@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import django_heroku
+import cloudinary
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels',
-    'mathfilters'
+    'mathfilters',
+    'cloudinary'
 ]
 
 MIDDLEWARE = [
@@ -202,5 +204,12 @@ LOGGING = {
         },
     },
 }
+
+# Credenciales de Cloudinary
+cloudinary.config( 
+  cloud_name = "hjujot11s", 
+  api_key = "372813674549718", 
+  api_secret = "0D8vxpDeuZuRG10IA1edc9XpJTU" 
+)
 
 django_heroku.settings(locals())

@@ -76,6 +76,9 @@
     // Escena
     var scene = undefined
 
+    // Para cargar imágenes
+    var loader = undefined
+
     // Estado de juego interno
     var game_state = {
 
@@ -192,6 +195,7 @@
     // Carga las imágenes que vamos a necesitar
     function preload ()
     {
+        loader = this
         // Sin loops ni nada porque se tiene que hacer en servidor
         this.load.image('BASTOS-ONE', "{% static 'BASTOS-ONE.png' %}")
         this.load.image('BASTOS-TWO', "{% static 'BASTOS-TWO.png' %}")
@@ -254,6 +258,42 @@
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");
         this.load.html('historicaldiv', "{% static 'game/historicaldiv.html' %}");
         this.load.html('alldiv', "{% static 'game/alldiv.html' %}");
+
+        this.load.on('progress', function (value) {
+            console.log(value);
+        });
+                    
+        this.load.on('fileprogress', function (file) {
+            console.log(file.src);
+        });
+        
+        this.load.on('complete', function () {
+            console.log('All loading done');
+        });
+
+    }
+
+    function onSocketOpenSetup() {
+        // Pedimos el primer estado de juego
+        gameSocket.send(JSON.stringify({
+            'type': "game_state"
+        }));
+
+        // Pedimos las profile pictures de los jugadores conectados (el servidor ignora índices no válidos)
+        for (i = 0; i < 10; i++) {
+            gameSocket.send(JSON.stringify({
+                'type': "profile_picture",
+                'index': i
+            }));
+        }
+
+        {% if cheats %}
+
+        gameSocket.send(JSON.stringify({
+            'type': "debug"
+        }));
+
+        {% endif %}
     }
 
     // Inicializa el juego
@@ -263,14 +303,17 @@
         //console.log(this)
         // "This" es la escena de juego
         scene = this
+        
+        //console.log(scene)
+        //console.log(scene.textures.exists('card-back'))
+        //console.log(scene.textures.exists('ay lamao'))
+        
         // Esto sirve para copiar sus caracteristicas para el chat
         example_text = scene.add.text(0, 0, "", {fontSize: chat_text_size, fontFamily: 'Arial', wordWrap: { width: word_wrap_width, useAdvancedWrap: true }})
         //drawBeginMatch()
         // Pide el estado de juego cuando todo esta listo
         if (gameSocket.readyState == gameSocket.OPEN) {
-            gameSocket.send(JSON.stringify({
-                'type': "game_state"
-            }));
+            onSocketOpenSetup()
         }
         
         createChatBoxes()
@@ -474,6 +517,43 @@ function addToStateQueue(data) {
     game_state_queue.push(data)
 }
 
+    function processNotification(data) {
+        var event = data['info']['event']
+        // Si alguien se conecta o desconecta, pedimos su imagen de perfil
+        if (event == 'connect' || event == 'disconnect') {
+            gameSocket.send(JSON.stringify({
+                'type': "profile_picture",
+                'index': data['info']['player']
+            }));
+        }
+    }
+
+    function loadProfilePicture(ref, indx) {
+        //console.log("Loading pfp " + "player-" + indx)
+        loader.load.image("player-" + indx, ref)
+        if (loader.load.isReady()) {
+            loader.load.start()
+        }
+    }
+
+    function checkProfilePictures(data){
+        // Si falta alguna profile picture, la pedimos
+        try {
+            //console.log(scene)
+            for (i = 0; i < data['players'].length; i++){
+                if (!(scene.textures.exists("player-" + i))) {
+                    //console.log("Picture " + i + " missing, reloading")
+                    gameSocket.send(JSON.stringify({
+                        'type': "profile_picture",
+                        'index': i
+                    }));
+                }
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     // Hace lo que haga falta cuando llega un mensaje
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
@@ -483,6 +563,7 @@ function addToStateQueue(data) {
         // Paquete es un estado de juego
         if (message_type == "game_state"){
             addToStateQueue(data)
+            checkProfilePictures(data)
         // Paquete es un mensaje de chat
         } else if (message_type == "chat_message"){
             var message = data['message'];
@@ -492,6 +573,7 @@ function addToStateQueue(data) {
         // Paquete es una notificación de sistema
         } else if (message_type == "notification"){
             appendToChatbox(data['message'])
+            processNotification(data)
         // Paquete es un error
         } else if (message_type == "error") {
             appendToChatbox("Error: " + data['message'])
@@ -507,6 +589,10 @@ function addToStateQueue(data) {
             // Nos guardamos cuál carta es aparte para mostrarla si alguien la roba
             last_divined = data['card']
             drawDivine(data['card']['suit'], data['card']['number'])
+        } else if (message_type == "profile_picture") {
+            var ref = data['picture']
+            var indx = data['index']
+            loadProfilePicture(ref, indx)
         }
 
         {% if cheats %}
@@ -564,17 +650,7 @@ function addToStateQueue(data) {
 
     // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida al servidor
     gameSocket.onopen = function(event) {
-        gameSocket.send(JSON.stringify({
-            'type': "game_state"
-        }));
-
-        {% if cheats %}
-
-        gameSocket.send(JSON.stringify({
-            'type': "debug"
-        }));
-
-        {% endif %}
+        onSocketOpenSetup()
     }
 </script>
 

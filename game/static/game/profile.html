@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load cloudinary %}
+
+{% block content %}
+
+{% cloudinary profile.userprofilepicture.picture %}
+
+<div>
+<b>Username:</b>{{ user.username }}<br>
+</div>
+<br>
+<form action="{% url 'upload_profile_picture' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <br><input type="submit" value="Upload">
+</form>
+
+<a href="{% url 'delete_profile_picture' %}"><button>Delete profile picture</button></a>
+
+{% endblock %}

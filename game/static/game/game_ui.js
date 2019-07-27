@@ -341,30 +341,40 @@ function drawPlayers() {
     var num_players = Math.max(game_state["players"].length, 1)
     var width_assigned = (1920 - 100) / num_players
 
+    var theight = 10
+
     // Por cada jugador
     for(i = 0; i < num_players; i++){
         // Cogemos su username y le añadimos "(IA)" si es una IA
         var text = game_state["players"][i][0]
-        if (game_state["players"][i][2] == "True") {
+        if (game_state["players"][i][2] == true) {
             text = text + "(AI) "
         }
         // Calculamos dónde debería ir
         var xpos = i * width_assigned + (1/2) * width_assigned
         // Creamos el texto
-        var ptext = scene.add.text(xpos, 10, text, { fontFamily: 'Verdana', fontSize: 24, align: 'center', wordWrap: { width: width_assigned, useAdvancedWrap: true } });
+        var ptext = scene.add.text(xpos + 10, theight + 20, text, { fontFamily: 'Verdana', fontSize: 20, align: 'left', wordWrap: { width: width_assigned - 256 * 0.4, useAdvancedWrap: true } });
         // Al jugador actual lo pintamos con otro color
         if (game_state["current_player"] == i) {
             ptext.setColor("#00ff00")
         }
         // Añadimos el objeto texto al grupo
         players_group.add(ptext)
+        
+        // Ponemos la imagen de perfil
+        var pic = scene.add.sprite(xpos - 50, theight + 60, "player-" + i)
+        pic.setScale(0.35)
+        players_group.add(pic)
+        
+        
         var last_j = 0
         // Pintamos las cartas que tiene en la mano
         var z = 0
         var maxi = game_state["players"][i][1]
+        var cardxpos = 30 + xpos
         for (j = 0; j < maxi; j++){
             // Posición y
-            var ypos = 80
+            var ypos = theight + 80
             // Si el jugador tiene un nombre largo y ocupa dos líneas, movemos las cartas un poco para abajo
             if (ptext.getWrappedText(text).length > 1){
                 ypos = ypos + 20
@@ -374,11 +384,11 @@ function drawPlayers() {
             // Si sabemos qué carta es por DIVINE (y no es de las nuestras), la pintamos
             var pvined = getPlayersDivined()
             if (i == playerIndex) {
-                unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+                unknown_card = scene.add.sprite(cardxpos + j * 20, ypos, "card-back")
             } else if (pvined[i] != undefined && j >  maxi - pvined[i].length - 1) {
                 var dcard = pvined[i][z]
                 z += 1
-                unknown_card = scene.add.sprite(xpos + j * 20, ypos, dcard['suit'] + "-" + dcard['number'])
+                unknown_card = scene.add.sprite(cardxpos + j * 20, ypos, dcard['suit'] + "-" + dcard['number'])
                 // Ponemos que en hover se amplíe
                 unknown_card.setInteractive()
                 function highlightThisCard (ccard) {
@@ -415,7 +425,7 @@ function drawPlayers() {
                 unknown_card.on("pointerout", stopHighlightThisCard(unknown_card))
             // Si no, pintamos un cardback genérico
             } else {
-                unknown_card = scene.add.sprite(xpos + j * 20, ypos, "card-back")
+                unknown_card = scene.add.sprite(cardxpos + j * 20, ypos, "card-back")
             }
             
             // La hacemos más pequeña
@@ -427,12 +437,12 @@ function drawPlayers() {
             // Actualizamos el último j (es para dibujar justo después del loop un número)
             last_j = j
             // Si ya hay muchas cartas, no dibujamos más
-            if (j > 10) {
+            if (j > 6) {
                 break
             }
         }
         // Pintamos aparte el número de cartas que tenga en mano
-        var cardn = scene.add.text(xpos + (last_j + 1) * 20, ypos, maxi, { fontFamily: 'Verdana', fontSize: 24, align: 'right'});
+        var cardn = scene.add.text(cardxpos + (last_j + 1) * 20, ypos, maxi, { fontFamily: 'Verdana', fontSize: 24, align: 'right'});
         players_group.add(cardn)
     }
 }

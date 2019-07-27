@@ -3,10 +3,11 @@ from asgiref.sync import async_to_sync
 import json
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist 
+from django.contrib.auth.models import User
 from game.exceptions import PumbaException
 import traceback
 from game.domain_objects import GameStatus, CardNumber, Suit, TurnDirection, ActionType, Card, AIDifficulty
-from game.models import GameKey
+from game.models import GameKey, getUserProfilePictureUrl
 import time
 import random
 import copy
@@ -93,7 +94,7 @@ class GameConsumer(WebsocketConsumer):
                 key.save()
             # Enviamos notificación por chat de que un usuario se ha unido
             notificationmsg = "User " + game.players[self.player_index].name + " joined the game"
-            self.send_notification_global(notificationmsg)
+            self.send_notification_global(notificationmsg, {"event": "connect", "player": self.player_index})
             self.was_connected_successfully_to_game = True
             # Finalmente, aceptamos la conexión
             self.accept()
@@ -135,7 +136,7 @@ class GameConsumer(WebsocketConsumer):
             # Avisamos al resto de jugadores
             username = game.players[self.player_index].name
             notificationmsg = "User " + username + " disconnected from the game"
-            self.send_notification_global(notificationmsg)
+            self.send_notification_global(notificationmsg, {"event": "disconnect", "player": self.player_index})
             
             # Si todos los usuarios se desconectan, borramos la partida
             anyone_connected = False
@@ -155,7 +156,7 @@ class GameConsumer(WebsocketConsumer):
                     for player in game.players:
                         if not player.controller.isAI:
                             game.host = player.controller.user
-                            self.send_notification_global(player.name + " is the new host")
+                            self.send_notification_global(player.name + " is the new host", {"event": "host_change", "player": self.player_index})
                             break
                 self.save_to_cache(game)
                 # Actualizamos a todos los jugadores
@@ -180,6 +181,8 @@ class GameConsumer(WebsocketConsumer):
         # Ejecuta el procesamiento necesario dependiendo del tipo de comando enviado
         if pkgtype == "chat_message":
             self.trigger_chat_message(text_data_json['message'], username)
+        elif pkgtype == "profile_picture":
+            self.send_profile_picture(text_data_json['index'])
         elif pkgtype == "begin_match":
             self.trigger_begin_match()
         elif pkgtype == "begin_turn":
@@ -194,6 +197,23 @@ class GameConsumer(WebsocketConsumer):
             self.trigger_switch_effect(text_data_json['switch'])
         elif pkgtype == "debug":
             self.cheat(text_data_json)
+
+    def send_profile_picture(self, index):
+        # Recuperamos el estado de juego
+        game = self.retrieve_from_cache()
+        # Si es un identificador válido, devolvemos la imagen de perfil adecuada
+        if index < len(game.players) and index > -1:
+            controller = game.players[index].controller
+            if controller.user is None:
+                picture = picture = "/static/ai-prof-picture.png"
+            else:
+                picture = getUserProfilePictureUrl(User.objects.get(id = self.user_id))
+
+            self.send(text_data=json.dumps({
+                'type': 'profile_picture',
+                'index': index,
+                'picture': picture
+            }))
 
     # Te permite hacer trampas para debugear
     def cheat(self, message):
@@ -501,7 +521,10 @@ class GameConsumer(WebsocketConsumer):
         elif card.number is CardNumber.SWITCH:
             score = self.ai_calculate_SWITCH_score(card, game)
         elif card.number is CardNumber.COPY:
-            score = self.ai_calculate_card_score(Card(card.suit, game.lastNumber), game)
+            if game.lastEffect is not CardNumber.COPY:
+                score = self.ai_calculate_card_score(Card(card.suit, game.lastEffect), game)
+            else:
+                score = 1
         else:
             score = 1
         print("\t\t\tResult: " + str(score))
@@ -866,12 +889,14 @@ class GameConsumer(WebsocketConsumer):
         )
     
     # Envía un mensaje de notificación a todos los clientes
-    def send_notification_global(self, text):
+    def send_notification_global(self, text, options = None):
+        print(options)
         async_to_sync(self.channel_layer.group_send)(
             self.match_group_name,
             {
                 'type': 'chat_notification',
-                'message': text
+                'message': text,
+                'info': options
             }
         )
 
@@ -891,11 +916,13 @@ class GameConsumer(WebsocketConsumer):
     def chat_notification(self, event):
         # Recupera el mensaje
         message = event['message']
+        info = event['info']
 
         # Envía el mensaje al websocket en cliente
         self.send(text_data=json.dumps({
             'type': 'notification',
-            'message': message
+            'message': message,
+            'info': info
         }))
 
     def save_to_cache(self, game, timeout = None):

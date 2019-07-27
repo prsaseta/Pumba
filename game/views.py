@@ -5,12 +5,16 @@ from game.domain_objects import *
 from django.http import HttpResponseRedirect
 import game.matchmaking
 from game.exceptions import PumbaException
-from game.forms import MatchForm, FeedbackForm
-from game.models import GameKey, FeedbackMail
+from game.forms import MatchForm, FeedbackForm, UserProfilePictureForm
+from game.models import GameKey, FeedbackMail, getUserProfile
 import traceback
 from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
+from django.urls import reverse
+import cloudinary.uploader
+import cloudinary
+import copy
 
 # Create your views here.
 
@@ -18,6 +22,73 @@ GAME_TEMPLATE = "game_phaser.html"
 
 def index_view(request):
     return render(request, "index.html")
+
+@login_required
+def profile(request):
+    # Cogemos el usuario
+    user = User.objects.get(id = request.user.id)
+    # Cogemos el perfil
+    profile = getUserProfile(user)
+    # Hacemos un form para subir una imagen de perfil
+    form = UserProfilePictureForm(initial={'profile': profile})
+    # Renderizamos el HTML
+    error = request.GET.get("error", None)
+    return render(request, "profile.html", {"user": user, "profile": profile, "form": form, "error": error})
+
+
+@login_required
+def profile_picture_delete(request):
+    # Cogemos el usuario
+    user = User.objects.get(id = request.user.id)
+    # Cogemos el perfil
+    profile = getUserProfile(user)
+    try:
+        instance = profile.userprofilepicture
+        ref = copy.copy(instance.picture.public_id)
+        instance.delete()
+        cloudinary.uploader.destroy(ref,invalidate=True)
+    except:
+        pass
+
+    return HttpResponseRedirect(reverse("profile"))
+
+@login_required
+def profile_picture_upload(request):
+    if request.POST:
+        # Cogemos el usuario
+        user = User.objects.get(id = request.user.id)
+        # Cogemos el perfil
+        profile = getUserProfile(user)
+        # Cogemos la instancia a actualizar
+        try:
+            instance = profile.userprofilepicture
+            ref = copy.copy(instance.picture.public_id)
+        except:
+            instance = None
+        # Recogemos el formulario
+        if instance is None:
+            form = UserProfilePictureForm(request.POST, request.FILES)
+        else:
+            form = UserProfilePictureForm(request.POST, request.FILES, instance=instance)
+        # Validamos y limpiamos campos
+        if form.is_valid():
+            if form.cleaned_data['profile'] != profile:
+                print("Los profiles no coinciden")
+                return HttpResponseRedirect(reverse("profile"))
+            # Borramos la imagen vieja
+            try:
+                if instance is not None:
+                    cloudinary.uploader.destroy(ref,invalidate=True)
+            except Exception as e:
+                print(e)
+                print("Could not delete image " + str(ref))
+            # Guardamos el formulario
+            form.save()
+        else:
+            return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image!" )
+        
+    return HttpResponseRedirect(reverse("profile"))
+
 
 @login_required
 def match_list3(request):

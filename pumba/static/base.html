@@ -1,6 +1,7 @@
 <html lang="en">
     <head>
         {% load static %}
+        {% load cloudinary %}
         <meta charset="utf-8">
         <link rel="shortcut icon" href="{%  static 'favicon.ico' %}">
         <title>Pumba!</title>
@@ -14,6 +15,7 @@
                 Welcome, {{ user.username }}<br>
                 <a href="{% url 'logout' %}"><button class="menu-button">Logout</button></a>
                 <a href="{% url 'matchmaking' %}"><button class="menu-button">Matchmaking</button></a>
+                <a href = "{% url 'profile' %}"><button class="menu-button">Profile</button></a>
                 <a href = "{% url 'feedback' %}"><button class="menu-button">Bug report / Feedback</button></a><br>
             {% else %}
                 Welcome!<br>
