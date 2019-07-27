@@ -9,4 +9,4 @@ coverage==4.5.3
 django-mathfilters==0.4.0
 service_identity==18.1.0
 selenium==3.141.0
-cloduinary
+cloudinary
