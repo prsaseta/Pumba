@@ -71,21 +71,25 @@ def profile_picture_upload(request):
         else:
             form = UserProfilePictureForm(request.POST, request.FILES, instance=instance)
         # Validamos y limpiamos campos
-        if form.is_valid():
-            if form.cleaned_data['profile'] != profile:
-                print("Los profiles no coinciden")
-                return HttpResponseRedirect(reverse("profile"))
-            # Borramos la imagen vieja
-            try:
-                if instance is not None:
-                    cloudinary.uploader.destroy(ref,invalidate=True)
-            except Exception as e:
-                print(e)
-                print("Could not delete image " + str(ref))
-            # Guardamos el formulario
-            form.save()
-        else:
-            return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image!" )
+        try:
+            if form.is_valid():
+                if form.cleaned_data['profile'] != profile:
+                    print("Los profiles no coinciden")
+                    return HttpResponseRedirect(reverse("profile"))
+                # Borramos la imagen vieja
+                try:
+                    if instance is not None:
+                        cloudinary.uploader.destroy(ref,invalidate=True)
+                except Exception as e:
+                    print(e)
+                    print("Could not delete image " + str(ref))
+                # Guardamos el formulario
+                form.save()
+            else:
+                print(form.errors)
+                return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image!" )
+        except Exception as e:
+            return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image! The format is incorrect or the image is too big" )
         
     return HttpResponseRedirect(reverse("profile"))
 

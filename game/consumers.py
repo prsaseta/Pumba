@@ -890,7 +890,6 @@ class GameConsumer(WebsocketConsumer):
     
     # Envía un mensaje de notificación a todos los clientes
     def send_notification_global(self, text, options = None):
-        print(options)
         async_to_sync(self.channel_layer.group_send)(
             self.match_group_name,
             {

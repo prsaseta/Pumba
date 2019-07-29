@@ -189,6 +189,7 @@ function updateDisplay() {
     drawUI()
     drawYourHand()
     drawPlayers()
+    drawPlayerPictures()
     drawPiles()
     drawDrawCounter()
     drawTurnDirection()

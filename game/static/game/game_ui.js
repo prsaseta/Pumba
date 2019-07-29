@@ -329,6 +329,34 @@ function drawYourHand(gamestate = undefined) {
     }
 }
 
+function calculateAssignedWidthForPlayerDisplays() {
+    var num_players = Math.max(game_state["players"].length, 1)
+    var width_assigned = (1920 - 100) / num_players
+    return width_assigned
+}
+
+function drawPlayerPictures() {
+    // Borramos lo que hubiera, si lo hay
+    if (player_pictures_group != undefined) {
+        player_pictures_group.clear(true, false)
+    } else {
+        player_pictures_group = scene.add.group()
+    }
+
+    // TODO Reformatear esto, que ha sido sacado de drawPlayers para poder usarse fuera de repintando esa parte de la UI
+    var num_players = game_state["players"].length
+    var width_assigned = calculateAssignedWidthForPlayerDisplays()
+    var theight = 10
+    
+    for (i = 0; i < num_players; i++) {
+        // Ponemos la imagen de perfil
+        var xpos = i * width_assigned + (1/2) * width_assigned
+        var pic = scene.add.sprite(xpos - 50, theight + 60, "player-" + i)
+        pic.setScale(0.35)
+        player_pictures_group.add(pic)
+    }
+}
+
 function drawPlayers() {
     // Borramos lo que hubiera, si lo hay
     if (players_group != undefined) {
@@ -339,7 +367,7 @@ function drawPlayers() {
 
     // Dividimos la parte de arriba en la pantalla entre el número de jugadores
     var num_players = Math.max(game_state["players"].length, 1)
-    var width_assigned = (1920 - 100) / num_players
+    var width_assigned = calculateAssignedWidthForPlayerDisplays()
 
     var theight = 10
 
@@ -360,12 +388,6 @@ function drawPlayers() {
         }
         // Añadimos el objeto texto al grupo
         players_group.add(ptext)
-        
-        // Ponemos la imagen de perfil
-        var pic = scene.add.sprite(xpos - 50, theight + 60, "player-" + i)
-        pic.setScale(0.35)
-        players_group.add(pic)
-        
         
         var last_j = 0
         // Pintamos las cartas que tiene en la mano

@@ -5,18 +5,17 @@
 
 {% block content %}
 
-{% cloudinary profile.userprofilepicture.picture %}
+<div style="text-align: center">{% cloudinary profile.userprofilepicture.picture %}</div>
 
-<div>
-<b>Username:</b>{{ user.username }}<br>
-</div>
-<br>
-<form action="{% url 'upload_profile_picture' %}" method="POST" enctype="multipart/form-data">
+<h2>Change profile picture</h2>
+<form action="{% url 'upload_profile_picture' %}" method="POST" enctype="multipart/form-data" style="text-align: center">
     {% csrf_token %}
-    {{ form }}
+    {{ form.profile }}
+    {{ form.picture }}<br>
     <br><input type="submit" value="Upload">
 </form>
 
-<a href="{% url 'delete_profile_picture' %}"><button>Delete profile picture</button></a>
-
+{% if profile.userprofilepicture %}
+<div style="text-align: center"><a href="{% url 'delete_profile_picture' %}"><button>Delete profile picture</button></a></div>
+{% endif %}
 {% endblock %}

@@ -21,4 +21,5 @@ class UserProfilePictureForm(forms.ModelForm):
     class Meta:
         model = UserProfilePicture
         fields = ['picture', 'profile']
-        widgets = {'profile': forms.HiddenInput()}
+        widgets = {'profile': forms.HiddenInput(),
+                    'picture': forms.FileInput(attrs={'accept': 'image/*'})}

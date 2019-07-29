@@ -126,6 +126,7 @@
     // Grupos de sprites y texto
     var piles_group = undefined
     var players_group = undefined
+    var player_pictures_group = undefined
     var piles_group = undefined
     var hand_group = undefined
     var drawCounter_group = undefined
@@ -259,6 +260,7 @@
         this.load.html('historicaldiv', "{% static 'game/historicaldiv.html' %}");
         this.load.html('alldiv', "{% static 'game/alldiv.html' %}");
 
+        /*
         this.load.on('progress', function (value) {
             console.log(value);
         });
@@ -266,9 +268,15 @@
         this.load.on('fileprogress', function (file) {
             console.log(file.src);
         });
+        */
         
         this.load.on('complete', function () {
-            console.log('All loading done');
+            //console.log('All loading done');
+            // Le pedimos que al terminar de cargar vuelva a pintar las imágenes de jugadores, para que recarguen automáticamente
+            // las imágenes cuando lleguen
+            if (player_pictures_group != undefined) {
+                drawPlayerPictures()
+            }
         });
 
     }
