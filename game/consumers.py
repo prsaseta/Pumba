@@ -388,8 +388,8 @@ class GameConsumer(WebsocketConsumer):
                 self.ai_action_draw_card(game)
                 self.ai_action_draw_card(game)
             else:
-                # Si se queda sin cartas gana
-                self.ai_action_check_if_won(game)
+                pass
+        self.ai_action_check_if_won(game)
         # Pase lo que pase, se termina el turno
         self.ai_action_end_turn(game)
         self.save_to_cache(game)

@@ -11,7 +11,7 @@ function tweenTextMiddleScreen(text, config) {
         x: 1920 / 2,
         y: 1080 / 2,
         ease: "Linear",
-        duration: 1000,
+        duration: 400,
         repeat: 0,
         yoyo: false,
         completeDelay: 500,
@@ -21,7 +21,7 @@ function tweenTextMiddleScreen(text, config) {
                 x: 1920 + 500,
                 y: 1080 / 2,
                 ease: "Linear",
-                duration: 1000,
+                duration: 850,
                 repeat: 0,
                 yoyo: false,
                 onComplete: function() {
