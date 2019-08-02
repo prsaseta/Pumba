@@ -207,7 +207,7 @@ class GameConsumer(WebsocketConsumer):
             if controller.user is None:
                 picture = picture = "/static/ai-prof-picture.png"
             else:
-                picture = getUserProfilePictureUrl(User.objects.get(id = self.user_id))
+                picture = getUserProfilePictureUrl(User.objects.get(id = controller.user.id))
 
             self.send(text_data=json.dumps({
                 'type': 'profile_picture',
