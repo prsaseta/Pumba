@@ -664,17 +664,20 @@ function drawTurnDirection() {
     } else {
         turnDirection_group = scene.add.group()
     }
-    var text = undefined
-    if (game_state["turn_direction"] == "CLOCKWISE"){
-        text = ">>>"
-    } else {
-        text = "<<<"
+    // Creamos el sprite
+    var turnDirSprite = scene.add.sprite(1920 / 2, 130, "toggle-end-turn");
+    // Lo guardamos aparte para animarlo luego
+    turn_direction_sprite = turnDirSprite
+    // Lo ponemos en posición
+    turnDirSprite.setOrigin(0.5, 0.5)
+    turnDirSprite.setX(1920 / 2)
+    turnDirSprite.setY(160)
+    turnDirSprite.setScale(0.5)
+    // Lo rotamos si debería estar en el sentido opuesto
+    if (game_state["turn_direction"] == "COUNTERCLOCKWISE") {
+        turnDirSprite.setAngle(180)
     }
-    var turnDirText = scene.add.text(1920 / 2, 130, text, { fontFamily: 'Verdana', fontSize: 26, align: "center" });
-    turnDirText.setOrigin(0.5, 0)
-    turnDirText.setX(1920 / 2)
-    turnDirText.setY(120)
-    turnDirection_group.add(turnDirText)
+    turnDirection_group.add(turnDirSprite)
 }
 
 // Muestra en pantalla el contador de robo (si hay)

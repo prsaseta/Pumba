@@ -67,6 +67,18 @@ function animatePlayCard(gstate) {
     // Ponemos un sonido
     var sound = play_card_sounds[Math.floor(Math.random()*play_card_sounds.length)];
     scene.sound.play(sound)
+    // Si se juega un FLIP, se mueve el indicador
+    if (gstate["last_effect"] == "FLIP") {
+        var turntween = scene.tweens.add({
+            targets: turn_direction_sprite,
+            delay: 0,
+            angle: "+=180",
+            ease: "Linear",
+            duration: 600,
+            repeat: 0,
+            yoyo: false
+        })
+    }
     // Le ponemos un tween para moverla a encima de la pila
     var cardtween = scene.tweens.add({
         targets: cardsp,
