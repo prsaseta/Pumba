@@ -21,5 +21,5 @@ urlpatterns = [
     path('authentication/', include('authentication.urls')),
     path('game/', include('game.urls')),
     path('admin/', admin.site.urls),
-    path('', index_view)
+    path('', index_view, name = "index")
 ]

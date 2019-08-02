@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError, HttpResponseBadRequest
-from authentication.forms import LoginForm, RegisterForm
+from authentication.forms import LoginForm, RegisterForm, RecoverPasswordRequestForm, ResetPasswordForm 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from authentication.models import PreRegister
+from authentication.models import PreRegister, RecoverPassword
 from pumba.settings import IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY, VERIFICATION_MAIL_URL
 from django.utils.crypto import get_random_string
 # Create your views here.
@@ -120,3 +120,63 @@ def do_email_verification(username, password, email):
     # Enviamos el correo
     url = VERIFICATION_MAIL_URL + "/authentication/verification?id=" + verification
     send_mail('Confirm registration at Pumba', 'Please confirm your registration with the following link: ' + url, 'register@pumba.com', [email], fail_silently=False)
+
+def request_password_recovery(request):
+    # Si ya está autenticado, lo devolvemos al índice
+    if (request.user.is_authenticated):
+        return HttpResponseRedirect("/")
+    if request.POST:
+        try:
+            form = RecoverPasswordRequestForm(request.POST)
+            if form.is_valid():
+                # TODO Comprobar repeticiones
+                key = get_random_string(length = 20)
+                recovery = RecoverPassword(key = key, user = User.objects.get(email = form.cleaned_data["email"]))
+                recovery.save()
+                url = VERIFICATION_MAIL_URL + "/authentication/reset?id=" + key
+                send_mail('Reset password at Pumba', 'We have received a request to reset your password. You can do so by clicking the following link:  ' + url + " \nIf you didn't request this change, you needn't do anything.", 'recoverypumba@pumba.com', [form.cleaned_data["email"]], fail_silently=False)
+        except Exception as e:
+            print(e)
+        return render(request, "password_recover_request_success.html")
+    else:
+        return render(request, "password_recover_request.html", {"form": RecoverPasswordRequestForm()})
+
+def reset_password(request):
+    if (request.user.is_authenticated):
+        logout(request)
+    if request.POST:
+        # Recogemos el formulario
+        form = ResetPasswordForm(request.POST)
+        # Comprobamos que está relleno correctamente
+        if form.is_valid():
+            key = form.cleaned_data["key"]
+            # Si las contraseñas no coinciden:
+            if form.cleaned_data["password"] != form.cleaned_data["confirmation"]:
+                return render(request, "reset_password.html", {"error": "Passwords don't match", "form": ResetPasswordForm(initial={"key": key})})
+            try:
+                # Recuperamos el objeto de resetear contraseña
+                recovery = RecoverPassword.objects.get(key = key)
+                # Recuperamos el usuario
+                user = recovery.user
+                # Cambiamos la contraseña
+                user.set_password(form.cleaned_data["password"])
+                # Guardamos el usuario
+                user.save()
+                # Borramos el objeto de recuperar contraseña
+                recovery.delete()
+                return render(request, "reset_password_success.html")
+            except Exception as e:
+                print(e)
+                return render(request, "reset_password.html", {"error": "There was an error changing your password", "form": ResetPasswordForm(initial={"key": key})})
+    else:
+        # Comprobamos que se ha mandado la key
+        key = request.GET.get("id", None)
+        if key is None:
+            return render(request, "400.html", {"error": "Invalid password recovery key."})
+        # Si la key no existe, la petición no es válida
+        try:
+            RecoverPassword.objects.get(key = key)
+        except Exception as e:
+            print(e)
+            return render(request, "400.html", {"error": "Invalid password recovery key."})
+        return render(request, "reset_password.html", {"form": ResetPasswordForm(initial={"key": key})})
