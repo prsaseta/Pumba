@@ -95,6 +95,12 @@
     // Si ya se está procesando la cola de estados o no
     var game_state_processing = false
 
+    // Sonidos a usar cuando se juega una carta
+    var play_card_sounds = []
+
+    // Sonidos a usar cuando se roba una carta
+    var draw_card_sounds = []
+
     // Coordenadas base de la pila de juego
     // Las coordenadas de la pila de descarte, número de cartas y otras cosas dependen de esta coordenada
     var play_pile_coordinates = [-254 / 2 + 1920 / 2 + 100, 1080 / 3]
@@ -104,6 +110,8 @@
     // Escala de la pila de juego
     // La escala de otros elementos también depende de ella
     var play_pile_scale = [0.8, 0.8]
+    // Carta superior de la pila de juego
+    var last_played_sprite = undefined
 
     // Divs HTML para el registro de chat y de acciones
     var chatboxdiv = undefined
@@ -251,9 +259,38 @@
 
         this.load.audio('your-turn-sound', "{% static 'your-turn.mp3' %}")
         this.load.audio('enemy-turn-sound', "{% static 'enemy-turn.wav' %}")
-        this.load.audio('play-card-sound', "{% static 'play-card.wav' %}")
-        this.load.audio('draw-card-sound', "{% static 'draw-card.wav' %}")
+        //this.load.audio('play-card-sound', "{% static 'play-card.wav' %}")
+        //this.load.audio('draw-card-sound', "{% static 'draw-card.wav' %}")
         this.load.audio('game-won-sound', "{% static 'game-won.wav' %}")
+        this.load.audio('switch-sound', "{% static 'switch-sound.wav' %}")
+
+        this.load.audio('playCard1', "{% static 'cardPlace1.wav' %}")
+        this.load.audio('playCard2', "{% static 'cardPlace2.wav' %}")
+        this.load.audio('playCard3', "{% static 'cardPlace3.wav' %}")
+        this.load.audio('playCard4', "{% static 'cardPlace4.wav' %}")
+
+        play_card_sounds.push('playCard1')
+        play_card_sounds.push('playCard2')
+        play_card_sounds.push('playCard3')
+        play_card_sounds.push('playCard4')
+
+        this.load.audio('drawCard1', "{% static 'cardSlide1.wav' %}")
+        this.load.audio('drawCard2', "{% static 'cardSlide2.wav' %}")
+        this.load.audio('drawCard3', "{% static 'cardSlide3.wav' %}")
+        this.load.audio('drawCard4', "{% static 'cardSlide4.wav' %}")
+        this.load.audio('drawCard5', "{% static 'cardSlide5.wav' %}")
+        this.load.audio('drawCard6', "{% static 'cardSlide6.wav' %}")
+        this.load.audio('drawCard7', "{% static 'cardSlide7.wav' %}")
+        this.load.audio('drawCard8', "{% static 'cardSlide8.wav' %}")
+
+        draw_card_sounds.push('drawCard1')
+        draw_card_sounds.push('drawCard2')
+        draw_card_sounds.push('drawCard3')
+        draw_card_sounds.push('drawCard4')
+        draw_card_sounds.push('drawCard5')
+        draw_card_sounds.push('drawCard6')
+        draw_card_sounds.push('drawCard7')
+        draw_card_sounds.push('drawCard8')
 
         this.load.html('form', "{% static 'game/form.html' %}");
         this.load.html('chatdiv', "{% static 'game/chatdiv.html' %}");

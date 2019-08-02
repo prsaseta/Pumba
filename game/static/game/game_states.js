@@ -177,11 +177,31 @@ function processSwitch(gstate) {
     var cbox_message = "Player " + gstate['action']['player'] + " changes the current suit to " + gstate['action']['suit'] + "."
     appendToRecord(cbox_message)
 
-    // Actualizamos la UI
-    updateGameFromState(gstate)
+    // Animación
+    var next = scene.add.sprite(play_pile_coordinates[0], play_pile_coordinates[1], gstate["last_suit"] + "-" + gstate["last_number"])
+    next.setDepth(last_played_sprite.depth - 1)
+    next.setScale(play_pile_scale[0], play_pile_scale[1])
+    last_played_sprite.removeInteractive()
 
-    // Guardamos que hemos terminado
-    game_state_processing = false
+    scene.sound.play("switch-sound")
+
+    var tween2 = scene.add.tween({
+        targets: last_played_sprite,
+        alpha: 0,
+        duration: 500,
+        ease: 'Linear',
+        repeat: 0,
+        yoyo: false,
+        onComplete: function () {
+            // Actualizamos la UI
+            updateGameFromState(gstate)
+
+            next.destroy()
+
+            // Guardamos que hemos terminado
+            game_state_processing = false
+        }
+    })
 }
 
 // Pinta TODO de nuevo

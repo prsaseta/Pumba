@@ -65,7 +65,8 @@ function animatePlayCard(gstate) {
         drawUI()
     }
     // Ponemos un sonido
-    scene.sound.play("play-card-sound")
+    var sound = play_card_sounds[Math.floor(Math.random()*play_card_sounds.length)];
+    scene.sound.play(sound)
     // Le ponemos un tween para moverla a encima de la pila
     var cardtween = scene.tweens.add({
         targets: cardsp,
@@ -89,7 +90,8 @@ function animatePlayCard(gstate) {
 
 function animateDrawCard(gstate) {
     // Ponemos un sonido y listo
-    scene.sound.play("draw-card-sound")
+    var sound = draw_card_sounds[Math.floor(Math.random()*draw_card_sounds.length)];
+    scene.sound.play(sound)
     // Repintamos la UI
     updateGameFromState(gstate)
     // Guardamos que hemos terminado
@@ -98,7 +100,8 @@ function animateDrawCard(gstate) {
 
 function animateDrawCardForced(gstate) {
     // Ponemos un sonido y listo
-    scene.sound.play("draw-card-sound")
+    var sound = draw_card_sounds[Math.floor(Math.random()*draw_card_sounds.length)];
+    scene.sound.play(sound)
     // Repintamos la UI
     updateGameFromState(gstate)
     // Guardamos que hemos terminado

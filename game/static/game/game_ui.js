@@ -484,6 +484,8 @@ function drawPiles() {
     var drawPileDisp = scene.add.sprite(getDrawPileCoordinates()[0], getDrawPileCoordinates()[1], "card-back")
     var drawPileText = scene.add.text(getDrawPileCoordinates()[0], 50 + 254 / 2 + getDrawPileCoordinates()[1], game_state["draw_pile"], { fontFamily: 'Verdana', fontSize: 36 });
     
+    last_played_sprite = playPileDisp
+
     playPileDisp.setScale(play_pile_scale[0], play_pile_scale[1])
     drawPileDisp.setScale(play_pile_scale[0], play_pile_scale[1])
 
