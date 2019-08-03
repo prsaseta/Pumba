@@ -22,4 +22,4 @@ class UserProfilePictureForm(forms.ModelForm):
         model = UserProfilePicture
         fields = ['picture', 'profile']
         widgets = {'profile': forms.HiddenInput(),
-                    'picture': forms.FileInput(attrs={'accept': 'image/*'})}
+                    'picture': forms.FileInput(attrs={'accept': 'image/*', 'onChange': 'validateSize(this)'})}

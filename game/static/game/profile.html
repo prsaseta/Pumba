@@ -8,6 +8,20 @@
 <div style="text-align: center">{% cloudinary profile.userprofilepicture.picture %}</div>
 
 <h2>Change profile picture</h2>
+
+<script>
+    // Comprueba que el fichero no se pasa de tamaño
+    function validateSize(file) {
+        // Convierte a MB
+        var size = file.files[0].size / 1024 / 1024; 
+        // Si se pasa de tamaño, lo echa para atrás
+        if (size > 2.5) {
+            alert('Please select a file of at most 2.5 MB');
+            $(file).val('');
+        }
+    }
+</script>
+
 <form action="{% url 'upload_profile_picture' %}" method="POST" enctype="multipart/form-data" style="text-align: center">
     {% csrf_token %}
     {{ form.profile }}
