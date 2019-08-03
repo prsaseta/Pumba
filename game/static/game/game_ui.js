@@ -354,6 +354,28 @@ function drawPlayerPictures() {
         var pic = scene.add.sprite(xpos - 50, theight + 60, "player-" + i)
         pic.setScale(0.35)
         player_pictures_group.add(pic)
+        // Al jugador actual le ponemos efectos extra
+        if (game_state["current_player"] == i) {
+            var circle = scene.add.sprite(xpos - 50, theight + 60, "toggle-end-turn-circle")
+            circle.setScale(0.65)
+            var ttween = scene.tweens.add({
+                targets: circle,
+                angle: 360,
+                ease: "Linear",
+                duration: 1500,
+                repeat: -1,
+                yoyo: false,
+            })
+            var ttween2 = scene.tweens.add({
+                targets: circle,
+                alpha: 0.5,
+                ease: "Linear",
+                duration: 1000,
+                repeat: -1,
+                yoyo: true,
+            })
+            player_pictures_group.add(circle)
+        }
     }
 }
 
