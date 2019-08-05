@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block content %}
 {% if user.is_authenticated %}
-    <p style="text-align: center">Welcome back {{ user.username }}! <a href="{% url 'matchmaking' %}">Join a match?</a></p><br/>
+    <p style="text-align: center">{% blocktrans with username=user.username %}Welcome back {{ username }}!{% endblocktrans %}<a href="{% url 'matchmaking' %}">{% trans "Join a match?" %}</a></p><br/>
 {% else %}
-    <p style="text-align: center">Welcome to Pumba! Please <a href="{% url 'login' %}">login</a> or <a href="{% url 'register' %}">register</a> to play!</p>
+    <p style="text-align: center">{% trans "Welcome to Pumba!" %} {% trans "Please" %}, <a href="{% url 'login' %}">{% trans "login" %}</a> {% trans "or" %} <a href="{% url 'register' %}">{% trans "register" %}</a> {% trans "to play" %}</p>
 {% endif %}
 {% endblock %}

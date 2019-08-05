@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block content %}
 
 <form method="post" action="{% url 'login' %}">
@@ -8,10 +10,10 @@
     {{ form.as_table }}
 </table>
 <div style="float: center; text-align: center">
-    <button type="submit" class="menu-button">Login</button>
+    <button type="submit" class="menu-button">{% trans "Login" %}</button>
 </div>
 </form>
 
-<div style="float: center; text-align: center"><a href="{% url 'request_recovery' %}">Forgotten password?</a></div>
+<div style="float: center; text-align: center"><a href="{% url 'request_recovery' %}">{% trans "Forgotten password?" %}</a></div>
 
 {% endblock %}

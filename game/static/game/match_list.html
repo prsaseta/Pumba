@@ -2,6 +2,7 @@
 
 {% load mathfilters %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 
@@ -9,24 +10,24 @@
 
 {% if yours is not None %}
 
-<h2>Your matches</h2>
+<h2>{% trans "Your matches" %}</h2>
 
 <table class="matchmaking_table">
     <tr>
         <th>
-            Name
+            {% trans "Name" %}
         </th>
         <th>
-            Status
+            {% trans "Status" %}
         </th>
         <th>
-            Player count
+            {% trans "Player count" %}
         </th>
         <th>
-            AIs
+            {% trans "AIs" %}
         </th>
         <th>
-            Players
+            {% trans "Players" %}
         </th>
         <th>
             
@@ -44,7 +45,7 @@
             {% endfor %}
         </th>
         <th class="matchmaking_table_row">
-            <a href="/game/join?id={{ game.key }}"><button class="join-match-button">Rejoin</button></a>
+            <a href="/game/join?id={{ game.key }}"><button class="join-match-button">{% trans "Rejoin" %}</button></a>
         </th>
     </tr>
     {% endfor %}
@@ -53,24 +54,24 @@
 
 {% if games is not None %}
 
-<h2>Join match</h2>
+<h2>{% trans "Join match" %}</h2>
 
 <table class="matchmaking_table">
     <tr>
         <th>
-            Name
+            {% trans "Name" %}
         </th>
         <th>
-            Status
+            {% trans "Status" %}
         </th>
         <th>
-            Player count
+            {% trans "Player count" %}
         </th>
         <th>
-            AIs
+            {% trans "AIs" %}
         </th>
         <th>
-            Players
+            {% trans "Players" %}
         </th>
         <th>
             
@@ -93,9 +94,9 @@
         </th>
         <th class="matchmaking_table_row">
             {% if game.current_users < game.capacity %}
-                <a href="/game/join?id={{ game.key }}"><button class="join-match-button">Join</button></a>
+                <a href="/game/join?id={{ game.key }}"><button class="join-match-button">{% trans "Join" %}</button></a>
             {% else %}
-                <button class="full-match-button">Full</button>
+                <button class="full-match-button">{% trans "Full" %}</button>
             {% endif %}
         </th>
     </tr>
@@ -104,18 +105,18 @@
 
 {% else %}
 
-<p style="text-align: center">No games found</p>
+<p style="text-align: center">{% trans "No games found" %}</p>
 
 {% endif %}
 
-<h2>Create match</h2>
+<h2>{% trans "Create match" %}</h2>
 <div style="text-align: center">
 <form method="post" action="{% url 'create_match' %}" id="create-match-form">
     {% csrf_token %}
     <table class="form-table">
     {{ form.as_table }}
     </table>
-    <button type="submit" class="create-match-button" style="float: center; text-align: center">Create match</button>
+    <button type="submit" class="create-match-button" style="float: center; text-align: center">{% trans "Create match" %}</button>
 </form>
 </div>
 

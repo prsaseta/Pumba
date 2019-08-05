@@ -197,7 +197,7 @@ def feedback(request):
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(e)
-                return (request, "feedback.html", {"form": FeedbackForm, "error": "Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later."})
+                return (request, "feedback.html", {"form": form, "error": "Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later."})
 
             # Intentamos enviar un correo con el feedback
             try:
@@ -207,7 +207,7 @@ def feedback(request):
             
             return HttpResponseRedirect("/", {"notification": "Your feedback was sent successfully, thank you for your time!"})
         else:
-            return render (request, "feedback.html", {"form": FeedbackForm, "error": "Invalid data"})
+            return render (request, "feedback.html", {"form": form, "error": "Invalid data"})
     else:
-        return render (request, "feedback.html", {"form": FeedbackForm})
+        return render (request, "feedback.html", {"form": FeedbackForm()})
     

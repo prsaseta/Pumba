@@ -2,12 +2,13 @@
 
 {% load static %}
 {% load cloudinary %}
+{% load i18n %}
 
 {% block content %}
 
 <div style="text-align: center">{% cloudinary profile.userprofilepicture.picture %}</div>
 
-<h2>Change profile picture</h2>
+<h2>{% trans "Change profile picture" %}</h2>
 
 <script>
     // Comprueba que el fichero no se pasa de tamaño
@@ -26,21 +27,21 @@
     {% csrf_token %}
     {{ form.profile }}
     {{ form.picture }}<br>
-    <br><input type="submit" value="Upload">
+    <br><input type="submit" value="{% trans 'Upload' %}">
 </form>
 
 {% if profile.userprofilepicture %}
-<div style="text-align: center"><a href="{% url 'delete_profile_picture' %}"><button>Delete profile picture</button></a></div>
+<div style="text-align: center"><a href="{% url 'delete_profile_picture' %}"><button>{% trans "Delete profile picture" %}</button></a></div>
 {% endif %}
 
-<h2>Change background</h2>
+<h2>{% trans "Change game background" %}</h2>
 
 <form action="{% url 'edit_background' %}" method="POST" enctype="multipart/form-data" style="text-align: center">
     {% csrf_token %}
     {{ form_background }}<br>
     <div id = "preview-bg">
     </div>
-    <br><input type="submit" value="Change background">
+    <br><input type="submit" value="{% trans 'Change background' %}">
 </form>
 
 <script>

@@ -16,6 +16,16 @@ body {
     font-size: 16px;
 }
 
+.language-container form,
+.language-container form div {
+    display: inline;
+}
+
+.language-container button {
+    display: inline;
+    vertical-align: middle;
+}
+
 .menu-button:hover {
     background-color: darkslateblue
 }

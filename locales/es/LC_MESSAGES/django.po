@@ -1,0 +1,232 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-08-05 20:10+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\authentication\static\authentication\login.html:13
+#: .\authentication\static\authentication\reset_password_success.html:6
+#: .\pumba\static\base.html:36
+msgid "Login"
+msgstr "Iniciar sesión"
+
+#: .\authentication\static\authentication\login.html:17
+msgid "Forgotten password?"
+msgstr "¿Has olvidaado tu contraseña?"
+
+#: .\authentication\static\authentication\password_recover_request.html:6
+msgid ""
+"If you have forgotten your password, input your e-mail and we'll send you a "
+"reset link"
+msgstr "Si has olvidado tu contraseña, escribe aquí tu correo y te mandaremos un enlace para reestablecerla"
+
+#: .\authentication\static\authentication\password_recover_request.html:13
+msgid "Recover password"
+msgstr "Recuperar contraseña"
+
+#: .\authentication\static\authentication\password_recover_request_success.html:4
+msgid ""
+"If that e-mail was assigned to an account, we have sent a reset link to it. "
+"Please check your inbox and spambox"
+msgstr "Si el correo que has puesto se corresponde con una cuenta, mandaremos un enlace de recuperación. Por favor, comprueba tu bandeja de entrada y de spam"
+
+#: .\authentication\static\authentication\password_recover_request_success.html:4
+msgid "Go back to the main page"
+msgstr "Volver al índice"
+
+#: .\authentication\static\authentication\register.html:11
+#: .\pumba\static\base.html:37
+msgid "Register"
+msgstr "Registrarse"
+
+#: .\authentication\static\authentication\register_confirm.html:4
+msgid ""
+"We have sent a message to your specified email address to finish your "
+"registrarion. Please click the link provided therein."
+msgstr "Hemos mandado un mensaje a tu correo para terminar tu registro. Por favor, pincha en el enlace que te hemos mandado."
+
+#: .\authentication\static\authentication\register_success.html:4
+msgid "You registered successfully!"
+msgstr "¡Te has registrado con éxito!"
+
+#: .\authentication\static\authentication\register_success.html:4
+msgid "Click"
+msgstr "Pincha"
+
+#: .\authentication\static\authentication\register_success.html:4
+msgid "here"
+msgstr "aquí"
+
+#: .\authentication\static\authentication\register_success.html:4
+msgid "to log in"
+msgstr "para identificarte"
+
+#: .\authentication\static\authentication\reset_password.html:6
+msgid "Insert your new password"
+msgstr "Escribe tu nueva contraseña"
+
+#: .\authentication\static\authentication\reset_password.html:13
+msgid "Reset"
+msgstr "Recuperar"
+
+#: .\authentication\static\authentication\reset_password_success.html:6
+msgid "You have successfully reset your password"
+msgstr "Has recuperado con éxito tu contraseña"
+
+#: .\game\static\game\feedback.html:7
+msgid "You can send any feedback or bug report about Pumba here"
+msgstr ""
+"Puedes enviar cualquier error que encuentres o feedback sobre Pumba aquí"
+
+#: .\game\static\game\feedback.html:19
+msgid "Send!"
+msgstr "¡Listo!"
+
+#: .\game\static\game\match_list.html:13
+msgid "Your matches"
+msgstr "Tus partidas en curso"
+
+#: .\game\static\game\match_list.html:18 .\game\static\game\match_list.html:62
+msgid "Name"
+msgstr "Nombre"
+
+#: .\game\static\game\match_list.html:21 .\game\static\game\match_list.html:65
+msgid "Status"
+msgstr "Estado"
+
+#: .\game\static\game\match_list.html:24 .\game\static\game\match_list.html:68
+msgid "Player count"
+msgstr "Nº de jugadores"
+
+#: .\game\static\game\match_list.html:27 .\game\static\game\match_list.html:71
+msgid "AIs"
+msgstr "IAs"
+
+#: .\game\static\game\match_list.html:30 .\game\static\game\match_list.html:74
+msgid "Players"
+msgstr "Jugadores"
+
+#: .\game\static\game\match_list.html:48
+msgid "Rejoin"
+msgstr "Reconectar"
+
+#: .\game\static\game\match_list.html:57
+msgid "Join match"
+msgstr "Unirse a una partida"
+
+#: .\game\static\game\match_list.html:97
+msgid "Join"
+msgstr "Unirse"
+
+#: .\game\static\game\match_list.html:99
+msgid "Full"
+msgstr "Lleno"
+
+#: .\game\static\game\match_list.html:108
+msgid "No games found"
+msgstr "No se han encontrado partidas"
+
+#: .\game\static\game\match_list.html:112
+#: .\game\static\game\match_list.html:119
+msgid "Create match"
+msgstr "Crear partida"
+
+#: .\game\static\game\profile.html:11
+msgid "Change profile picture"
+msgstr "Cambiar foto de perfil"
+
+#: .\game\static\game\profile.html:30
+msgid "Upload"
+msgstr "Subir"
+
+#: .\game\static\game\profile.html:34
+msgid "Delete profile picture"
+msgstr "Borrar foto de perfil"
+
+#: .\game\static\game\profile.html:37
+msgid "Change game background"
+msgstr "Cambiar fondo del juego"
+
+#: .\game\static\game\profile.html:44
+msgid "Change background"
+msgstr "Cambiar fondo"
+
+#: .\pumba\static\400.html:7
+msgid "Go back to the index"
+msgstr "Volver al índice"
+
+#: .\pumba\static\base.html:29
+#, python-format
+msgid "Welcome, %(username)s!"
+msgstr "¡Bienvenido, %(username)s!"
+
+#: .\pumba\static\base.html:30
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+#: .\pumba\static\base.html:31
+msgid "Matchmaking"
+msgstr "Buscador"
+
+#: .\pumba\static\base.html:32
+msgid "Profile"
+msgstr "Perfil"
+
+#: .\pumba\static\base.html:33
+msgid "Bug report / Feedback"
+msgstr "Errores / Feedback"
+
+#: .\pumba\static\base.html:35
+msgid "Welcome!"
+msgstr "¡Bienvenido!"
+
+#: .\pumba\static\base.html:39
+msgid "Language"
+msgstr "Lenguaje"
+
+#: .\pumba\static\index.html:7
+#, python-format
+msgid "Welcome back %(username)s!"
+msgstr "¡Bienvenido de vuelta %(username)s!"
+
+#: .\pumba\static\index.html:7
+msgid "Join a match?"
+msgstr "¿Juegas una partida?"
+
+#: .\pumba\static\index.html:9
+msgid "Welcome to Pumba!"
+msgstr "¡Bienvenido a Pumba!"
+
+#: .\pumba\static\index.html:9
+msgid "Please"
+msgstr "Por favor"
+
+#: .\pumba\static\index.html:9
+msgid "login"
+msgstr "identifícate"
+
+#: .\pumba\static\index.html:9
+msgid "or"
+msgstr "o"
+
+#: .\pumba\static\index.html:9
+msgid "register"
+msgstr "regístrate"
+
+#: .\pumba\static\index.html:9
+msgid "to play"
+msgstr "para jugar"

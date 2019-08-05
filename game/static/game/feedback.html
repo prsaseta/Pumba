@@ -1,15 +1,22 @@
 {% extends "base.html" %}
 
+{% load i18n %}
+
 {% block content %}
-{% if error %}
-<p class="error">{{error}}</p>
-{% endif %}
 <div style="text-align: center">
-    <h2>You can send any feedback or bug report about Pumba! here</h2>
+    <h2>{% trans "You can send any feedback or bug report about Pumba here" %}</h2>
 <form method="post" action="{% url 'feedback' %}">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="menu-button">Send!</button>
+    {{ form.email.label }}<br>
+    <span class = "error">{{ form.email.errors.as_text }}</span><br>
+    {{ form.email }}<br><br>
+    {{ form.subject.label }}<br>
+    <span class = "error">{{ form.subject.errors.as_text }}</span><br>
+    {{ form.subject }}<br><br>
+    {{ form.body.label }}<br>
+    <span class = "error">{{ form.body.errors.as_text }}</span><br>
+    {{ form.body }}<br><br>
+    <button type="submit" class="menu-button">{% trans "Send!" %}</button>
 </form>
 </div>
 

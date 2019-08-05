@@ -2,6 +2,7 @@
     <head>
         {% load static %}
         {% load cloudinary %}
+        {% load i18n %}
         <meta charset="utf-8">
         <link rel="shortcut icon" href="{%  static 'favicon.ico' %}">
         <title>Pumba!</title>
@@ -9,19 +10,47 @@
         <link rel="stylesheet" type="text/css" href="{% static 'base.css' %}">
     </head>
     <body>
+
+        <script>
+        function toggleLanguageChoices() {
+            if ($("#lang-button-en").is(":hidden")){
+                $("#lang-button-en").show()
+                $("#lang-button-es").show()
+            } else {
+                $("#lang-button-en").hide()
+                $("#lang-button-es").hide()
+            }
+        }
+        </script>
+
         <div class="header">
             <h1><a href="/"><img src="{% static 'logo.png' %}"/></a></h1>
             {% if user.is_authenticated %}
-                Welcome, {{ user.username }}<br>
-                <a href="{% url 'logout' %}"><button class="menu-button">Logout</button></a>
-                <a href="{% url 'matchmaking' %}"><button class="menu-button">Matchmaking</button></a>
-                <a href = "{% url 'profile' %}"><button class="menu-button">Profile</button></a>
-                <a href = "{% url 'feedback' %}"><button class="menu-button">Bug report / Feedback</button></a><br>
+                {% blocktrans with username=user.username %}Welcome, {{ username }}!{% endblocktrans %}<br>
+                <a href="{% url 'logout' %}"><button class="menu-button">{% trans "Logout" %}</button></a>
+                <a href="{% url 'matchmaking' %}"><button class="menu-button">{% trans "Matchmaking" %}</button></a>
+                <a href = "{% url 'profile' %}"><button class="menu-button">{% trans "Profile" %}</button></a>
+                <a href = "{% url 'feedback' %}"><button class="menu-button">{% trans "Bug report / Feedback" %}</button></a><br>
             {% else %}
-                Welcome!<br>
-                <a href="{% url 'login' %}"><button class="menu-button">Login</button></a>
-                <a href="{% url 'register' %}"><button class="menu-button">Register</button></a>
+                {% trans "Welcome!" %}<br>
+                <a href="{% url 'login' %}"><button class="menu-button">{% trans "Login" %}</button></a>
+                <a href="{% url 'register' %}"><button class="menu-button">{% trans "Register" %}</button></a>
             {% endif %}
+            <button class="menu-button" onclick="toggleLanguageChoices()">{% trans "Language" %}</button>
+            <div class="language-container">
+                <form action="{% url 'set_language' %}" method="post">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{% url 'index' %}">
+                    <input type="hidden" name="language" value="en">
+                    <input type="image" src="{% static 'en-flag.png'%}" onclick="submit()" width="50" hidden id="lang-button-en" />
+                </form>
+                <form action="{% url 'set_language' %}" method="post">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{% url 'index' %}">
+                        <input type="hidden" name="language" value="es">
+                        <input type="image" src="{% static 'es-flag.png'%}" onclick="submit()" width="50" hidden id="lang-button-es"/>
+                </form>
+            </div>
         </div>
         {% if notification %}
             <p class="notification">{{notification}}</p>
