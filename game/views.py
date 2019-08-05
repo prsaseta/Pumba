@@ -5,13 +5,14 @@ from game.domain_objects import *
 from django.http import HttpResponseRedirect
 import game.matchmaking
 from game.exceptions import PumbaException
-from game.forms import MatchForm, FeedbackForm, UserProfilePictureForm
-from game.models import GameKey, FeedbackMail, getUserProfile
+from game.forms import MatchForm, FeedbackForm, UserProfilePictureForm, UserProfileGameBackgroundForm
+from game.models import GameKey, FeedbackMail, getUserProfile, UserProfileGameBackground, getBackgroundsAsJson
 import traceback
-from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED
+from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED, STATIC_URL
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.urls import reverse
+import json
 import cloudinary.uploader
 import cloudinary
 import copy
@@ -31,10 +32,35 @@ def profile(request):
     profile = getUserProfile(user)
     # Hacemos un form para subir una imagen de perfil
     form = UserProfilePictureForm(initial={'profile': profile})
+    # Hacemos un form para cambiar el background
+    form_background = UserProfileGameBackgroundForm(instance= profile.userprofilegamebackground)
     # Renderizamos el HTML
     error = request.GET.get("error", None)
-    return render(request, "profile.html", {"user": user, "profile": profile, "form": form, "error": error})
+    return render(request, "profile.html", {"user": user, "profile": profile, "form": form, "form_background": form_background,
+     "error": error, "backgrounds": getBackgroundsAsJson(), "static_path": STATIC_URL})
 
+@login_required
+def change_background(request):
+    if request.POST:
+        # Cogemos el usuario
+        user = User.objects.get(id = request.user.id)
+        # Cogemos el perfil
+        profile = getUserProfile(user)
+        # Cogemos el formulario
+        form = UserProfileGameBackgroundForm(request.POST, instance= profile.userprofilegamebackground)
+        # Comprobamos que está bien relleno
+        if form.is_valid():
+            # Si está intentando modificar otro perfil, se lo denegamos
+            if form.cleaned_data['profile'] != profile:
+                print("Los profiles no coinciden")
+                return HttpResponseRedirect(reverse("profile") + "?error=" + "There was an error processing your request")
+            form.save()
+            return HttpResponseRedirect(reverse("profile"))
+        else:
+            print(form.errors)
+            return HttpResponseRedirect(reverse("profile") + "?error=" + "There was an error processing your request")
+    else:
+        return HttpResponseRedirect(reverse("profile"))
 
 @login_required
 def profile_picture_delete(request):
@@ -126,7 +152,7 @@ def join_match(request):
             key.delete()
             return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
         player_id = game.matchmaking.join(request.user, id)
-        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED})
+        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
     except Exception as e:
         return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     
@@ -150,7 +176,7 @@ def create_match(request):
             except ValueError as e:
                 return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
 
-            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0, 'cheats': CHEATS_ENABLED})
+            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
         else:
             return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
     else:

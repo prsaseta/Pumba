@@ -1,5 +1,5 @@
 from django import forms
-from game.models import UserProfilePicture
+from game.models import UserProfilePicture, UserProfileGameBackground
 
 class MatchForm(forms.Form):
     max_players = forms.IntegerField(max_value=6, min_value=2, label = "Maximum players", initial = 4)
@@ -23,3 +23,10 @@ class UserProfilePictureForm(forms.ModelForm):
         fields = ['picture', 'profile']
         widgets = {'profile': forms.HiddenInput(),
                     'picture': forms.FileInput(attrs={'accept': 'image/*', 'onChange': 'validateSize(this)'})}
+
+
+class UserProfileGameBackgroundForm(forms.ModelForm):
+    class Meta:
+        model = UserProfileGameBackground
+        fields = ['background', 'profile']
+        widgets = {'profile': forms.HiddenInput()}

@@ -32,4 +32,49 @@
 {% if profile.userprofilepicture %}
 <div style="text-align: center"><a href="{% url 'delete_profile_picture' %}"><button>Delete profile picture</button></a></div>
 {% endif %}
+
+<h2>Change background</h2>
+
+<form action="{% url 'edit_background' %}" method="POST" enctype="multipart/form-data" style="text-align: center">
+    {% csrf_token %}
+    {{ form_background }}<br>
+    <div id = "preview-bg">
+    </div>
+    <br><input type="submit" value="Change background">
+</form>
+
+<script>
+// Cuando el DOM carga, cargamos las imágenes de los backgrounds
+$(document).ready(function (){
+    var backgrounds = {{ backgrounds|safe }};
+    var staticPath = {{ static_path }}
+    // Por cada background, crea y esconde una imagen en un div del form
+    for (i = 0; i < backgrounds.length; i++) {
+        // URL al recurso (camino a recursos estáticos + background concreto)
+        var url = staticPath + "background-" + backgrounds[i] + ".png"
+        // Nodos que vamos a añadir al DOM (una imagen con las propiedades que nos haacen falta)
+        var item = "<img src = '" + url + "' width = '20%' hidden id = 'bg-image-" + backgrounds[i] +"'>"
+        $("#preview-bg").append(item)
+        // Mostramos la imagen que ya está seleccionada
+        if (backgrounds[i] == $("#id_background").val()) {
+            $("#bg-image-" + backgrounds[i]).show()
+        }
+    }
+    // Le ponemos al choicefield un onChange para que oculte y revele los backgrounds según cambien
+    $("#id_background").change(function () {
+        // Cogemos el valor seleccionado en el select
+        var value = $("#id_background").val()
+        // Ocultamos los que no sean y mostramos el que sea
+        for (i = 0; i < backgrounds.length; i++) {
+            if (backgrounds[i] != value) {
+                $("#bg-image-" + backgrounds[i]).hide()
+            } else {
+                $("#bg-image-" + backgrounds[i]).show()
+            }
+        }
+    })
+})
+
+</script>
+
 {% endblock %}

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from cloudinary.models import CloudinaryField
 from django.core.exceptions import ObjectDoesNotExist
+import json
 
 # Create your models here.
 
@@ -33,6 +34,17 @@ class FeedbackMail(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+class UserProfileGameBackground(models.Model):
+    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
+    BACKGROUNDS = (
+        ("blue", "Blue"),
+        ("deepcyan", "Deep cyan"),
+        ("gray", "Gray"),
+        ("green", "Green"),
+        ("violet", "Violet")
+    )
+    background = models.CharField(max_length = 100, default="blue", choices = BACKGROUNDS)
+
 class UserProfilePicture(models.Model):
     picture = CloudinaryField('profpicture')
     profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
@@ -41,9 +53,15 @@ def getUserProfile(user):
     try:
         user2 = User.objects.get(id = user.id)
         profile = UserProfile.objects.get(user = user2)
+        try:
+            profile.userprofilegamebackground
+        except:
+            UserProfileGameBackground(profile = profile).save()
     except ObjectDoesNotExist:
         profile = UserProfile(user = user2)
         profile.save()
+        background = UserProfileGameBackground(profile = profile)
+        background.save()
     return profile
 
 def getUserProfilePictureUrl(user):
@@ -56,3 +74,11 @@ def getUserProfilePictureUrl(user):
             return pf.userprofilepicture.picture.url
     except:
         return "/static/default-prof-picture.png"
+
+def getBackgroundsAsJson():
+    tups = UserProfileGameBackground.BACKGROUNDS
+    backgrounds = []
+    for i in range(len(tups)):
+        backgrounds.append(tups[i][0])
+
+    return json.dumps(backgrounds)
