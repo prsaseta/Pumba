@@ -13,7 +13,7 @@ function processEndTurn(gstate) {
     has_played_card = false
     
     // Actualizamos el historial
-    var cbox_message = "Player " + gstate['action']['player'] + " ends their turn."
+    var cbox_message = gstate['action']['player'] + strings["ends-turn"]
     appendToRecord(cbox_message)
 
     // Animación de fin de turno
@@ -34,7 +34,7 @@ function processBeginMatch(gstate) {
     // Borramos el botón para empezar la partida
     deleteBeginMatch()
     // Añadimos lo que ha pasado al historial
-    var cbox_message = "The match has begun!"
+    var cbox_message = strings["match-begun"]
     appendToRecord(cbox_message)
 
     // Ponemos la carta del principio en el historial de cartas
@@ -65,7 +65,7 @@ function processDrawCard(gstate) {
     }
 
     // Añadimos lo que ha pasado al historial
-    var cbox_message = "Player " + gstate['action']['player'] + " draws a card."
+    var cbox_message = gstate['action']['player'] + strings["draws-card"]
     appendToRecord(cbox_message)
 
     animateDrawCard(gstate)
@@ -87,7 +87,7 @@ function processDrawCardForced(gstate) {
     }
 
     // Añadimos lo que ha pasado al historial
-    var cbox_message = "Player " + gstate['action']['player'] + " draws " + gstate['action']['number'] + " cards and resets the counter."
+    var cbox_message = gstate['action']['player'] + strings["draws"] + gstate['action']['number'] + strings["forced-draw"]
     appendToRecord(cbox_message)
 
     animateDrawCardForced(gstate)
@@ -130,7 +130,7 @@ function processGameWon(gstate) {
     last_cards_played = []
 
     // Añadimos lo que ha pasado al registro
-    var cbox_message = gstate['action']['player'] + " wins the match!"
+    var cbox_message = strings["open-exclamation"] + gstate['action']['player'] + strings["wins-match"]
     appendToRecord(cbox_message)
 
     // Guardamos que hemos terminado
@@ -163,7 +163,7 @@ function processPlayCard(gstate) {
     }
 
     // Añadimos lo que ha pasado al historial
-    var cbox_message = "Player " + gstate['action']['player'] + " plays a " + gstate['action']['card']['number'] + " of " + gstate['action']['card']['suit'] + "."
+    var cbox_message = gstate['action']['player'] + strings["plays"] + gstate['action']['card']['number'] + strings["of"] + gstate['action']['card']['suit'] + "."
     appendToRecord(cbox_message)
 
     // Añadimos además la carta jugada al historial
@@ -174,7 +174,7 @@ function processPlayCard(gstate) {
 
 function processSwitch(gstate) {
     // Añadimos lo que ha pasado al historial
-    var cbox_message = "Player " + gstate['action']['player'] + " changes the current suit to " + gstate['action']['suit'] + "."
+    var cbox_message = gstate['action']['player'] + strings["change-suit"] + gstate['action']['suit'] + "."
     appendToRecord(cbox_message)
 
     // Animación

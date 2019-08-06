@@ -42,11 +42,37 @@
     var language = "{{ LANGUAGE_CODE }}"
 
     // Traducciones varias
-    // No me termina de servir el traductor de Django aquí por cadenas concatenadas; por suerte es muy poco texto
+    // No me termina de servir el traductor de Django aquí por cadenas concatenadas, y como plus,
+    // Channels no funciona con internacionalización: manda en cada mensaje en el lenguaje que le da la gana
     var strings = {
         "your-turn": language == "es" ? "¡Tu turno!" : "Your turn!",
         "before-enemy-turn": language == "es" ? "Turno de " : "",
-        "after-enemy-turn": language == "es" ? "" : "'s turn'"
+        "after-enemy-turn": language == "es" ? "" : "'s turn'",
+        "ends-turn": language == "es" ? " termina su turno," : " ends their turn.",
+        "match-begun": language == "es" ? "¡La partida ha empezado!" : "The match has begun!",
+        "draws-card": language == "es" ? " roba una carta." : " draws a card.",
+        "draws": language == "es" ? " roba " : " draws ",
+        "forced-draw": language == "es" ? " cartas y pone el contador a cero." : " cards and resets the counter.",
+        "wins-match": language == "es" ? " gana la partida!" : " wins the match!",
+        "open-exclamation": language == "es" ? "¡" : "",
+        "plays": language == "es" ? " juega un " : " plays a ",
+        "of": language == "es" ? " de " : " of ",
+        "change-suit": language == "es" ? " cambia el palo a " : " changes current suit to ",
+        
+        "That card does not share a suit or number with the last card played!": language == "es" ? "¡Esa carta no comparte palo ni número con la última carta jugada!" : "That card does not share a suit or number with the last card played!",
+        "Cannot end turn without playing or drawing cards!": language == "es" ? "¡No puedes terminar tu turno sin jugar o robar cartas!" : "Cannot end turn without playing or drawing cards!",
+        "Draw counter must be zero!": language == "es" ? "¡El contador de robo debe ser cero!" : "Draw counter must be zero!",
+       "Cannot draw if something else has been done this turn!": language == "es" ? "¡No puedes robar si ya has hecho algo este turno!" : "Cannot draw if something else has been done this turn!",
+       "Can only draw up to twice per turn!": language == "es" ? "¡Solo puedes robar carta dos veces por turno!" : "Can only draw up to twice per turn!",
+       "Cannot draw if there are no cards in play!": language == "es" ? "¡No puedes robar carta si no hay cartas en juego!" : "Cannot draw if there are no cards in play!",
+       "The game is not started!": language == "es" ? "¡La partida no ha empezado todavía!" : "The game is not started!",
+       "Draw from draw counter must be done at the beginning of turn!": language == "es" ? "¡Tienes que robar carta forzadamente al principio del turno!" : "Draw from draw counter must be done at the beginning of turn!",
+       "Cannot draw if the counter is zero already!": language == "es" ? "¡No puedes robar si el contador ya es cero!" : "Cannot draw if the counter is zero already!",
+       "You've already played a card this turn!": language == "es" ? "¡Ya has jugado una carta este turno!" : "You've already played a card this turn!",
+       "Must deflect card draw with One or Two!": language == "es" ? "¡Tienes que reflejar con un UNO o un DOS!" : "Must deflect card draw with One or Two!",
+       "This card is not of a suitable suit!": language == "es" ? "¡Esta carta no es del Palo correcto!" : "This card is not of a suitable suit!",
+       "Cannot switch!": language == "es" ? "¡No puedes cambiar de palo!" : "Cannot switch!",
+       "Not enough players!": language == "es" ? "¡No hay los suficientes jugadores!" : "Not enough players!"
     }
 
     // Websocket al servidor
@@ -670,6 +696,15 @@ function addToStateQueue(data) {
         }
     }
 
+    function translateErrorMsg(msg) {
+        if (msg in strings) {
+            return strings[msg]
+        } else {
+            console.log(msg)
+            return "An unexpected error occurred"
+        }
+    }
+
     // Hace lo que haga falta cuando llega un mensaje
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
@@ -692,7 +727,9 @@ function addToStateQueue(data) {
             processNotification(data)
         // Paquete es un error
         } else if (message_type == "error") {
-            appendToChatbox("Error: " + data['message'])
+            // Traduce si es necesario el mensaje de error del servidor
+            var errormsg = translateErrorMsg(data['message'])
+            appendToChatbox("Error: " + errormsg)
         // Paquete es un ACK del servidor (no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
