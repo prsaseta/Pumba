@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from authentication.models import PreRegister, RecoverPassword
 from pumba.settings import IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY, VERIFICATION_MAIL_URL
 from django.utils.crypto import get_random_string
+from django.utils.translation import gettext as _
 # Create your views here.
 
 def login_view(request):
@@ -19,7 +20,7 @@ def login_view(request):
         form = LoginForm(request.POST)
         # Si el formulario no está bien relleno, redirigimos
         if not form.is_valid():
-            return render(request, "login.html", {"form": LoginForm(), "error": "Your username and password didn't match. Please try again."})
+            return render(request, "login.html", {"form": LoginForm(), "error": _("Your username and password didn't match. Please try again.")})
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
         
@@ -32,7 +33,7 @@ def login_view(request):
             return HttpResponseRedirect("/")
         # Si no, devolvemos al formulario con un error
         else:
-            return render(request, "login.html", {"form": LoginForm({"username": username, "password": ""}), "error": "Your username and password didn't match. Please try again."})
+            return render(request, "login.html", {"form": LoginForm({"username": username, "password": ""}), "error": _("Your username and password didn't match. Please try again.")})
     # Si no es una petición POST, devolvemos el formulario vacío
     else:
         return render(request, "login.html", {"form": LoginForm()})
@@ -47,7 +48,7 @@ def register_view(request):
         form = RegisterForm(request.POST)
         # Si el formulario no está bien relleno, redirigimos
         if not form.is_valid():
-            return render(request, "register.html", {"form": RegisterForm(), "error": "Invalid data"})
+            return render(request, "register.html", {"form": RegisterForm(), "error": _("Invalid data")})
         username = form.cleaned_data['username']
         password = form.cleaned_data['password']
         confirm = form.cleaned_data['confirm']
@@ -55,17 +56,17 @@ def register_view(request):
         
         # Comprobamos que las contraseñas coincidan
         if password != confirm:
-            return render(request, "register.html", {"form": form, "error": "Passwords don't match"})
+            return render(request, "register.html", {"form": form, "error": _("Passwords don't match")})
         
         # Comprobamos que el nombre de usuario no está cogido
         if User.objects.filter(username = username).count() > 0 or PreRegister.objects.filter(username = username).count() > 0:
-            return render(request, "register.html", {"form": form, "error": "That username is already taken"})
+            return render(request, "register.html", {"form": form, "error": _("That username is already taken")})
         # Comprobamos que el nombre de usuario no es demasiado largo
         if len(username) > 32:
-            return render(request, "register.html", {"form": form, "error": "The username may only be up to 32 characters long"})
+            return render(request, "register.html", {"form": form, "error": _("The username may only be up to 32 characters long")})
         # Comprobamos que el email no está cogido
         if User.objects.filter(email = email).count() > 0 or PreRegister.objects.filter(email = email).count() > 0:
-            return render(request, "register.html", {"form": form, "error": "That email is already taken"})
+            return render(request, "register.html", {"form": form, "error": _("That email is already taken")})
 
         if IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY:
             try:
@@ -73,7 +74,7 @@ def register_view(request):
                 return render(request, "register_confirm.html")
             except Exception as e:
                 print(e)
-                return HttpResponseServerError("There was an error while sending you the verification email, please try again later")
+                return HttpResponseServerError(_("There was an error while sending you the verification email, please try registering again later"))
         else:
             user = User.objects.create_user(username, email, password)
             login(request, user)
@@ -119,7 +120,7 @@ def do_email_verification(username, password, email):
 
     # Enviamos el correo
     url = VERIFICATION_MAIL_URL + "/authentication/verification?id=" + verification
-    send_mail('Confirm registration at Pumba', 'Please confirm your registration with the following link: ' + url, 'register@pumba.com', [email], fail_silently=False)
+    send_mail(_('Confirm registration at Pumba'), _('Please confirm your registration with the following link: ') + url, 'register@pumba.com', [email], fail_silently=False)
 
 def request_password_recovery(request):
     # Si ya está autenticado, lo devolvemos al índice
@@ -134,7 +135,7 @@ def request_password_recovery(request):
                 recovery = RecoverPassword(key = key, user = User.objects.get(email = form.cleaned_data["email"]))
                 recovery.save()
                 url = VERIFICATION_MAIL_URL + "/authentication/reset?id=" + key
-                send_mail('Reset password at Pumba', 'We have received a request to reset your password. You can do so by clicking the following link:  ' + url + " \nIf you didn't request this change, you needn't do anything.", 'recoverypumba@pumba.com', [form.cleaned_data["email"]], fail_silently=False)
+                send_mail(_('Reset password at Pumba'), _('We have received a request to reset your password. You can do so by clicking the following link: ') + url + " \n" + _("If you didn't request this change, you needn't do anything."), 'recoverypumba@pumba.com', [form.cleaned_data["email"]], fail_silently=False)
         except Exception as e:
             print(e)
         return render(request, "password_recover_request_success.html")
@@ -152,7 +153,7 @@ def reset_password(request):
             key = form.cleaned_data["key"]
             # Si las contraseñas no coinciden:
             if form.cleaned_data["password"] != form.cleaned_data["confirmation"]:
-                return render(request, "reset_password.html", {"error": "Passwords don't match", "form": ResetPasswordForm(initial={"key": key})})
+                return render(request, "reset_password.html", {"error": _("Passwords don't match"), "form": ResetPasswordForm(initial={"key": key})})
             try:
                 # Recuperamos el objeto de resetear contraseña
                 recovery = RecoverPassword.objects.get(key = key)
@@ -167,16 +168,16 @@ def reset_password(request):
                 return render(request, "reset_password_success.html")
             except Exception as e:
                 print(e)
-                return render(request, "reset_password.html", {"error": "There was an error changing your password", "form": ResetPasswordForm(initial={"key": key})})
+                return render(request, "reset_password.html", {"error": _("There was an error changing your password"), "form": ResetPasswordForm(initial={"key": key})})
     else:
         # Comprobamos que se ha mandado la key
         key = request.GET.get("id", None)
         if key is None:
-            return render(request, "400.html", {"error": "Invalid password recovery key."})
+            return render(request, "400.html", {"error": _("Invalid password recovery key.")})
         # Si la key no existe, la petición no es válida
         try:
             RecoverPassword.objects.get(key = key)
         except Exception as e:
             print(e)
-            return render(request, "400.html", {"error": "Invalid password recovery key."})
+            return render(request, "400.html", {"error": _("Invalid password recovery key.")})
         return render(request, "reset_password.html", {"form": ResetPasswordForm(initial={"key": key})})

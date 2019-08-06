@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-05 20:10+0200\n"
+"POT-Creation-Date: 2019-08-06 17:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,26 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\authentication\forms.py:5 .\authentication\forms.py:9
+msgid "Username"
+msgstr "Nombre de usuario"
+
+#: .\authentication\forms.py:6 .\authentication\forms.py:10
+msgid "Password"
+msgstr "Contraseña"
+
+#: .\authentication\forms.py:11 .\authentication\forms.py:20
+msgid "Confirm password"
+msgstr "Confirmar contraseña"
+
+#: .\authentication\forms.py:12 .\authentication\forms.py:15
+msgid "Email"
+msgstr "Email"
+
+#: .\authentication\forms.py:19
+msgid "New password"
+msgstr "Nueva contraseña"
 
 #: .\authentication\static\authentication\login.html:13
 #: .\authentication\static\authentication\reset_password_success.html:6
@@ -32,7 +52,9 @@ msgstr "¿Has olvidaado tu contraseña?"
 msgid ""
 "If you have forgotten your password, input your e-mail and we'll send you a "
 "reset link"
-msgstr "Si has olvidado tu contraseña, escribe aquí tu correo y te mandaremos un enlace para reestablecerla"
+msgstr ""
+"Si has olvidado tu contraseña, escribe aquí tu correo y te mandaremos un "
+"enlace para reestablecerla"
 
 #: .\authentication\static\authentication\password_recover_request.html:13
 msgid "Recover password"
@@ -42,13 +64,15 @@ msgstr "Recuperar contraseña"
 msgid ""
 "If that e-mail was assigned to an account, we have sent a reset link to it. "
 "Please check your inbox and spambox"
-msgstr "Si el correo que has puesto se corresponde con una cuenta, mandaremos un enlace de recuperación. Por favor, comprueba tu bandeja de entrada y de spam"
+msgstr ""
+"Si el correo que has puesto se corresponde con una cuenta, mandaremos un "
+"enlace de recuperación. Por favor, comprueba tu bandeja de entrada y de spam"
 
 #: .\authentication\static\authentication\password_recover_request_success.html:4
 msgid "Go back to the main page"
 msgstr "Volver al índice"
 
-#: .\authentication\static\authentication\register.html:11
+#: .\authentication\static\authentication\register.html:13
 #: .\pumba\static\base.html:37
 msgid "Register"
 msgstr "Registrarse"
@@ -56,8 +80,10 @@ msgstr "Registrarse"
 #: .\authentication\static\authentication\register_confirm.html:4
 msgid ""
 "We have sent a message to your specified email address to finish your "
-"registrarion. Please click the link provided therein."
-msgstr "Hemos mandado un mensaje a tu correo para terminar tu registro. Por favor, pincha en el enlace que te hemos mandado."
+"registration. Please click the link provided therein."
+msgstr ""
+"Hemos mandado un mensaje a tu correo para terminar tu registro. Por favor, "
+"pincha en el enlace que te hemos mandado."
 
 #: .\authentication\static\authentication\register_success.html:4
 msgid "You registered successfully!"
@@ -87,10 +113,288 @@ msgstr "Recuperar"
 msgid "You have successfully reset your password"
 msgstr "Has recuperado con éxito tu contraseña"
 
+#: .\authentication\views.py:23 .\authentication\views.py:36
+msgid "Your username and password didn't match. Please try again."
+msgstr "Tu usuario y contraseña no coinciden. Por favor, inténtalo de nuevo."
+
+#: .\authentication\views.py:51
+msgid "Invalid data"
+msgstr "Datos no válidos"
+
+#: .\authentication\views.py:59 .\authentication\views.py:156
+msgid "Passwords don't match"
+msgstr "Las contraseñas no coinciden"
+
+#: .\authentication\views.py:63
+msgid "That username is already taken"
+msgstr "Ese nombre de usuario ya está cogido"
+
+#: .\authentication\views.py:66
+msgid "The username may only be up to 32 characters long"
+msgstr "El nombre de usuario solamente puede tener hasta 32 caracteres"
+
+#: .\authentication\views.py:69
+msgid "That email is already taken"
+msgstr "Ese correo ya está cogido"
+
+#: .\authentication\views.py:77
+msgid ""
+"There was an error while sending you the verification email, please try "
+"registering again later"
+msgstr ""
+
+#: .\authentication\views.py:123
+msgid "Confirm registration at Pumba"
+msgstr "Confirma tu registro en Pumba"
+
+#: .\authentication\views.py:123
+msgid "Please confirm your registration with the following link: "
+msgstr "Por favor, confirma tu registro con el siguiente enlace: "
+
+#: .\authentication\views.py:138
+msgid "Reset password at Pumba"
+msgstr "Recupera tu contraseña de Pumba"
+
+#: .\authentication\views.py:138
+msgid ""
+"We have received a request to reset your password. You can do so by clicking "
+"the following link: "
+msgstr ""
+"Hemos recibido una petición para recuperar tu contraseña. Puedes hacerlo "
+"pinchando en el siguiente enlace: "
+
+#: .\authentication\views.py:138
+msgid "If you didn't request this change, you needn't do anything."
+msgstr "Si no has pedido este cambio, no necesitas hacer nada."
+
+#: .\authentication\views.py:171
+msgid "There was an error changing your password"
+msgstr "Ha habido un error cambiando tu contraseña"
+
+#: .\authentication\views.py:176 .\authentication\views.py:182
+msgid "Invalid password recovery key."
+msgstr "Clave de recuperar contraseña no válida"
+
+#: .\game\consumers.py:109
+msgid "Could not connect to the match"
+msgstr "No se ha podido conectar a la partida"
+
+#: .\game\consumers.py:122
+msgid "You opened the game on another window; closing this one"
+msgstr "Has abierto esta partida en otra ventana; cerrando esta"
+
+#: .\game\consumers.py:139
+#, python-format
+msgid "User %(username)s disconnected from the game"
+msgstr "El usuario %(username)s se ha desconectado"
+
+#: .\game\consumers.py:160
+#, python-format
+msgid "%(player)s is the new host"
+msgstr "%(player)s es el nuevo host"
+
+#: .\game\consumers.py:303
+msgid "You are not the host!"
+msgstr "¡No eres el host!"
+
+#: .\game\consumers.py:330 .\game\consumers.py:662 .\game\consumers.py:691
+#: .\game\consumers.py:737
+msgid "It's not your turn!"
+msgstr "¡No es tu turno!"
+
+#: .\game\consumers.py:763
+msgid "An unexpected server error ocurred"
+msgstr "Un error de servidor inesperado ha ocurrido"
+
+#: .\game\consumers.py:943
+msgid "Match timed out due to inactivity"
+msgstr "La partida se ha borrado por inactividad"
+
+#: .\game\domain_objects.py:140 .\game\matchmaking.py:34
+msgid "The game is already started!"
+msgstr "¡La partida ya ha empezado!"
+
+#: .\game\domain_objects.py:142
+msgid "There is no defined host for the game"
+msgstr "No hay host definido paara la partida"
+
+#: .\game\domain_objects.py:145
+msgid "Not enough players! "
+msgstr "¡No hay suficientes jugadores! "
+
+#: .\game\domain_objects.py:203 .\game\domain_objects.py:240
+#: .\game\domain_objects.py:275 .\game\domain_objects.py:308
+#: .\game\domain_objects.py:376
+msgid "The game is not started!"
+msgstr "¡El juego no ha empezado!"
+
+#: .\game\domain_objects.py:216
+msgid "Cannot end turn without playing or drawing cards!"
+msgstr "¡No puedes terminar el turno sin jugar o robar cartas!"
+
+#: .\game\domain_objects.py:246
+msgid "Draw counter must be zero!"
+msgstr "¡El contador de robo debe ser cero!"
+
+#: .\game\domain_objects.py:252
+msgid "Cannot draw if something else has been done this turn!"
+msgstr "¡No puedes robar si ya has hecho algo este turno!"
+
+#: .\game\domain_objects.py:256
+msgid "Can only draw up to twice per turn!"
+msgstr "¡Solamente puedes robar dos veces por turno!"
+
+#: .\game\domain_objects.py:263
+msgid "Cannot draw if there are no cards in play!"
+msgstr "¡No puedes robar si no hay cartas en juego!"
+
+#: .\game\domain_objects.py:282
+msgid "Draw from draw counter must be done at the beginning of turn!"
+msgstr "¡Robar por el contador se tiene que hacer al principio del turno!"
+
+#: .\game\domain_objects.py:285
+msgid "Cannot draw if the counter is zero already!"
+msgstr "¡No puedes robar si el contador ya es cero!"
+
+#: .\game\domain_objects.py:311
+msgid "Invalid card index!"
+msgstr "¡Índice de carta no válido!"
+
+#: .\game\domain_objects.py:327
+msgid "You've already played a card this turn!"
+msgstr "¡Ya has jugado una carta este turno!"
+
+#: .\game\domain_objects.py:329
+msgid "Must deflect card draw with One or Two!"
+msgstr "¡Tienes que reflejar con un Uno o un Dos!"
+
+#: .\game\domain_objects.py:344
+msgid "This card is not of a suitable suit!"
+msgstr "¡Esta carta no es del palo correcto!"
+
+#: .\game\domain_objects.py:359
+msgid "That card does not share a suit or number with the last card played!"
+msgstr "¡Esa carta no comparte palo ni número con la última carta jugada!"
+
+#: .\game\domain_objects.py:363
+msgid "You already played a card this turn!"
+msgstr "¡Ya has jugado una carta este turno!"
+
+#: .\game\domain_objects.py:382
+msgid "Invalid suit!"
+msgstr "¡Palo incorrecto!"
+
+#: .\game\domain_objects.py:384
+msgid "Cannot switch!"
+msgstr "¡No puedes cambiar el palo!"
+
+#: .\game\forms.py:6
+msgid "Maximum players"
+msgstr "Jugadores máximos"
+
+#: .\game\forms.py:7
+msgid "Game title"
+msgstr "Título"
+
+#: .\game\forms.py:8
+msgid "AI players"
+msgstr "IAs"
+
+#: .\game\forms.py:10
+msgid "Easy"
+msgstr "Fácil"
+
+#: .\game\forms.py:11
+msgid "Medium"
+msgstr "Normal"
+
+#: .\game\forms.py:12
+msgid "Hard"
+msgstr "Difícil"
+
+#: .\game\forms.py:14
+msgid "AI difficulty"
+msgstr "Dificultad de la IA"
+
+#: .\game\forms.py:18
+msgid "Your email (optional)"
+msgstr "Tu correo (opcional)"
+
+#: .\game\forms.py:19
+msgid "Subject"
+msgstr "Asunto"
+
+#: .\game\forms.py:20
+msgid "Text"
+msgstr "Texto"
+
+#: .\game\forms.py:27
+msgid "Picture"
+msgstr "Imagen"
+
+#: .\game\forms.py:37
+msgid "Background"
+msgstr "Fondo"
+
+#: .\game\matchmaking.py:18
+msgid "The match doesn't exist!"
+msgstr "¡Esa partida no existe!"
+
+#: .\game\matchmaking.py:36
+msgid "The game is full!"
+msgstr "¡La partida ya está llena!"
+
+#: .\game\matchmaking.py:63
+msgid "The number of users must be at least two!"
+msgstr "¡Tiene que haber al menos dos jugadores"
+
+#: .\game\matchmaking.py:65
+msgid "The number of users cannot be more than six!"
+msgstr "¡No puede haber más de seis jugadores!"
+
+#: .\game\matchmaking.py:67
+msgid "Too many AIs! Are you trying to start a revolution?"
+msgstr "¡Demasiadas IAs! ¿Quieres empezar una revolución o algo así?"
+
+#: .\game\matchmaking.py:69
+msgid "The title cannot be empty!"
+msgstr "¡El título no puede estar vacío!"
+
+#: .\game\models.py:13
+msgid "WAITING"
+msgstr "ESPERANDO"
+
+#: .\game\models.py:14
+msgid "PLAYING"
+msgstr "JUGANDO"
+
+#: .\game\models.py:15
+msgid "ENDING"
+msgstr "TERMINANDO"
+
+#: .\game\models.py:41
+msgid "Blue"
+msgstr "Azul"
+
+#: .\game\models.py:42
+msgid "Deep cyan"
+msgstr "Cian oscuro"
+
+#: .\game\models.py:43
+msgid "Gray"
+msgstr "Gris"
+
+#: .\game\models.py:44
+msgid "Green"
+msgstr "Verde"
+
+#: .\game\models.py:45
+msgid "Violet"
+msgstr "Púrpura"
+
 #: .\game\static\game\feedback.html:7
 msgid "You can send any feedback or bug report about Pumba here"
-msgstr ""
-"Puedes enviar cualquier error que encuentres o feedback sobre Pumba aquí"
+msgstr "Puedes enviar cualquier error que encuentres o feedback sobre Pumba aquí"
 
 #: .\game\static\game\feedback.html:19
 msgid "Send!"
@@ -164,6 +468,34 @@ msgstr "Cambiar fondo del juego"
 #: .\game\static\game\profile.html:44
 msgid "Change background"
 msgstr "Cambiar fondo"
+
+#: .\game\views.py:58 .\game\views.py:63
+#, fuzzy
+#| msgid "There was an error changing your password"
+msgid "There was an error processing your request"
+msgstr "Ha habido un error cambiando tu contraseña"
+
+#: .\game\views.py:118
+msgid "Could not upload image!"
+msgstr "No se ha podido subir la imagen"
+
+#: .\game\views.py:120
+msgid "Could not upload image! The format is incorrect or the image is too big"
+msgstr "¡No se ha podido subir la imagen! El formato es incorrecto o la imagen es demasiado grande"
+
+#: .\game\views.py:155 .\game\views.py:159 .\game\views.py:161
+msgid "That match did not exist!"
+msgstr "¡Esa partida no existe!"
+
+#: .\game\views.py:204
+msgid ""
+"Whoops! There was an error sending your feedback. Yes, we get the irony. "
+"Please try again later."
+msgstr "¡Ups! Ha habido un error mandando tu reporte de errores. Sí, nos percatamos de la ironía. Vuelve a intentarlo más tarde"
+
+#: .\game\views.py:212
+msgid "Your feedback was sent successfully, thank you for your time!"
+msgstr "Tu correo se ha enviado con éxito. ¡Gracias por tu tiempo!"
 
 #: .\pumba\static\400.html:7
 msgid "Go back to the index"

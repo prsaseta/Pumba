@@ -4,6 +4,8 @@ from game.exceptions import PumbaException
 from django.utils.crypto import get_random_string
 from game.models import GameKey
 import random
+
+from django.utils.translation import gettext as _
 # Métodos para hacer matchmaking
 
 # Mete al usuario en partida
@@ -13,7 +15,7 @@ def join(user, match_id):
     
     # Se asegura de que existe
     if (game is None):
-        raise PumbaException("The match doesn't exist!")
+        raise PumbaException(_("The match doesn't exist!"))
 
     # Comprueba si ya está en la partida, p.e. por desconexión o lo que sea
     already_ingame = False
@@ -29,9 +31,9 @@ def join(user, match_id):
     if not already_ingame:
         # Se asegura de que se puede unir a la partida
         if (not (game.status is GameStatus.WAITING or game.status is GameStatus.ENDING)):
-            raise PumbaException("The game is already started!")
+            raise PumbaException(_("The game is already started!"))
         if(len(game.players) >= game.maxPlayerCount):
-            raise PumbaException("The game is full!")
+            raise PumbaException(_("The game is full!"))
 
         # Actualiza la GameKey
         key = GameKey.objects.get(key = match_id)
@@ -58,13 +60,13 @@ def create(max_users, host, title, ai_players = 0, ai_difficulty = "EASY"):
     # Crea la partida y le pone los parámetros
     game = Game()
     if(max_users < 2):
-        raise ValueError("The number of users must be at least two!")
+        raise ValueError(_("The number of users must be at least two!"))
     if(max_users > 6):
-        raise ValueError("The number of users cannot be more than six!")
+        raise ValueError(_("The number of users cannot be more than six!"))
     if (ai_players >= max_users):
-        raise ValueError("Too many AIs! Are you trying to start a revolution?")
+        raise ValueError(_("Too many AIs! Are you trying to start a revolution?"))
     if title is None or str(title).strip() is "":
-        raise ValueError("The title cannot be empty!")
+        raise ValueError(_("The title cannot be empty!"))
     game.maxPlayerCount = max_users
     game.host = host
     game.title = str(title).strip()

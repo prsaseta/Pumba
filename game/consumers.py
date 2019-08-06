@@ -12,6 +12,7 @@ import time
 import random
 import copy
 from pumba.settings import CHEATS_ENABLED
+from django.utils.translation import gettext as _
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -105,7 +106,7 @@ class GameConsumer(WebsocketConsumer):
             self.was_connected_successfully_to_game = False
             self.send(text_data=json.dumps({
                 'type': 'disconnect',
-                'reason': 'Could not connect to the match'
+                'reason': _('Could not connect to the match')
             }))
             #self.close()
 
@@ -118,7 +119,7 @@ class GameConsumer(WebsocketConsumer):
             # Se avisa al cliente
             self.send(text_data=json.dumps({
                 'type': 'disconnect',
-                'reason': "You opened the game on another window; closing this one"
+                'reason': _("You opened the game on another window; closing this one")
             }))
             # Actualizamos a todos los jugadores por si acaso
             self.send_game_state_global()
@@ -135,7 +136,7 @@ class GameConsumer(WebsocketConsumer):
             game.players[self.player_index].controller.isAI = True
             # Avisamos al resto de jugadores
             username = game.players[self.player_index].name
-            notificationmsg = "User " + username + " disconnected from the game"
+            notificationmsg = _("User %(username)s disconnected from the game") % {"username": username}
             self.send_notification_global(notificationmsg, {"event": "disconnect", "player": self.player_index})
             
             # Si todos los usuarios se desconectan, borramos la partida
@@ -156,7 +157,7 @@ class GameConsumer(WebsocketConsumer):
                     for player in game.players:
                         if not player.controller.isAI:
                             game.host = player.controller.user
-                            self.send_notification_global(player.name + " is the new host", {"event": "host_change", "player": self.player_index})
+                            self.send_notification_global(_("%(player)s is the new host") % {"player": player.name}, {"event": "host_change", "player": self.player_index})
                             break
                 self.save_to_cache(game)
                 # Actualizamos a todos los jugadores
@@ -299,7 +300,7 @@ class GameConsumer(WebsocketConsumer):
             # Comprueba que es el host
             user = self.scope["user"]
             if game.host.id is not user.id:
-                raise PumbaException("You are not the host!")
+                raise PumbaException(_("You are not the host!"))
             else:
                 # Actualiza el estado en la BD
                 key = GameKey.objects.get(key = self.match_id)
@@ -326,7 +327,7 @@ class GameConsumer(WebsocketConsumer):
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
-                raise PumbaException("It's not your turn!")
+                raise PumbaException(_("It's not your turn!"))
             # Intenta terminar el turno
             game.begin_turn()
             self.save_to_cache(game)
@@ -658,7 +659,7 @@ class GameConsumer(WebsocketConsumer):
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
-                raise PumbaException("It's not your turn!")
+                raise PumbaException(_("It's not your turn!"))
             # Intenta robar carta
             # Cambia la acción dependiendo si hay contador de robo o no
             forced_draw = None
@@ -687,7 +688,7 @@ class GameConsumer(WebsocketConsumer):
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
-                raise PumbaException("It's not your turn!")
+                raise PumbaException(_("It's not your turn!"))
             # Recupera la carta que quiere jugar
             index = int(index)
             card = game.players[self.player_index].hand[index]
@@ -733,7 +734,7 @@ class GameConsumer(WebsocketConsumer):
             username = game.players[self.player_index].name
             # Comprueba que es su turno
             if self.player_index is not game.currentPlayer:
-                raise PumbaException("It's not your turn!")
+                raise PumbaException(_("It's not your turn!"))
             # Intenta hacer el efecto
             game.player_action_switch(Suit[suit])
             self.save_to_cache(game)
@@ -759,7 +760,7 @@ class GameConsumer(WebsocketConsumer):
         print(exception)
         self.send(text_data=json.dumps({
             'type': 'error',
-            'message': "An unexpected server error ocurred",
+            'message': _("An unexpected server error ocurred"),
         }))
 
     # Le envía un mensaje de OK al cliente actual
@@ -939,7 +940,7 @@ class GameConsumer(WebsocketConsumer):
             self.game_timed_out = True
             self.send(text_data=json.dumps({
                 'type': 'disconnect',
-                'reason': 'Match timed out due to inactivity'
+                'reason': _('Match timed out due to inactivity')
             }))
             try:
                 GameKey.objects.get(key = self.match_id).delete()

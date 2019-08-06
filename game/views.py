@@ -17,6 +17,8 @@ import cloudinary.uploader
 import cloudinary
 import copy
 
+from django.utils.translation import gettext as _
+
 # Create your views here.
 
 GAME_TEMPLATE = "game_phaser.html"
@@ -53,12 +55,12 @@ def change_background(request):
             # Si está intentando modificar otro perfil, se lo denegamos
             if form.cleaned_data['profile'] != profile:
                 print("Los profiles no coinciden")
-                return HttpResponseRedirect(reverse("profile") + "?error=" + "There was an error processing your request")
+                return HttpResponseRedirect(reverse("profile") + "?error=" + _("There was an error processing your request"))
             form.save()
             return HttpResponseRedirect(reverse("profile"))
         else:
             print(form.errors)
-            return HttpResponseRedirect(reverse("profile") + "?error=" + "There was an error processing your request")
+            return HttpResponseRedirect(reverse("profile") + "?error=" + _("There was an error processing your request"))
     else:
         return HttpResponseRedirect(reverse("profile"))
 
@@ -113,9 +115,9 @@ def profile_picture_upload(request):
                 form.save()
             else:
                 print(form.errors)
-                return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image!" )
+                return HttpResponseRedirect(reverse("profile") + "?error=" + _("Could not upload image!") )
         except Exception as e:
-            return HttpResponseRedirect(reverse("profile") + "?error=" + "Could not upload image! The format is incorrect or the image is too big" )
+            return HttpResponseRedirect(reverse("profile") + "?error=" + _("Could not upload image! The format is incorrect or the image is too big" ))
         
     return HttpResponseRedirect(reverse("profile"))
 
@@ -150,11 +152,13 @@ def join_match(request):
         if g is None:
             key = GameKey.objects.get(key = id)
             key.delete()
-            return HttpResponseRedirect("/game/matchmaking?error=" + "That match did not exist!")
+            return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
         player_id = game.matchmaking.join(request.user, id)
         return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
+    except GameKey.DoesNotExist:
+        return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
     except Exception as e:
-        return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
+        return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
     
 
 @login_required
@@ -197,7 +201,7 @@ def feedback(request):
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(e)
-                return (request, "feedback.html", {"form": form, "error": "Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later."})
+                return (request, "feedback.html", {"form": form, "error": _("Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later.")})
 
             # Intentamos enviar un correo con el feedback
             try:
@@ -205,7 +209,7 @@ def feedback(request):
             except:
                 pass
             
-            return HttpResponseRedirect("/", {"notification": "Your feedback was sent successfully, thank you for your time!"})
+            return HttpResponseRedirect("/", {"notification": _("Your feedback was sent successfully, thank you for your time!")})
         else:
             return render (request, "feedback.html", {"form": form, "error": "Invalid data"})
     else:

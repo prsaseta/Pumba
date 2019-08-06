@@ -3,6 +3,7 @@ import random
 import math
 from game.exceptions import ConcurrencyError, IllegalMoveException, PumbaException
 from copy import deepcopy
+from django.utils.translation import gettext_lazy as _
 
 # Enumerados
 class Suit(enum.Enum):
@@ -136,12 +137,12 @@ class Game():
     # Inicia una partida
     def begin_match(self, cards = None):
         if self.status is GameStatus.PLAYING:
-            raise PumbaException("The game is already started!")
+            raise PumbaException(_("The game is already started!"))
         if self.host is None:
-            raise PumbaException("There is no defined host for the game")
+            raise PumbaException(_("There is no defined host for the game"))
 
         if len(self.players) < 2:
-            raise PumbaException("Not enough players! " + str(len(self.players)))
+            raise PumbaException(_("Not enough players! ") + str( len(self.players) ) )
 
         # Reinicia el estado en caso de que se esté reiniciando una partida
         self.playPile = []
@@ -199,7 +200,7 @@ class Game():
     # Le cede el turno al siguiente jugador
     def begin_turn(self):
         if self.status is not GameStatus.PLAYING:
-            raise PumbaException("The game is not started!")
+            raise PumbaException(_("The game is not started!"))
 
         # Si no ha empezado la partida, seguimos;
         # si no, hay que asegurarse de que se puede terminar el turno
@@ -212,7 +213,7 @@ class Game():
                     if(a.type == ActionType.DRAW):
                         count = count + 1
                 if(count < 2):
-                    raise IllegalMoveException("Cannot end turn without playing or drawing cards!")
+                    raise IllegalMoveException(_("Cannot end turn without playing or drawing cards!"))
 
         # Ponemos al siguiente jugador
         self.currentPlayer = self.nextPlayer
@@ -236,30 +237,30 @@ class Game():
     # Devuelve la carta robada
     def player_action_draw(self):
         if self.status is not GameStatus.PLAYING:
-            raise PumbaException("The game is not started!")
+            raise PumbaException(_("The game is not started!"))
 
         # Un jugador puede robar una carta si:
         # 1. El contador de robo está a 0
         # 2. No ha hecho otra cosa este turno que no sea robar carta una vez
         if self.drawCounter > 0:
-            raise IllegalMoveException("Draw counter must be zero!")
+            raise IllegalMoveException(_("Draw counter must be zero!"))
         
         actions = self.turn.actions
         draw_count = 0
         for a in actions:
             if a.type != ActionType.DRAW:
-                raise IllegalMoveException("Cannot draw if something else has been done this turn!")
+                raise IllegalMoveException(_("Cannot draw if something else has been done this turn!"))
             else:
                 draw_count = draw_count + 1
         if (draw_count > 1):
-            raise IllegalMoveException("Can only draw up to twice per turn!")
+            raise IllegalMoveException(_("Can only draw up to twice per turn!"))
 
         # Roba la carta
         if(len(self.drawPile) == 0):
             # Si la baraja se ha acabado, hay que remezclar
             # Si no hay cartas en juego, no se puede robar
             if (len(self.playPile) == 0):
-                raise IllegalMoveException("Cannot draw if there are no cards in play!")
+                raise IllegalMoveException(_("Cannot draw if there are no cards in play!"))
             else:
                 self.shuffle_play_draw()
         
@@ -271,17 +272,17 @@ class Game():
     # Roba por la pila de robo
     def player_action_draw_forced(self):
         if self.status is not GameStatus.PLAYING:
-            raise PumbaException("The game is not started!")
+            raise PumbaException(_("The game is not started!"))
 
         # Para poder hacer esta acción:
         # 1. No se puede haber hecho nada este turno
         # 2. El contador de robo no puede ser cero
 
         if (len(self.turn.actions) != 0):
-            raise IllegalMoveException("Draw from draw counter must be done at the beginning of turn!")
+            raise IllegalMoveException(_("Draw from draw counter must be done at the beginning of turn!"))
 
         if (self.drawCounter < 1):
-            raise IllegalMoveException("Cannot draw if the counter is zero already!")
+            raise IllegalMoveException(_("Cannot draw if the counter is zero already!"))
 
         # Se roban tantas cartas como indique el contador
         # Si no hay las suficientes en juego, lo ponemos a 0 igualmente
@@ -304,10 +305,10 @@ class Game():
     # El jugador juega una carta
     def player_action_play(self, index):
         if self.status is not GameStatus.PLAYING:
-            raise PumbaException("The game is not started!")
+            raise PumbaException(_("The game is not started!"))
 
         if index < 0 or index -1 > len(self.players[self.currentPlayer].hand):
-            raise PumbaException("Invalid card index!")
+            raise PumbaException(_("Invalid card index!"))
 
         # Hay los siguientes casos posibles para jugar una carta
         # 1. Si el contador de robo no es 0, se puede jugar solamente 1 o 2
@@ -323,9 +324,9 @@ class Game():
         # Si hay que robar carta:
         if (self.drawCounter > 0):
             if (self.turn.has(ActionType.PLAY)):
-                raise IllegalMoveException("You've already played a card this turn!")
+                raise IllegalMoveException(_("You've already played a card this turn!"))
             if (card.number != CardNumber.ONE and card.number != CardNumber.TWO and not(card.number == CardNumber.COPY and card.suit == self.lastSuit)):
-                raise IllegalMoveException("Must deflect card draw with One or Two!")
+                raise IllegalMoveException(_("Must deflect card draw with One or Two!"))
             
             # Quitamos la carta de la mano del jugador
             card = self.players[self.currentPlayer].hand.pop(index)
@@ -340,7 +341,7 @@ class Game():
         elif (self.turn.has(ActionType.PLAYKING)):
             # Se comprueba que la carta es del mismo palo
             if(card.suit != self.lastSuit):
-                raise IllegalMoveException("This card is not of a suitable suit!")
+                raise IllegalMoveException(_("This card is not of a suitable suit!"))
             
             # Quitamos la carta de la mano del jugador
             card = self.players[self.currentPlayer].hand.pop(index)
@@ -355,11 +356,11 @@ class Game():
         else:
             # Se comprueba que se puede jugar la carta
             if(self.lastSuit != card.suit and self.lastNumber != card.number):
-                raise IllegalMoveException("That card does not share a suit or number with the last card played!")
+                raise IllegalMoveException(_("That card does not share a suit or number with the last card played!"))
 
             # Se comprueba que no se ha jugado otra carta este último turno
             if(self.turn.has(ActionType.PLAYSWITCH) or self.turn.has(ActionType.PLAY)):
-                raise IllegalMoveException("You already played a card this turn!")
+                raise IllegalMoveException(_("You already played a card this turn!"))
             
             # Quitamos la carta de la mano del jugador
             card = self.players[self.currentPlayer].hand.pop(index)
@@ -372,15 +373,15 @@ class Game():
 
     def player_action_switch(self, suit):
         if self.status is not GameStatus.PLAYING:
-            raise PumbaException("The game is not started!")
+            raise PumbaException(_("The game is not started!"))
 
         if (self.turn.has(ActionType.PLAYSWITCH) and not self.turn.has(ActionType.SWITCH)):
             if (suit in Suit):
                 self.lastSuit = suit
             else:
-                raise ValueError("Invalid suit!")
+                raise ValueError(_("Invalid suit!"))
         else:
-            raise IllegalMoveException("Cannot switch!")
+            raise IllegalMoveException(_("Cannot switch!"))
 
     def execute_card_effect(self, card):
         if (card.number == CardNumber.ONE):

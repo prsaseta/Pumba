@@ -3,15 +3,16 @@ from django.contrib.auth.models import User
 from cloudinary.models import CloudinaryField
 from django.core.exceptions import ObjectDoesNotExist
 import json
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
 # Representa una partida en memoria
 class GameKey(models.Model):
     STATUSES = (
-        ("WAITING", "WAITING"),
-        ("PLAYING", "PLAYING"),
-        ("ENDING", "ENDING")
+        ("WAITING", _("WAITING")),
+        ("PLAYING", _("PLAYING")),
+        ("ENDING", _("ENDING"))
     )
     key = models.CharField(max_length = 100)
     name = models.CharField(max_length = 200)
@@ -37,11 +38,11 @@ class UserProfile(models.Model):
 class UserProfileGameBackground(models.Model):
     profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
     BACKGROUNDS = (
-        ("blue", "Blue"),
-        ("deepcyan", "Deep cyan"),
-        ("gray", "Gray"),
-        ("green", "Green"),
-        ("violet", "Violet")
+        ("blue", _("Blue")),
+        ("deepcyan", _("Deep cyan")),
+        ("gray", _("Gray")),
+        ("green", _("Green")),
+        ("violet", _("Violet"))
     )
     background = models.CharField(max_length = 100, default="blue", choices = BACKGROUNDS)
 
