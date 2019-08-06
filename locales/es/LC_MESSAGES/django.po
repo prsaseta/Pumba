@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-06 17:42+0200\n"
+"POT-Creation-Date: 2019-08-06 18:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -394,7 +394,8 @@ msgstr "Púrpura"
 
 #: .\game\static\game\feedback.html:7
 msgid "You can send any feedback or bug report about Pumba here"
-msgstr "Puedes enviar cualquier error que encuentres o feedback sobre Pumba aquí"
+msgstr ""
+"Puedes enviar cualquier error que encuentres o feedback sobre Pumba aquí"
 
 #: .\game\static\game\feedback.html:19
 msgid "Send!"
@@ -481,7 +482,9 @@ msgstr "No se ha podido subir la imagen"
 
 #: .\game\views.py:120
 msgid "Could not upload image! The format is incorrect or the image is too big"
-msgstr "¡No se ha podido subir la imagen! El formato es incorrecto o la imagen es demasiado grande"
+msgstr ""
+"¡No se ha podido subir la imagen! El formato es incorrecto o la imagen es "
+"demasiado grande"
 
 #: .\game\views.py:155 .\game\views.py:159 .\game\views.py:161
 msgid "That match did not exist!"
@@ -491,7 +494,9 @@ msgstr "¡Esa partida no existe!"
 msgid ""
 "Whoops! There was an error sending your feedback. Yes, we get the irony. "
 "Please try again later."
-msgstr "¡Ups! Ha habido un error mandando tu reporte de errores. Sí, nos percatamos de la ironía. Vuelve a intentarlo más tarde"
+msgstr ""
+"¡Ups! Ha habido un error mandando tu reporte de errores. Sí, nos percatamos "
+"de la ironía. Vuelve a intentarlo más tarde"
 
 #: .\game\views.py:212
 msgid "Your feedback was sent successfully, thank you for your time!"

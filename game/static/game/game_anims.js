@@ -36,14 +36,14 @@ function animateBeginTurn(gstate){
     // Comprobamos si es tu turno
     // Comprobamos que sea tu turno *y* no hayas sido tú quien haya terminado el turno
     if (gstate['current_player'] == playerIndex){
-        tweenTextMiddleScreen("Your turn!", { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#00ff00", align: "center" })
+        tweenTextMiddleScreen(strings["your-turn"], { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#00ff00", align: "center" })
         scene.sound.play("your-turn-sound")
     } else {
         // Si es una IA quien empieza su turno, se lo salta
         if (gstate['players'][gstate['current_player']][2]){
             // No hace nada
         } else {
-            tweenTextMiddleScreen(gstate['players'][gstate['current_player']][0] + "'s turn", { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#ff0000", align: "center" })
+            tweenTextMiddleScreen(strings["before-enemy-turn"] + gstate['players'][gstate['current_player']][0] + strings["after-enemy-turn"], { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#ff0000", align: "center" })
             scene.sound.play("enemy-turn-sound")
         }
     }
