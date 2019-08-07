@@ -27,16 +27,21 @@
             <h1><a href="/"><img src="{% static 'logo.png' %}"/></a></h1>
             {% if user.is_authenticated %}
                 {% blocktrans with username=user.username %}Welcome, {{ username }}!{% endblocktrans %}<br>
-                <a href="{% url 'logout' %}"><button class="menu-button">{% trans "Logout" %}</button></a>
                 <a href="{% url 'matchmaking' %}"><button class="menu-button">{% trans "Matchmaking" %}</button></a>
                 <a href = "{% url 'profile' %}"><button class="menu-button">{% trans "Profile" %}</button></a>
-                <a href = "{% url 'feedback' %}"><button class="menu-button">{% trans "Bug report / Feedback" %}</button></a><br>
+                <a href = "{% url 'feedback' %}"><button class="menu-button">{% trans "Bug report / Feedback" %}</button></a>
+                <a href="{% url 'logout' %}"><button class="menu-button">{% trans "Logout" %}</button></a>
             {% else %}
                 {% trans "Welcome!" %}<br>
                 <a href="{% url 'login' %}"><button class="menu-button">{% trans "Login" %}</button></a>
                 <a href="{% url 'register' %}"><button class="menu-button">{% trans "Register" %}</button></a>
             {% endif %}
-            <button class="menu-button" onclick="toggleLanguageChoices()">{% trans "Language" %}</button>
+            {% get_current_language as LANGUAGE_CODE %}
+            {% if LANGUAGE_CODE == "es" %}
+                <input type="image" src="{% static 'es-flag.png'%}" onclick="toggleLanguageChoices()" width="50"/>
+            {% else %}
+                <input type="image" src="{% static 'en-flag.png'%}" onclick="toggleLanguageChoices()" width="50"/>
+            {% endif %}
             <div class="language-container">
                 <form action="{% url 'set_language' %}" method="post">
                     {% csrf_token %}
