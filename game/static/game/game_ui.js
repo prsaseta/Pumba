@@ -315,9 +315,16 @@ function drawYourHand(gamestate = undefined) {
                 }));
                 // Si el autoterminar turno está activado, terminamos turno si la carta lo permite y no se ha jugado un rey
                 if (getAutoEndTurn()) {
+                    // Si no ha jugado un rey:
                     if (!has_played_king) {
+                        // Si la carta que va a jugar es factible para autoterminar:
                         if (number == "FLIP" || number == "JUMP" || number == "ONE" || number == "TWO" || number == "DIVINE" || (number == "COPY" && gamestate["last_effect"] != "KING" && gamestate["last_effect"] != "SWITCH")) {
-                            endTurn()
+                            // Si dicha carta es jugable:
+                            if (number == gamestate["last_number"] || suit == gamestate["last_suit"] || 
+                            (gamestate["draw_counter"] > 0 && (number == "ONE" || number == "TWO" || 
+                            (number == "COPY" && suit == gamestate["last_suit"])))){
+                                endTurn()
+                            }
                         }
                     }
                 }
