@@ -16,6 +16,7 @@ import json
 import cloudinary.uploader
 import cloudinary
 import copy
+from pumba.views import getBasicContext
 
 from django.utils.translation import gettext as _
 
@@ -24,10 +25,12 @@ from django.utils.translation import gettext as _
 GAME_TEMPLATE = "game_phaser.html"
 
 def index_view(request):
-    return render(request, "index.html")
+    context = getBasicContext(request)
+    return render(request, "index.html", context)
 
 @login_required
 def profile(request):
+    context = getBasicContext(request)
     # Cogemos el usuario
     user = User.objects.get(id = request.user.id)
     # Cogemos el perfil
@@ -36,13 +39,18 @@ def profile(request):
     form = UserProfilePictureForm(initial={'profile': profile})
     # Hacemos un form para cambiar el background
     form_background = UserProfileGameBackgroundForm(instance= profile.userprofilegamebackground)
+    # Añadimos datos al contexto
+    context["profile"] = profile
+    context["form"] = form
+    context["form_background"] = form_background
+    context["backgrounds"] = getBackgroundsAsJson()
     # Renderizamos el HTML
-    error = request.GET.get("error", None)
-    return render(request, "profile.html", {"user": user, "profile": profile, "form": form, "form_background": form_background,
-     "error": error, "backgrounds": getBackgroundsAsJson(), "static_path": STATIC_URL})
+    return render(request, "profile.html", context)
+    #return render(request, "profile.html", {"user": user, "profile": profile, "form": form, "form_background": form_background, "error": error, "backgrounds": getBackgroundsAsJson(), "static_path": STATIC_URL})
 
 @login_required
 def change_background(request):
+    # Si se ha enviado un formulario:
     if request.POST:
         # Cogemos el usuario
         user = User.objects.get(id = request.user.id)
@@ -54,13 +62,16 @@ def change_background(request):
         if form.is_valid():
             # Si está intentando modificar otro perfil, se lo denegamos
             if form.cleaned_data['profile'] != profile:
-                print("Los profiles no coinciden")
                 return HttpResponseRedirect(reverse("profile") + "?error=" + _("There was an error processing your request"))
+            # Guardamos el nuevo fondo
             form.save()
-            return HttpResponseRedirect(reverse("profile"))
+            # Redirigimos al perfil
+            return HttpResponseRedirect(reverse("profile")+ "?notification=" + _("Background changed successfully"))
+        # Si ha fallado algo (normalmente hacking) redirigimos sin hacer nada
         else:
-            print(form.errors)
+            #print(form.errors)
             return HttpResponseRedirect(reverse("profile") + "?error=" + _("There was an error processing your request"))
+    # Si no se ha enviado un formulario, redirigimos y ya está
     else:
         return HttpResponseRedirect(reverse("profile"))
 
@@ -70,30 +81,34 @@ def profile_picture_delete(request):
     user = User.objects.get(id = request.user.id)
     # Cogemos el perfil
     profile = getUserProfile(user)
+    # Lo intentamos borrar (puede fallar por cloudinary o por no existir tal foto de perfil)
     try:
         instance = profile.userprofilepicture
         ref = copy.copy(instance.picture.public_id)
         instance.delete()
         cloudinary.uploader.destroy(ref,invalidate=True)
+    # Si falla algo, notificamos
     except:
-        pass
-
+        return HttpResponseRedirect(reverse("profile") + "?error=" + _("There was an error processing your request"))
+    # Si todo va bien, redirigimos
     return HttpResponseRedirect(reverse("profile"))
 
 @login_required
 def profile_picture_upload(request):
+    # Comprobamos que se ha enviado un formulario
     if request.POST:
-        # Cogemos el usuario
+        # Cogemos el usuario actual
         user = User.objects.get(id = request.user.id)
         # Cogemos el perfil
         profile = getUserProfile(user)
-        # Cogemos la instancia a actualizar
+        # Cogemos la instancia a actualizar (None si resulta que es la primera vez que sube imagen)
         try:
             instance = profile.userprofilepicture
             ref = copy.copy(instance.picture.public_id)
         except:
             instance = None
         # Recogemos el formulario
+        # Si había una instancia de UserProfilePicture, la asociamos; si no, la creamos nueva
         if instance is None:
             form = UserProfilePictureForm(request.POST, request.FILES)
         else:
@@ -101,29 +116,32 @@ def profile_picture_upload(request):
         # Validamos y limpiamos campos
         try:
             if form.is_valid():
+                # Si nos intentan hackear y modificar otro perfil:
                 if form.cleaned_data['profile'] != profile:
-                    print("Los profiles no coinciden")
                     return HttpResponseRedirect(reverse("profile"))
                 # Borramos la imagen vieja
+                # try/catch porque Cloudinary puede fallar
                 try:
                     if instance is not None:
                         cloudinary.uploader.destroy(ref,invalidate=True)
                 except Exception as e:
                     print(e)
                     print("Could not delete image " + str(ref))
-                # Guardamos el formulario
+                # Guardamos el formulario, guardando la imagen nueva
                 form.save()
+            # Si el formulario no es válido, la imagen normalmente es el problema
             else:
-                print(form.errors)
+                #print(form.errors)
                 return HttpResponseRedirect(reverse("profile") + "?error=" + _("Could not upload image!") )
         except Exception as e:
             return HttpResponseRedirect(reverse("profile") + "?error=" + _("Could not upload image! The format is incorrect or the image is too big" ))
-        
+    # Si no se ha enviado un formulario, redirigimos
     return HttpResponseRedirect(reverse("profile"))
 
 
 @login_required
 def match_list3(request):
+    context = getBasicContext(request)
     # Cogemos de la BD todas las partidas en curso
     keys = GameKey.objects.all()
     # Filtramos además las partidas en las que estás metido
@@ -137,37 +155,57 @@ def match_list3(request):
         yours = None
     if len(keys) == 0:
         keys = None
-    error = request.GET.get("error", None)
-    return render(request, "match_list.html", {"games" : keys, "yours": yours, "error": error, "form": MatchForm()})
+    # Metemos todo en el contexto
+    context["games"] = keys
+    context["yours"] = yours
+    context["form"] = MatchForm()
+    return render(request, "match_list.html", context)
+    #return render(request, "match_list.html", {"games" : keys, "yours": yours, "error": error, "form": MatchForm()})
 
 @login_required
 def join_match(request):
+    context = getBasicContext(request)
     # Te une a una partida
     # Coge la ID de la partida
     id = request.GET.get("id", None)
+    # Si no se ha enviado ID, redirigimos a la misma página
     if (id is None):
-        return HttpResponseRedirect("/game/matchmaking")
+        return HttpResponseRedirect(reverse("matchmaking") + "?error=" + _("Bad request!"))
     try:
+        # Recuperamos la partida de la caché
         g = cache.get("match_"+str(id), None)
+        # Si la partida ha caducado, borramos la llave
         if g is None:
             key = GameKey.objects.get(key = id)
             key.delete()
-            return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
+            return HttpResponseRedirect(reverse("matchmaking") + "?error=" + _("That match did not exist!"))
+        # Nos unimos a la partida
         player_id = game.matchmaking.join(request.user, id)
-        return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
+        # Actualizamos el contexto y finalmente mandamos la página
+        context["id"] = id
+        context["game_name"] = g.title
+        context["your_id"] = player_id
+        context["cheats"] = CHEATS_ENABLED
+        context["default_bg"] = getUserProfile(request.user).userprofilegamebackground.background
+        return render(request, GAME_TEMPLATE, context)
+        #return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": player_id, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
+    # Salta si la llave ya estaba borrada; es lo mismo, la partida no existía
     except GameKey.DoesNotExist:
-        return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
+        return HttpResponseRedirect(reverse("matchmaking") + "?error=" + _("That match did not exist!"))
+    # Si excepcionalmente pasa otra cosa, ponemos un error genérico
     except Exception as e:
-        return HttpResponseRedirect("/game/matchmaking?error=" + _("That match did not exist!"))
+        print(e)
+        return HttpResponseRedirect("/game/matchmaking?error=" + _("There was a problem joining your match"))
     
 
 @login_required
 def create_match(request):
+    context = getBasicContext(request)
     # Te crea una partida y te mete en ella
+    # Comprobamos que se ha mandado el formulario
     if request.POST:
         form = MatchForm(request.POST)
-        # Si quitas este print deja de funcionar porque ???
-        #print(form)
+        # Validamos los campos del formulario
         if form.is_valid():
             max_players = form.cleaned_data['max_players']
             ai_players = form.cleaned_data['ai_players']
@@ -175,19 +213,29 @@ def create_match(request):
             title = form.cleaned_data['title']
             user = request.user
             id = None
+            # Intentamos crear la partida
             try:
                 id = game.matchmaking.create(max_players, user, title, ai_players, ai_difficulty)
+            # Si ha habido un error creando la partida, lo mostramos (las excepciones de este método ya están pensadas
+            # para poderse mostrar a un usuario)
             except ValueError as e:
-                return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
-
-            return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
+                return HttpResponseRedirect(reverse("matchmaking") + "?error=" + str(e))
+            # Si todo ha ido bien, enviamos la página
+            context["id"] = id
+            context["game_name"] = cache.get("match_" + id).title
+            context["your_id"] = 0
+            context["cheats"] = CHEATS_ENABLED
+            context["default_bg"] = getUserProfile(request.user).userprofilegamebackground.background
+            return render(request, GAME_TEMPLATE, context)
+            #return render(request, GAME_TEMPLATE, {"id": id, "game_name": cache.get("match_" + id).title, "your_id": 0, 'cheats': CHEATS_ENABLED, 'default_bg': getUserProfile(request.user).userprofilegamebackground.background})
         else:
-            return HttpResponseRedirect("/game/matchmaking?error=" + str(e))
+            return HttpResponseRedirect(reverse("matchmaking") + "?error=" + _("Invalid data"))
     else:
-        return HttpResponseRedirect("/game/matchmaking")
+        return HttpResponseRedirect(reverse("matchmaking"))
 
 @login_required
 def feedback(request):
+    context = getBasicContext(request)
     # Si está enviando el formulario:
     if request.POST:
         # Recogemos el formulario
@@ -201,17 +249,24 @@ def feedback(request):
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(e)
-                return (request, "feedback.html", {"form": form, "error": _("Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later.")})
+                context["form"] = form
+                context["error"] = _("Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later.")
+                return render(request, "feedback.html", context)
+                #return (request, "feedback.html", {"form": form, "error": _("Whoops! There was an error sending your feedback. Yes, we get the irony. Please try again later.")})
 
             # Intentamos enviar un correo con el feedback
             try:
                 send_mail('Feedback: ' + form.cleaned_data["subject"], "From " + form.cleaned_data["email"] + ": \n" + form.cleaned_data["body"], "feedback@pumba.com", [FEEDBACK_MAIL_ADDRESS], fail_silently=False)
             except:
                 pass
-            
             return HttpResponseRedirect("/", {"notification": _("Your feedback was sent successfully, thank you for your time!")})
         else:
-            return render (request, "feedback.html", {"form": form, "error": "Invalid data"})
+            context["form"] = form
+            context["error"] = _("Invalid data")
+            return render(request, "feedback.html", context)
+            #return render (request, "feedback.html", {"form": form, "error": "Invalid data"})
     else:
-        return render (request, "feedback.html", {"form": FeedbackForm()})
+        context["form"] = FeedbackForm()
+        return render(request, "feedback.html", context)
+        #return render (request, "feedback.html", {"form": FeedbackForm()})
     
