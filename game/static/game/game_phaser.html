@@ -72,7 +72,8 @@
        "Must deflect card draw with One or Two!": language == "es" ? "¡Tienes que reflejar con un UNO o un DOS!" : "Must deflect card draw with One or Two!",
        "This card is not of a suitable suit!": language == "es" ? "¡Esta carta no es del Palo correcto!" : "This card is not of a suitable suit!",
        "Cannot switch!": language == "es" ? "¡No puedes cambiar de palo!" : "Cannot switch!",
-       "Not enough players!": language == "es" ? "¡No hay los suficientes jugadores!" : "Not enough players!"
+       "Not enough players!": language == "es" ? "¡No hay los suficientes jugadores!" : "Not enough players!",
+       "You already played a card this turn!": language == "es" ? "¡Ya has jugado una carta este turno!" : "You already played a card this turn!"
     }
 
     // Websocket al servidor
@@ -191,6 +192,10 @@
     var wonMatch_group = undefined
     var divine_group = undefined
     var chat_group = undefined
+
+    // Mensaje de error
+    var error_msg = undefined
+    var error_timer = undefined
 
     // Variables varias de la UI para iluminar o no botones de esta
     // Si ha robado este turno
@@ -705,6 +710,21 @@ function addToStateQueue(data) {
         }
     }
 
+    function drawErrorMsg(msg) {
+        if (error_msg != undefined) {
+            error_msg.destroy()
+        }
+        if (error_timer != undefined) {
+            error_timer.remove()
+        }
+        error_msg = scene.add.text(1920 / 2, 200, msg, { fontFamily: 'Verdana', fontSize: 48, backgroundColor: "#ff0000", align: "center" })
+        error_msg.setDepth(10000)
+        error_msg.setOrigin(0.5, 0.5)
+        error_msg.setX(1920 / 2)
+        error_msg.setY(200)
+        error_timer = scene.time.delayedCall(2000, function() { error_msg.destroy() }, [], this);
+    }
+
     // Hace lo que haga falta cuando llega un mensaje
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
@@ -729,7 +749,7 @@ function addToStateQueue(data) {
         } else if (message_type == "error") {
             // Traduce si es necesario el mensaje de error del servidor
             var errormsg = translateErrorMsg(data['message'])
-            appendToChatbox("Error: " + errormsg)
+            drawErrorMsg(errormsg)
         // Paquete es un ACK del servidor (no hace nada)
         } else if (message_type == "ok"){
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
