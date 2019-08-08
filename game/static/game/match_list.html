@@ -55,7 +55,15 @@
 {% if games is not None %}
 
 <h2>{% trans "Join match" %}</h2>
-
+<p style="text-align: center">
+{% for i in pages %}
+    {% if i == page %} 
+     <button class="full-match-button">{{ i }}</button>
+    {% else %}
+     <a href="{% url 'matchmaking' %}?p={{ i }}"><button class="menu-button">{{ i }}</button></a> 
+    {% endif %}
+{% endfor %}
+</p>
 <table class="matchmaking_table">
     <tr>
         <th>

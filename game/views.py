@@ -10,6 +10,7 @@ from game.models import GameKey, FeedbackMail, getUserProfile, UserProfileGameBa
 import traceback
 from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED, STATIC_URL
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
 from django.contrib.auth.models import User
 from django.urls import reverse
 import json
@@ -23,6 +24,7 @@ from django.utils.translation import gettext as _
 # Create your views here.
 
 GAME_TEMPLATE = "game_phaser.html"
+MATCHES_PER_PAGE = 10
 
 def index_view(request):
     context = getBasicContext(request)
@@ -142,6 +144,20 @@ def profile_picture_upload(request):
 @login_required
 def match_list3(request):
     context = getBasicContext(request)
+    # Recuperamos la página que se ha pedido
+    page = request.GET.get("p", 1)
+    try:
+        page = int(page)
+    except:
+        page = 1
+    
+    # Debug para comprobar que se ve bien el matchmaker
+    debug = request.GET.get("debug", None)
+    if debug is not None:
+        for i in range(20):
+            GameKey(key = str(i), name = "test" + str(i), max_users = 4, current_users = 0, ai_count = 0, status = "WAITING", capacity = 4).save()
+            context["notification"] = "Debug matches added"
+    
     # Cogemos de la BD todas las partidas en curso
     keys = GameKey.objects.all()
     # Filtramos además las partidas en las que estás metido
@@ -154,11 +170,22 @@ def match_list3(request):
     if len(yours) == 0:
         yours = None
     if len(keys) == 0:
-        keys = None
+        games = None
+    else:
+        # Creamos el paginador
+        paginator = Paginator(keys, MATCHES_PER_PAGE)
+        # Cogemos la página que nos toca
+        games = paginator.get_page(page)
+        # Creamos la lista de páginas disponibles (porque los templates de Django son muy cortitos)
+        plist = list(range(paginator.num_pages + 1))
+        plist.remove(0)
+        context["pages"] = plist
+
     # Metemos todo en el contexto
-    context["games"] = keys
+    context["games"] = games
     context["yours"] = yours
     context["form"] = MatchForm()
+    context["page"] = page
     return render(request, "match_list.html", context)
     #return render(request, "match_list.html", {"games" : keys, "yours": yours, "error": error, "form": MatchForm()})
 
