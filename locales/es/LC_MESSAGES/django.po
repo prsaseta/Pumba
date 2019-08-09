@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-06 18:47+0200\n"
+"POT-Creation-Date: 2019-08-09 11:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,49 +113,49 @@ msgstr "Recuperar"
 msgid "You have successfully reset your password"
 msgstr "Has recuperado con éxito tu contraseña"
 
-#: .\authentication\views.py:23 .\authentication\views.py:36
+#: .\authentication\views.py:27 .\authentication\views.py:43
 msgid "Your username and password didn't match. Please try again."
 msgstr "Tu usuario y contraseña no coinciden. Por favor, inténtalo de nuevo."
 
-#: .\authentication\views.py:51
+#: .\authentication\views.py:64 .\game\views.py:259 .\game\views.py:292
 msgid "Invalid data"
 msgstr "Datos no válidos"
 
-#: .\authentication\views.py:59 .\authentication\views.py:156
+#: .\authentication\views.py:74 .\authentication\views.py:187
 msgid "Passwords don't match"
 msgstr "Las contraseñas no coinciden"
 
-#: .\authentication\views.py:63
+#: .\authentication\views.py:79
 msgid "That username is already taken"
 msgstr "Ese nombre de usuario ya está cogido"
 
-#: .\authentication\views.py:66
+#: .\authentication\views.py:85
 msgid "The username may only be up to 32 characters long"
 msgstr "El nombre de usuario solamente puede tener hasta 32 caracteres"
 
-#: .\authentication\views.py:69
+#: .\authentication\views.py:91
 msgid "That email is already taken"
 msgstr "Ese correo ya está cogido"
 
-#: .\authentication\views.py:77
+#: .\authentication\views.py:101
 msgid ""
 "There was an error while sending you the verification email, please try "
 "registering again later"
-msgstr ""
+msgstr "Ha ocurrido un error mientras te mandábamos el e-mail de verificación. Por favor, intenta registrarte de nuevo más tarde."
 
-#: .\authentication\views.py:123
+#: .\authentication\views.py:150
 msgid "Confirm registration at Pumba"
 msgstr "Confirma tu registro en Pumba"
 
-#: .\authentication\views.py:123
+#: .\authentication\views.py:150
 msgid "Please confirm your registration with the following link: "
 msgstr "Por favor, confirma tu registro con el siguiente enlace: "
 
-#: .\authentication\views.py:138
+#: .\authentication\views.py:166
 msgid "Reset password at Pumba"
 msgstr "Recupera tu contraseña de Pumba"
 
-#: .\authentication\views.py:138
+#: .\authentication\views.py:166
 msgid ""
 "We have received a request to reset your password. You can do so by clicking "
 "the following link: "
@@ -163,15 +163,15 @@ msgstr ""
 "Hemos recibido una petición para recuperar tu contraseña. Puedes hacerlo "
 "pinchando en el siguiente enlace: "
 
-#: .\authentication\views.py:138
+#: .\authentication\views.py:166
 msgid "If you didn't request this change, you needn't do anything."
 msgstr "Si no has pedido este cambio, no necesitas hacer nada."
 
-#: .\authentication\views.py:171
+#: .\authentication\views.py:205
 msgid "There was an error changing your password"
 msgstr "Ha habido un error cambiando tu contraseña"
 
-#: .\authentication\views.py:176 .\authentication\views.py:182
+#: .\authentication\views.py:213 .\authentication\views.py:221
 msgid "Invalid password recovery key."
 msgstr "Clave de recuperar contraseña no válida"
 
@@ -209,84 +209,6 @@ msgstr "Un error de servidor inesperado ha ocurrido"
 #: .\game\consumers.py:943
 msgid "Match timed out due to inactivity"
 msgstr "La partida se ha borrado por inactividad"
-
-#: .\game\domain_objects.py:140 .\game\matchmaking.py:34
-msgid "The game is already started!"
-msgstr "¡La partida ya ha empezado!"
-
-#: .\game\domain_objects.py:142
-msgid "There is no defined host for the game"
-msgstr "No hay host definido paara la partida"
-
-#: .\game\domain_objects.py:145
-msgid "Not enough players! "
-msgstr "¡No hay suficientes jugadores! "
-
-#: .\game\domain_objects.py:203 .\game\domain_objects.py:240
-#: .\game\domain_objects.py:275 .\game\domain_objects.py:308
-#: .\game\domain_objects.py:376
-msgid "The game is not started!"
-msgstr "¡El juego no ha empezado!"
-
-#: .\game\domain_objects.py:216
-msgid "Cannot end turn without playing or drawing cards!"
-msgstr "¡No puedes terminar el turno sin jugar o robar cartas!"
-
-#: .\game\domain_objects.py:246
-msgid "Draw counter must be zero!"
-msgstr "¡El contador de robo debe ser cero!"
-
-#: .\game\domain_objects.py:252
-msgid "Cannot draw if something else has been done this turn!"
-msgstr "¡No puedes robar si ya has hecho algo este turno!"
-
-#: .\game\domain_objects.py:256
-msgid "Can only draw up to twice per turn!"
-msgstr "¡Solamente puedes robar dos veces por turno!"
-
-#: .\game\domain_objects.py:263
-msgid "Cannot draw if there are no cards in play!"
-msgstr "¡No puedes robar si no hay cartas en juego!"
-
-#: .\game\domain_objects.py:282
-msgid "Draw from draw counter must be done at the beginning of turn!"
-msgstr "¡Robar por el contador se tiene que hacer al principio del turno!"
-
-#: .\game\domain_objects.py:285
-msgid "Cannot draw if the counter is zero already!"
-msgstr "¡No puedes robar si el contador ya es cero!"
-
-#: .\game\domain_objects.py:311
-msgid "Invalid card index!"
-msgstr "¡Índice de carta no válido!"
-
-#: .\game\domain_objects.py:327
-msgid "You've already played a card this turn!"
-msgstr "¡Ya has jugado una carta este turno!"
-
-#: .\game\domain_objects.py:329
-msgid "Must deflect card draw with One or Two!"
-msgstr "¡Tienes que reflejar con un Uno o un Dos!"
-
-#: .\game\domain_objects.py:344
-msgid "This card is not of a suitable suit!"
-msgstr "¡Esta carta no es del palo correcto!"
-
-#: .\game\domain_objects.py:359
-msgid "That card does not share a suit or number with the last card played!"
-msgstr "¡Esa carta no comparte palo ni número con la última carta jugada!"
-
-#: .\game\domain_objects.py:363
-msgid "You already played a card this turn!"
-msgstr "¡Ya has jugado una carta este turno!"
-
-#: .\game\domain_objects.py:382
-msgid "Invalid suit!"
-msgstr "¡Palo incorrecto!"
-
-#: .\game\domain_objects.py:384
-msgid "Cannot switch!"
-msgstr "¡No puedes cambiar el palo!"
 
 #: .\game\forms.py:6
 msgid "Maximum players"
@@ -339,6 +261,10 @@ msgstr "Fondo"
 #: .\game\matchmaking.py:18
 msgid "The match doesn't exist!"
 msgstr "¡Esa partida no existe!"
+
+#: .\game\matchmaking.py:34
+msgid "The game is already started!"
+msgstr "¡La partida ya ha empezado!"
 
 #: .\game\matchmaking.py:36
 msgid "The game is full!"
@@ -405,23 +331,23 @@ msgstr "¡Listo!"
 msgid "Your matches"
 msgstr "Tus partidas en curso"
 
-#: .\game\static\game\match_list.html:18 .\game\static\game\match_list.html:62
+#: .\game\static\game\match_list.html:18 .\game\static\game\match_list.html:70
 msgid "Name"
 msgstr "Nombre"
 
-#: .\game\static\game\match_list.html:21 .\game\static\game\match_list.html:65
+#: .\game\static\game\match_list.html:21 .\game\static\game\match_list.html:73
 msgid "Status"
 msgstr "Estado"
 
-#: .\game\static\game\match_list.html:24 .\game\static\game\match_list.html:68
+#: .\game\static\game\match_list.html:24 .\game\static\game\match_list.html:76
 msgid "Player count"
 msgstr "Nº de jugadores"
 
-#: .\game\static\game\match_list.html:27 .\game\static\game\match_list.html:71
+#: .\game\static\game\match_list.html:27 .\game\static\game\match_list.html:79
 msgid "AIs"
 msgstr "IAs"
 
-#: .\game\static\game\match_list.html:30 .\game\static\game\match_list.html:74
+#: .\game\static\game\match_list.html:30 .\game\static\game\match_list.html:82
 msgid "Players"
 msgstr "Jugadores"
 
@@ -433,64 +359,74 @@ msgstr "Reconectar"
 msgid "Join match"
 msgstr "Unirse a una partida"
 
-#: .\game\static\game\match_list.html:97
+#: .\game\static\game\match_list.html:105
 msgid "Join"
 msgstr "Unirse"
 
-#: .\game\static\game\match_list.html:99
+#: .\game\static\game\match_list.html:107
 msgid "Full"
 msgstr "Lleno"
 
-#: .\game\static\game\match_list.html:108
+#: .\game\static\game\match_list.html:116
 msgid "No games found"
 msgstr "No se han encontrado partidas"
 
-#: .\game\static\game\match_list.html:112
-#: .\game\static\game\match_list.html:119
+#: .\game\static\game\match_list.html:120
+#: .\game\static\game\match_list.html:127
 msgid "Create match"
 msgstr "Crear partida"
 
-#: .\game\static\game\profile.html:11
+#: .\game\static\game\profile.html:13
 msgid "Change profile picture"
 msgstr "Cambiar foto de perfil"
 
-#: .\game\static\game\profile.html:30
+#: .\game\static\game\profile.html:32
 msgid "Upload"
 msgstr "Subir"
 
-#: .\game\static\game\profile.html:34
+#: .\game\static\game\profile.html:36
 msgid "Delete profile picture"
 msgstr "Borrar foto de perfil"
 
-#: .\game\static\game\profile.html:37
+#: .\game\static\game\profile.html:39
 msgid "Change game background"
 msgstr "Cambiar fondo del juego"
 
-#: .\game\static\game\profile.html:44
+#: .\game\static\game\profile.html:46
 msgid "Change background"
 msgstr "Cambiar fondo"
 
-#: .\game\views.py:58 .\game\views.py:63
-#, fuzzy
-#| msgid "There was an error changing your password"
+#: .\game\views.py:67 .\game\views.py:75 .\game\views.py:94
 msgid "There was an error processing your request"
-msgstr "Ha habido un error cambiando tu contraseña"
+msgstr "Ha habido un error procesando tu petición"
 
-#: .\game\views.py:118
+#: .\game\views.py:71
+msgid "Background changed successfully"
+msgstr "Fondo cambiado con éxito"
+
+#: .\game\views.py:137
 msgid "Could not upload image!"
 msgstr "No se ha podido subir la imagen"
 
-#: .\game\views.py:120
+#: .\game\views.py:139
 msgid "Could not upload image! The format is incorrect or the image is too big"
 msgstr ""
 "¡No se ha podido subir la imagen! El formato es incorrecto o la imagen es "
 "demasiado grande"
 
-#: .\game\views.py:155 .\game\views.py:159 .\game\views.py:161
+#: .\game\views.py:200
+msgid "Bad request!"
+msgstr "¡Petición no válida!"
+
+#: .\game\views.py:208 .\game\views.py:221
 msgid "That match did not exist!"
 msgstr "¡Esa partida no existe!"
 
-#: .\game\views.py:204
+#: .\game\views.py:225
+msgid "There was a problem joining your match"
+msgstr "Ha habido un error uniéndote a la partida"
+
+#: .\game\views.py:280
 msgid ""
 "Whoops! There was an error sending your feedback. Yes, we get the irony. "
 "Please try again later."
@@ -498,7 +434,7 @@ msgstr ""
 "¡Ups! Ha habido un error mandando tu reporte de errores. Sí, nos percatamos "
 "de la ironía. Vuelve a intentarlo más tarde"
 
-#: .\game\views.py:212
+#: .\game\views.py:289
 msgid "Your feedback was sent successfully, thank you for your time!"
 msgstr "Tu correo se ha enviado con éxito. ¡Gracias por tu tiempo!"
 
@@ -512,28 +448,24 @@ msgid "Welcome, %(username)s!"
 msgstr "¡Bienvenido, %(username)s!"
 
 #: .\pumba\static\base.html:30
-msgid "Logout"
-msgstr "Cerrar sesión"
-
-#: .\pumba\static\base.html:31
 msgid "Matchmaking"
 msgstr "Buscador"
 
-#: .\pumba\static\base.html:32
+#: .\pumba\static\base.html:31
 msgid "Profile"
 msgstr "Perfil"
 
-#: .\pumba\static\base.html:33
+#: .\pumba\static\base.html:32
 msgid "Bug report / Feedback"
 msgstr "Errores / Feedback"
+
+#: .\pumba\static\base.html:33
+msgid "Logout"
+msgstr "Cerrar sesión"
 
 #: .\pumba\static\base.html:35
 msgid "Welcome!"
 msgstr "¡Bienvenido!"
-
-#: .\pumba\static\base.html:39
-msgid "Language"
-msgstr "Lenguaje"
 
 #: .\pumba\static\index.html:7
 #, python-format
@@ -567,3 +499,60 @@ msgstr "regístrate"
 #: .\pumba\static\index.html:9
 msgid "to play"
 msgstr "para jugar"
+
+#~ msgid "There is no defined host for the game"
+#~ msgstr "No hay host definido paara la partida"
+
+#~ msgid "Not enough players! "
+#~ msgstr "¡No hay suficientes jugadores! "
+
+#~ msgid "The game is not started!"
+#~ msgstr "¡El juego no ha empezado!"
+
+#~ msgid "Cannot end turn without playing or drawing cards!"
+#~ msgstr "¡No puedes terminar el turno sin jugar o robar cartas!"
+
+#~ msgid "Draw counter must be zero!"
+#~ msgstr "¡El contador de robo debe ser cero!"
+
+#~ msgid "Cannot draw if something else has been done this turn!"
+#~ msgstr "¡No puedes robar si ya has hecho algo este turno!"
+
+#~ msgid "Can only draw up to twice per turn!"
+#~ msgstr "¡Solamente puedes robar dos veces por turno!"
+
+#~ msgid "Cannot draw if there are no cards in play!"
+#~ msgstr "¡No puedes robar si no hay cartas en juego!"
+
+#~ msgid "Draw from draw counter must be done at the beginning of turn!"
+#~ msgstr "¡Robar por el contador se tiene que hacer al principio del turno!"
+
+#~ msgid "Cannot draw if the counter is zero already!"
+#~ msgstr "¡No puedes robar si el contador ya es cero!"
+
+#~ msgid "Invalid card index!"
+#~ msgstr "¡Índice de carta no válido!"
+
+#~ msgid "You've already played a card this turn!"
+#~ msgstr "¡Ya has jugado una carta este turno!"
+
+#~ msgid "Must deflect card draw with One or Two!"
+#~ msgstr "¡Tienes que reflejar con un Uno o un Dos!"
+
+#~ msgid "This card is not of a suitable suit!"
+#~ msgstr "¡Esta carta no es del palo correcto!"
+
+#~ msgid "That card does not share a suit or number with the last card played!"
+#~ msgstr "¡Esa carta no comparte palo ni número con la última carta jugada!"
+
+#~ msgid "You already played a card this turn!"
+#~ msgstr "¡Ya has jugado una carta este turno!"
+
+#~ msgid "Invalid suit!"
+#~ msgstr "¡Palo incorrecto!"
+
+#~ msgid "Cannot switch!"
+#~ msgstr "¡No puedes cambiar el palo!"
+
+#~ msgid "Language"
+#~ msgstr "Lenguaje"
