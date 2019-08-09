@@ -161,7 +161,10 @@ EMAIL_USE_TLS = True
 IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = True
 
 # URL base para los correos de verificación
-VERIFICATION_MAIL_URL = "http://localhost:8000"
+if os.environ.get('DEPLOYMENT_URL') is not None:
+    VERIFICATION_MAIL_URL = os.environ.get('DEPLOYMENT_URL')
+else:
+    VERIFICATION_MAIL_URL = "http://localhost:8000"
 
 # Channels
 ASGI_APPLICATION = "pumba.routing.application"
