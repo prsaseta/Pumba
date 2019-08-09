@@ -58,6 +58,12 @@
         "plays": language == "es" ? " juega un " : " plays a ",
         "of": language == "es" ? " de " : " of ",
         "change-suit": language == "es" ? " cambia el palo a " : " changes current suit to ",
+        "player-connect": language == "es" ? "se ha conectado" : "connected to game",
+        "player-disconnect": language == "es" ? "se ha desconectado" : "disconnected from game",
+        "new-host": language == "es" ? "es el nuevo host" : "is the new host",
+        "begin-match": language == "es" ? "Empezar partida" : "Begin match",
+        "wins-the-match-before": language == "es" ? "¡" : "",
+        "wins-the-match-after": language == "es" ? " gana la partida!" : " wins the match!",
         
         "That card does not share a suit or number with the last card played!": language == "es" ? "¡Esa carta no comparte palo ni número con la última carta jugada!" : "That card does not share a suit or number with the last card played!",
         "Cannot end turn without playing or drawing cards!": language == "es" ? "¡No puedes terminar tu turno sin jugar o robar cartas!" : "Cannot end turn without playing or drawing cards!",
@@ -197,6 +203,10 @@
     // Mensaje de error
     var error_msg = undefined
     var error_timer = undefined
+
+    // Notificación
+    var notification_msg = undefined
+    var notification_timer = undefined
 
     // Variables varias de la UI para iluminar o no botones de esta
     // Si ha robado este turno
@@ -674,6 +684,20 @@ function addToStateQueue(data) {
                 'index': data['info']['player']
             }));
         }
+        // Ponemos los mensajes varios
+        if (event == 'connect') {
+            var msg = data["info"]["player_name"] + " " + strings["player-connect"]
+            appendToChatbox(msg)
+            drawNotificationMsg(msg)
+        } else if (event == 'disconnect') {
+            var msg = data["info"]["player_name"] + " " + strings["player-disconnect"]
+            appendToChatbox(msg)
+            drawNotificationMsg(msg)
+        } else if (event == 'host_change') {
+            var msg = data["info"]["player_name"] + " " + strings["new-host"]
+            appendToChatbox(msg)
+            drawNotificationMsg(msg)
+        }
     }
 
     function loadProfilePicture(ref, indx) {
@@ -726,6 +750,21 @@ function addToStateQueue(data) {
         error_timer = scene.time.delayedCall(2000, function() { error_msg.destroy() }, [], this);
     }
 
+    function drawNotificationMsg(msg) {
+        if (notification_msg != undefined) {
+            notification_msg.destroy()
+        }
+        if (notification_timer != undefined) {
+            notification_timer.remove()
+        }
+        notification_msg = scene.add.text(1920 / 2, 300, msg, { fontFamily: 'Verdana', fontSize: 48, backgroundColor: "#00ff00", align: "center" })
+        notification_msg.setDepth(10000)
+        notification_msg.setOrigin(0.5, 0.5)
+        notification_msg.setX(1920 / 2)
+        notification_msg.setY(300)
+        notification_timer = scene.time.delayedCall(2000, function() { notification_msg.destroy() }, [], this);
+    }
+
     // Hace lo que haga falta cuando llega un mensaje
     gameSocket.onmessage = function(e) {
         // Parsea el JSON
@@ -744,7 +783,7 @@ function addToStateQueue(data) {
             appendToChatbox(composed);
         // Paquete es una notificación de sistema
         } else if (message_type == "notification"){
-            appendToChatbox(data['message'])
+            //appendToChatbox(data['message'])
             processNotification(data)
         // Paquete es un error
         } else if (message_type == "error") {

@@ -11,7 +11,7 @@ function drawBeginMatch() {
     if (beginMatch_group == undefined) {
         beginMatch_group = scene.add.group()
     }
-    var begin_match = scene.add.text(1920 / 3, 1080 - 1080 / 3, "Begin match", { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#0000ff", align: "center" })
+    var begin_match = scene.add.text(1920 / 3, 1080 - 1080 / 3, strings["begin-match"], { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#0000ff", align: "center" })
     beginMatch_group.add(begin_match)
     begin_match.setInteractive()
     begin_match.setOrigin(0.5, 0.5)
@@ -49,7 +49,7 @@ function drawWinner(player) {
     } else {
         wonMatch_group.clear(true, true)
     }
-    var winner = scene.add.text(1920 / 3, 150 + 1080 - 1080 / 3, player + " wins the match!", { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#00ff00", align: "center" })
+    var winner = scene.add.text(1920 / 3, 150 + 1080 - 1080 / 3, strings["wins-the-match-before"] + player + strings["wins-the-match-after"], { fontFamily: 'Verdana', fontSize: 80, backgroundColor: "#00ff00", align: "center" })
     wonMatch_group.add(winner)
     winner.setDepth(9999)
     winner.setOrigin(0.5, 0.5)

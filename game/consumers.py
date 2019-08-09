@@ -95,7 +95,7 @@ class GameConsumer(WebsocketConsumer):
                 key.save()
             # Enviamos notificación por chat de que un usuario se ha unido
             notificationmsg = "User " + game.players[self.player_index].name + " joined the game"
-            self.send_notification_global(notificationmsg, {"event": "connect", "player": self.player_index})
+            self.send_notification_global(notificationmsg, {"event": "connect", "player": self.player_index, "player_name": game.players[self.player_index].name})
             self.was_connected_successfully_to_game = True
             # Finalmente, aceptamos la conexión
             self.accept()
@@ -137,7 +137,7 @@ class GameConsumer(WebsocketConsumer):
             # Avisamos al resto de jugadores
             username = game.players[self.player_index].name
             notificationmsg = "User %(username)s disconnected from the game" % {"username": username}
-            self.send_notification_global(notificationmsg, {"event": "disconnect", "player": self.player_index})
+            self.send_notification_global(notificationmsg, {"event": "disconnect", "player": self.player_index, "player_name": username})
             
             # Si todos los usuarios se desconectan, borramos la partida
             anyone_connected = False
@@ -157,7 +157,7 @@ class GameConsumer(WebsocketConsumer):
                     for player in game.players:
                         if not player.controller.isAI:
                             game.host = player.controller.user
-                            self.send_notification_global("%(player)s is the new host" % {"player": player.name}, {"event": "host_change", "player": self.player_index})
+                            self.send_notification_global("%(player)s is the new host" % {"player": player.name}, {"event": "host_change", "player": self.player_index, "player_name": player.name})
                             break
                 self.save_to_cache(game)
                 # Actualizamos a todos los jugadores
