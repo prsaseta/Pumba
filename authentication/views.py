@@ -160,10 +160,11 @@ def request_password_recovery(request):
             if form.is_valid():
                 # TODO Comprobar repeticiones
                 key = get_random_string(length = 20)
-                recovery = RecoverPassword(key = key, user = User.objects.get(email = form.cleaned_data["email"]))
+                user = User.objects.get(email = form.cleaned_data["email"])
+                recovery = RecoverPassword(key = key, user = user)
                 recovery.save()
                 url = VERIFICATION_MAIL_URL + "/authentication/reset?id=" + key
-                send_mail(_('Reset password at Pumba'), _('We have received a request to reset your password. You can do so by clicking the following link: ') + url + " \n" + _("If you didn't request this change, you needn't do anything."), 'recoverypumba@pumba.com', [form.cleaned_data["email"]], fail_silently=False)
+                send_mail(_('Reset password at Pumba') + ": " + user.username, _('We have received a request to reset your password. You can do so by clicking the following link: ') + url + " \n" + _("If you didn't request this change, you needn't do anything."), 'recoverypumba@pumba.com', [form.cleaned_data["email"]], fail_silently=False)
         except Exception as e:
             print(e)
         return render(request, "password_recover_request_success.html", context)
