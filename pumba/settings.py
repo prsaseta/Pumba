@@ -27,7 +27,7 @@ SECRET_KEY = 'imc8remwl2vmevm**i34+($!u5=dt7sn_=&p_-$3rq$k5c#opk'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CHEATS_ENABLED = True
+CHEATS_ENABLED = False
 
 ALLOWED_HOSTS = []
 
@@ -158,7 +158,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 # Esto activa o desactiva la necesidad de usar el correo para registrarse
-IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = False
+IS_USING_EMAIL_VERIFICATION_FOR_REGISTRY = True
 
 # URL base para los correos de verificación
 VERIFICATION_MAIL_URL = "http://localhost:8000"

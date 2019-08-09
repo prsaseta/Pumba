@@ -8,7 +8,7 @@ from game.exceptions import PumbaException
 from game.forms import MatchForm, FeedbackForm, UserProfilePictureForm, UserProfileGameBackgroundForm
 from game.models import GameKey, FeedbackMail, getUserProfile, UserProfileGameBackground, getBackgroundsAsJson
 import traceback
-from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED, STATIC_URL
+from pumba.settings import FEEDBACK_MAIL_ADDRESS, CHEATS_ENABLED, STATIC_URL, DEBUG
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
@@ -153,7 +153,7 @@ def match_list3(request):
     
     # Debug para comprobar que se ve bien el matchmaker
     debug = request.GET.get("debug", None)
-    if debug is not None:
+    if debug is not None and DEBUG:
         for i in range(20):
             GameKey(key = str(i), name = "test" + str(i), max_users = 4, current_users = 0, ai_count = 0, status = "WAITING", capacity = 4).save()
             context["notification"] = "Debug matches added"
