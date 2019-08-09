@@ -214,7 +214,8 @@ LOGGING = {
 cloudinary.config( 
   cloud_name = "hjujot11s", 
   api_key = "372813674549718", 
-  api_secret = "0D8vxpDeuZuRG10IA1edc9XpJTU" 
+  api_secret = "0D8vxpDeuZuRG10IA1edc9XpJTU",
+  secure = True
 )
 
 django_heroku.settings(locals())

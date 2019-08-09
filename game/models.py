@@ -72,7 +72,7 @@ def getUserProfilePictureUrl(user):
         if pf.userprofilepicture == None:
             return "/static/default-prof-picture.png"
         else:
-            return pf.userprofilepicture.picture.secure_url
+            return pf.userprofilepicture.picture.url
     except:
         return "/static/default-prof-picture.png"
 
