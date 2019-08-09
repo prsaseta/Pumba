@@ -191,7 +191,7 @@ LOGIN_URL = "/authentication/login"
 ALLOWED_HOSTS = ["*"]
 
 # Para enviarme el feedback por correo
-FEEDBACK_MAIL_ADDRESS = "rodriguezsaseta@hotmail.com"
+FEEDBACK_MAIL_ADDRESS = "rodriguezsaseta@gmail.com"
 
 # Logging en Heroku
 LOGGING = {

@@ -46,7 +46,7 @@ msgstr "Iniciar sesión"
 
 #: .\authentication\static\authentication\login.html:17
 msgid "Forgotten password?"
-msgstr "¿Has olvidaado tu contraseña?"
+msgstr "¿Has olvidado tu contraseña?"
 
 #: .\authentication\static\authentication\password_recover_request.html:6
 msgid ""
