@@ -80,7 +80,10 @@
        "Cannot switch!": language == "es" ? "¡No puedes cambiar de palo!" : "Cannot switch!",
        "Not enough players!": language == "es" ? "¡No hay los suficientes jugadores!" : "Not enough players!",
        "You already played a card this turn!": language == "es" ? "¡Ya has jugado una carta este turno!" : "You already played a card this turn!",
-       "It's not your turn!": language == "es" ? "¡No es tu turno!" : "It's not your turn!"
+       "It's not your turn!": language == "es" ? "¡No es tu turno!" : "It's not your turn!",
+       "Could not connect to the match": language == "es" ? "No se ha podido conectar a la partida" : "Could not connect to the match",
+       "You opened the game on another window; closing this one": language == "es" ? "Has abierto la partida en otra pestaña; cerrando esta" : "You opened the game on another window; closing this one",
+       "Match timed out due to inactivity": language == "es" ? "La partida ha acabado por inactividad" : "Match timed out due to inactivity"
     }
 
     // Websocket al servidor
@@ -795,7 +798,7 @@ function addToStateQueue(data) {
             //document.querySelector('#chat-log').value += ("OK: Command executed successfully" + '\n');
         // Paquete es una notificación de que el socket se está cerrando desde el servidor
         } else if (message_type == "disconnect") {
-            document.getElementById("error-msg").innerHTML += data['reason'] + "<br>"
+            document.getElementById("error-msg").innerHTML += strings[data['reason']] + "<br>"
         // Paquete es una notificación por usar la carta DIVINE
         } else if (message_type == "divination") {
             //appendToChatbox("The next card drawn will be a " + data['card']['number'] + " of " + data['card']['suit'] + ".");
@@ -858,7 +861,7 @@ function addToStateQueue(data) {
     // Qué hacer si se cierra el websocket de forma inesperada
     // Muestra un mensaje en la parte de arriba de la pantalla
     gameSocket.onclose = function(e) {
-        document.getElementById("error-msg").innerHTML += "The connection to the server was lost<br>"
+        document.getElementById("error-msg").innerHTML += "{% trans 'The connection to the server was lost' %}<br>"
     };
 
     // Cuando el WebSocket está listo tras abrir la página, pide el estado de la partida al servidor

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-10 11:55+0200\n"
+"POT-Creation-Date: 2019-08-10 12:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -306,6 +306,10 @@ msgstr ""
 #: .\game\static\game\feedback.html:19
 msgid "Send!"
 msgstr "¡Listo!"
+
+#: .\game\static\game\game_phaser.html:864
+msgid "The connection to the server was lost"
+msgstr "Se ha perdido la conexión al servidor"
 
 #: .\game\static\game\match_list.html:13
 msgid "Your matches"
