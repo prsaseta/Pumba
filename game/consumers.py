@@ -83,13 +83,14 @@ class GameConsumer(WebsocketConsumer):
                 self.channel_name
             )
             # Comprobamos si la key en la BD está creada; si no, la creamos
+            # Así se evita que se queden partidas colgadas si no se abre el consumidor
             try:
                 GameKey.objects.get(key = self.match_id)
             except ObjectDoesNotExist:
                 # Nos aseguramos de que el que la ha creado es el host
                 if game.host.id is not user.id:
                     raise ValueError("The host is not the same as the logged user!")
-                key = GameKey(status = game.status.name, key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount, capacity = game.maxPlayerCount - game.aiCount)
+                key = GameKey(status = game.status.name, key = self.match_id, current_users = 1, max_users = game.maxPlayerCount, name=game.title, ai_count = game.aiCount, capacity = game.maxPlayerCount - game.aiCount, ai_difficulty = game.aiDifficulty.name)
                 key.save()
                 key.users.add(user)
                 key.save()

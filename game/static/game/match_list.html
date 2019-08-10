@@ -27,6 +27,9 @@
             {% trans "AIs" %}
         </th>
         <th>
+            {% trans "AI difficulty" %}
+        </th>
+        <th>
             {% trans "Players" %}
         </th>
         <th>
@@ -36,9 +39,10 @@
     {% for game in yours %}
     <tr>
         <th class="matchmaking_table_row">{{ game.name }}</th>
-        <th class="matchmaking_table_row">{{ game.status }}</th>
+        <th class="matchmaking_table_row">{% trans game.status %}</th>
         <th class="matchmaking_table_row">{{ game.current_users }} / {{ game.max_users|sub:game.ai_count }}</th>
         <th class="matchmaking_table_row">{{ game.ai_count }}</th>
+        <th class="matchmaking_table_row">{% trans game.ai_difficulty %}</th>
         <th class="matchmaking_table_row">
             {% for player in game.users.all %}
                 {{ player.username }}<br/>
@@ -79,6 +83,9 @@
             {% trans "AIs" %}
         </th>
         <th>
+            {% trans "AI difficulty" %}
+        </th>
+        <th>
             {% trans "Players" %}
         </th>
         <th>
@@ -88,9 +95,10 @@
     {% for game in games %}
     <tr>
         <th class="matchmaking_table_row">{{ game.name }}</th>
-        <th class="matchmaking_table_row">{{ game.status }}</th>
+        <th class="matchmaking_table_row">{% trans game.status %}</th>
         <th class="matchmaking_table_row">{{ game.current_users }} / {{ game.max_users|sub:game.ai_count }}</th>
         <th class="matchmaking_table_row">{{ game.ai_count }}</th>
+        <th class="matchmaking_table_row">{% trans game.ai_difficulty %}</th>
         <th class="matchmaking_table_row">
             {% for player in game.users.all %}
                 {% if player.username == user.username %}

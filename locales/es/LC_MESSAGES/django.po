@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-08-09 11:41+0200\n"
+"POT-Creation-Date: 2019-08-10 11:55+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -121,7 +121,7 @@ msgstr "Tu usuario y contraseña no coinciden. Por favor, inténtalo de nuevo."
 msgid "Invalid data"
 msgstr "Datos no válidos"
 
-#: .\authentication\views.py:74 .\authentication\views.py:187
+#: .\authentication\views.py:74 .\authentication\views.py:188
 msgid "Passwords don't match"
 msgstr "Las contraseñas no coinciden"
 
@@ -141,7 +141,9 @@ msgstr "Ese correo ya está cogido"
 msgid ""
 "There was an error while sending you the verification email, please try "
 "registering again later"
-msgstr "Ha ocurrido un error mientras te mandábamos el e-mail de verificación. Por favor, intenta registrarte de nuevo más tarde."
+msgstr ""
+"Ha ocurrido un error mientras te mandábamos el e-mail de verificación. Por "
+"favor, intenta registrarte de nuevo más tarde."
 
 #: .\authentication\views.py:150
 msgid "Confirm registration at Pumba"
@@ -151,11 +153,11 @@ msgstr "Confirma tu registro en Pumba"
 msgid "Please confirm your registration with the following link: "
 msgstr "Por favor, confirma tu registro con el siguiente enlace: "
 
-#: .\authentication\views.py:166
+#: .\authentication\views.py:167
 msgid "Reset password at Pumba"
 msgstr "Recupera tu contraseña de Pumba"
 
-#: .\authentication\views.py:166
+#: .\authentication\views.py:167
 msgid ""
 "We have received a request to reset your password. You can do so by clicking "
 "the following link: "
@@ -163,98 +165,76 @@ msgstr ""
 "Hemos recibido una petición para recuperar tu contraseña. Puedes hacerlo "
 "pinchando en el siguiente enlace: "
 
-#: .\authentication\views.py:166
+#: .\authentication\views.py:167
 msgid "If you didn't request this change, you needn't do anything."
 msgstr "Si no has pedido este cambio, no necesitas hacer nada."
 
-#: .\authentication\views.py:205
+#: .\authentication\views.py:206
 msgid "There was an error changing your password"
 msgstr "Ha habido un error cambiando tu contraseña"
 
-#: .\authentication\views.py:213 .\authentication\views.py:221
+#: .\authentication\views.py:214 .\authentication\views.py:222
 msgid "Invalid password recovery key."
 msgstr "Clave de recuperar contraseña no válida"
 
-#: .\game\consumers.py:109
-msgid "Could not connect to the match"
-msgstr "No se ha podido conectar a la partida"
-
-#: .\game\consumers.py:122
-msgid "You opened the game on another window; closing this one"
-msgstr "Has abierto esta partida en otra ventana; cerrando esta"
-
-#: .\game\consumers.py:139
-#, python-format
-msgid "User %(username)s disconnected from the game"
-msgstr "El usuario %(username)s se ha desconectado"
-
-#: .\game\consumers.py:160
-#, python-format
-msgid "%(player)s is the new host"
-msgstr "%(player)s es el nuevo host"
-
-#: .\game\consumers.py:303
-msgid "You are not the host!"
-msgstr "¡No eres el host!"
-
-#: .\game\consumers.py:330 .\game\consumers.py:662 .\game\consumers.py:691
-#: .\game\consumers.py:737
-msgid "It's not your turn!"
-msgstr "¡No es tu turno!"
-
-#: .\game\consumers.py:763
-msgid "An unexpected server error ocurred"
-msgstr "Un error de servidor inesperado ha ocurrido"
-
-#: .\game\consumers.py:943
-msgid "Match timed out due to inactivity"
-msgstr "La partida se ha borrado por inactividad"
-
 #: .\game\forms.py:6
+msgid "EASY"
+msgstr "FÁCIL"
+
+#: .\game\forms.py:7
+msgid "MEDIUM"
+msgstr "NORMAL"
+
+#: .\game\forms.py:8
+msgid "HARD"
+msgstr "DIFÍCIL"
+
+#: .\game\forms.py:11
 msgid "Maximum players"
 msgstr "Jugadores máximos"
 
-#: .\game\forms.py:7
+#: .\game\forms.py:12
 msgid "Game title"
 msgstr "Título"
 
-#: .\game\forms.py:8
+#: .\game\forms.py:13
 msgid "AI players"
 msgstr "IAs"
 
-#: .\game\forms.py:10
+#: .\game\forms.py:15 .\game\models.py:18
 msgid "Easy"
 msgstr "Fácil"
 
-#: .\game\forms.py:11
+#: .\game\forms.py:16 .\game\models.py:19
 msgid "Medium"
 msgstr "Normal"
 
-#: .\game\forms.py:12
+#: .\game\forms.py:17 .\game\models.py:20
 msgid "Hard"
 msgstr "Difícil"
 
-#: .\game\forms.py:14
+#: .\game\forms.py:19 .\game\static\game\match_list.html:30
+#: .\game\static\game\match_list.html:86
 msgid "AI difficulty"
 msgstr "Dificultad de la IA"
 
-#: .\game\forms.py:18
+#: .\game\forms.py:23
 msgid "Your email (optional)"
 msgstr "Tu correo (opcional)"
 
-#: .\game\forms.py:19
+#: .\game\forms.py:24
 msgid "Subject"
 msgstr "Asunto"
 
-#: .\game\forms.py:20
+#: .\game\forms.py:25
 msgid "Text"
 msgstr "Texto"
 
-#: .\game\forms.py:27
+#: .\game\forms.py:32
 msgid "Picture"
 msgstr "Imagen"
 
-#: .\game\forms.py:37
+#: .\game\forms.py:42
 msgid "Background"
 msgstr "Fondo"
 
@@ -298,23 +278,23 @@ msgstr "JUGANDO"
 msgid "ENDING"
 msgstr "TERMINANDO"
 
-#: .\game\models.py:41
+#: .\game\models.py:47
 msgid "Blue"
 msgstr "Azul"
 
-#: .\game\models.py:42
+#: .\game\models.py:48
 msgid "Deep cyan"
 msgstr "Cian oscuro"
 
-#: .\game\models.py:43
+#: .\game\models.py:49
 msgid "Gray"
 msgstr "Gris"
 
-#: .\game\models.py:44
+#: .\game\models.py:50
 msgid "Green"
 msgstr "Verde"
 
-#: .\game\models.py:45
+#: .\game\models.py:51
 msgid "Violet"
 msgstr "Púrpura"
 
@@ -331,48 +311,48 @@ msgstr "¡Listo!"
 msgid "Your matches"
 msgstr "Tus partidas en curso"
 
-#: .\game\static\game\match_list.html:18 .\game\static\game\match_list.html:70
+#: .\game\static\game\match_list.html:18 .\game\static\game\match_list.html:74
 msgid "Name"
 msgstr "Nombre"
 
-#: .\game\static\game\match_list.html:21 .\game\static\game\match_list.html:73
+#: .\game\static\game\match_list.html:21 .\game\static\game\match_list.html:77
 msgid "Status"
 msgstr "Estado"
 
-#: .\game\static\game\match_list.html:24 .\game\static\game\match_list.html:76
+#: .\game\static\game\match_list.html:24 .\game\static\game\match_list.html:80
 msgid "Player count"
 msgstr "Nº de jugadores"
 
-#: .\game\static\game\match_list.html:27 .\game\static\game\match_list.html:79
+#: .\game\static\game\match_list.html:27 .\game\static\game\match_list.html:83
 msgid "AIs"
 msgstr "IAs"
 
-#: .\game\static\game\match_list.html:30 .\game\static\game\match_list.html:82
+#: .\game\static\game\match_list.html:33 .\game\static\game\match_list.html:89
 msgid "Players"
 msgstr "Jugadores"
 
-#: .\game\static\game\match_list.html:48
+#: .\game\static\game\match_list.html:52
 msgid "Rejoin"
 msgstr "Reconectar"
 
-#: .\game\static\game\match_list.html:57
+#: .\game\static\game\match_list.html:61
 msgid "Join match"
 msgstr "Unirse a una partida"
 
-#: .\game\static\game\match_list.html:105
+#: .\game\static\game\match_list.html:113
 msgid "Join"
 msgstr "Unirse"
 
-#: .\game\static\game\match_list.html:107
+#: .\game\static\game\match_list.html:115
 msgid "Full"
 msgstr "Lleno"
 
-#: .\game\static\game\match_list.html:116
+#: .\game\static\game\match_list.html:124
 msgid "No games found"
 msgstr "No se han encontrado partidas"
 
-#: .\game\static\game\match_list.html:120
-#: .\game\static\game\match_list.html:127
+#: .\game\static\game\match_list.html:128
+#: .\game\static\game\match_list.html:135
 msgid "Create match"
 msgstr "Crear partida"
 
@@ -499,6 +479,32 @@ msgstr "regístrate"
 #: .\pumba\static\index.html:9
 msgid "to play"
 msgstr "para jugar"
+
+#~ msgid "Could not connect to the match"
+#~ msgstr "No se ha podido conectar a la partida"
+
+#~ msgid "You opened the game on another window; closing this one"
+#~ msgstr "Has abierto esta partida en otra ventana; cerrando esta"
+
+#, python-format
+#~ msgid "User %(username)s disconnected from the game"
+#~ msgstr "El usuario %(username)s se ha desconectado"
+
+#, python-format
+#~ msgid "%(player)s is the new host"
+#~ msgstr "%(player)s es el nuevo host"
+
+#~ msgid "You are not the host!"
+#~ msgstr "¡No eres el host!"
+
+#~ msgid "It's not your turn!"
+#~ msgstr "¡No es tu turno!"
+
+#~ msgid "An unexpected server error ocurred"
+#~ msgstr "Un error de servidor inesperado ha ocurrido"
+
+#~ msgid "Match timed out due to inactivity"
+#~ msgstr "La partida se ha borrado por inactividad"
 
 #~ msgid "There is no defined host for the game"
 #~ msgstr "No hay host definido paara la partida"

@@ -14,6 +14,11 @@ class GameKey(models.Model):
         ("PLAYING", _("PLAYING")),
         ("ENDING", _("ENDING"))
     )
+    DIFFICULTIES = (
+        ("EASY", _("Easy")),
+        ("MEDIUM", _("Medium")),
+        ("HARD", _("Hard"))
+    )
     key = models.CharField(max_length = 100)
     name = models.CharField(max_length = 200)
     users = models.ManyToManyField(User)
@@ -21,6 +26,7 @@ class GameKey(models.Model):
     current_users = models.PositiveSmallIntegerField()
     ai_count = models.PositiveSmallIntegerField()
     status = models.CharField(max_length = 20, choices = STATUSES)
+    ai_difficulty = models.CharField(max_length = 20, choices = DIFFICULTIES, default = "EASY")
     # Esto se rellena a mano, y es max_users - ai_count
     # Sirve básicamente para la lista de matchmaking
     capacity = models.PositiveSmallIntegerField()

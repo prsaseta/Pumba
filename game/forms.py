@@ -2,6 +2,11 @@ from django import forms
 from game.models import UserProfilePicture, UserProfileGameBackground
 from django.utils.translation import gettext_lazy as _
 
+# Para que el compilador de texto de traducción de Django lo añada solo:
+_("EASY")
+_("MEDIUM")
+_("HARD")
+
 class MatchForm(forms.Form):
     max_players = forms.IntegerField(max_value=6, min_value=2, label = _("Maximum players"), initial = 4)
     title = forms.CharField(max_length= 100, min_length=1, label= _("Game title"), initial = "Quick match")
