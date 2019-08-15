@@ -457,21 +457,21 @@ class GameConsumer(WebsocketConsumer):
         result = None
         best = None
         score = None
-        print("Evaluating choices of " + str(ai_player.name))
-        print("\tHand:")
-        for i in range(len(ai_hand)):
-            print("\t\t" + self.card_to_string(ai_hand[i]) + " (" + str(i) + ")")
+        #print("Evaluating choices of " + str(ai_player.name))
+        #print("\tHand:")
+        #for i in range(len(ai_hand)):
+            #print("\t\t" + self.card_to_string(ai_hand[i]) + " (" + str(i) + ")")
         # Por cada carta jugable en la mano, calculamos su puntuación y escogemos la mayor
         for i in range(len(ai_hand)):
             card = ai_hand[i]
             if card.suit is game.lastSuit or card.number is game.lastNumber:
-                print("\tChoice " + str(i))
+                #print("\tChoice " + str(i))
                 current_score = self.ai_calculate_card_score(card, game)
                 if score is None or current_score > score:
-                    if best is not None:
-                        print("\t\tUpdating choices: " + self.card_to_string(ai_hand[best]) + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
-                    else:
-                        print("\t\tUpdating choices: " + "None" + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
+                    #if best is not None:
+                        #print("\t\tUpdating choices: " + self.card_to_string(ai_hand[best]) + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
+                    #else:
+                        #print("\t\tUpdating choices: " + "None" + " -> " + self.card_to_string(card) + " (" + str(i) + ")")
                     best = i
                     score = current_score
         if best is not None:
@@ -514,7 +514,7 @@ class GameConsumer(WebsocketConsumer):
         return result
 
     def ai_calculate_card_score(self, card, game):
-        print("\t\tCalculating score of " + str(card.number) + " of " + str(card.suit))
+        #print("\t\tCalculating score of " + str(card.number) + " of " + str(card.suit))
         score = None
         if card.number is CardNumber.ONE or card.number is CardNumber.TWO:
             score = self.ai_calculate_ONE_score(card, game)
@@ -529,7 +529,7 @@ class GameConsumer(WebsocketConsumer):
                 score = 1
         else:
             score = 1
-        print("\t\t\tResult: " + str(score))
+        #print("\t\t\tResult: " + str(score))
         return score
 
     def ai_calculate_ONE_score(self, card, game):

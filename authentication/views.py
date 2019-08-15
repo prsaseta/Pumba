@@ -111,7 +111,7 @@ def register_view(request):
         #return render(request, "register.html", {"form": RegisterForm()})
 
 def verification_view(request):
-    context = getBasicContext()
+    context = getBasicContext(request)
     # Cogemos el código de verificación
     code = request.GET.get('id', None)
 
